@@ -1,3 +1,7 @@
+# Validação do JARVIS Mobile 0.4.0
+
+Nova revisão em desenvolvimento: testes, compilação e APK ainda não confirmados. Os resultados da 0.3 abaixo são históricos.
+
 # Validação do JARVIS Mobile 0.3.0
 
 ## Resultado confirmado

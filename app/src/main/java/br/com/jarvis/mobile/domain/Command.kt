@@ -3,6 +3,8 @@ package br.com.jarvis.mobile.domain
 sealed interface Command {
     data object Wake : Command
     data object OpenChatGpt : Command
+    data class OpenApp(val name: String) : Command
+    data class CreateEvent(val request: String) : Command
     data class SetAlarm(val hour: Int, val minute: Int) : Command
     data object AskAlarmTime : Command
     data object InvalidAlarmTime : Command

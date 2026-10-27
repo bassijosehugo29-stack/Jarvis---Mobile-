@@ -31,15 +31,34 @@ class CommandParserTest {
         assertEquals(Command.SetAlarm(0, 0), parser.parse("alarme para 12 da manhã").command)
     }
     @Test fun refusesInvalidTimes() {
-        for (time in listOf("25:00", "7:60", "99:99", "123:30", "7:300")) {
+        for (time in listOf("25:00", "7:60", "99:99", "123:30", "7:300", "7 30")) {
             assertEquals(time, Command.InvalidAlarmTime, parser.parse("alarme para $time").command)
         }
     }
     @Test fun ambiguousTimesRequireClockUi() {
-        for (text in listOf("alarme", "alarme para sete e trinta", "alarme para 7 e meia",
-            "alarme para amanhã às 7", "alarme daqui a 10 minutos", "alarme para 7 30")) {
+        for (text in listOf("alarme", "alarme para amanhã às 7", "alarme daqui a 10 minutos")) {
             assertEquals(text, Command.AskAlarmTime, parser.parse(text).command)
         }
+    }
+    @Test fun opensOtherAppsOnlyWhenExplicitlyRequested() {
+        for (text in listOf("Jarvis abrir WhatsApp", "Jarvis abre o aplicativo WhatsApp", "entrar no WhatsApp", "quero abrir WhatsApp")) {
+            assertEquals(Command.OpenApp("whatsapp"), parser.parse(text).command)
+        }
+        assertEquals(Command.Unknown, parser.parse("WhatsApp").command)
+        assertEquals(Command.Unknown, parser.parse("fechar WhatsApp").command)
+    }
+    @Test fun eventTitleCannotBecomeAnAppLaunch() {
+        val text = "Jarvis agende reunião para abrir conta amanhã às 15 horas"
+        assertEquals(Command.CreateEvent(text), parser.parse(text).command)
+    }
+    @Test fun recognizesCalendarCommandsAndSpokenTimes() {
+        for (text in listOf("Agende consulta amanhã às 15 horas", "crie um evento consulta amanhã às 15 horas", "anote consulta na agenda amanhã às 15 horas")) {
+            assertEquals(Command.CreateEvent(text), parser.parse(text).command)
+        }
+        for (text in listOf("sete e trinta", "7 e meia", "sete horas e trinta minutos")) {
+            assertEquals(text, Command.SetAlarm(7, 30), parser.parse("alarme para $text").command)
+        }
+        assertEquals(Command.SetAlarm(15, 0), parser.parse("alarme para três da tarde").command)
     }
     @Test fun stopTakesPriority() {
         assertEquals(Command.Stop, parser.parse("Jarvis cancelar alarme").command)

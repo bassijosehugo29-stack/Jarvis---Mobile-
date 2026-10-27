@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -41,8 +40,6 @@ import kotlin.math.sin
 fun JarvisScreen(
     state: JarvisState,
     onToggle: () -> Unit,
-    onChatGpt: () -> Unit,
-    onAlarm: () -> Unit,
     onSettings: () -> Unit
 ) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
@@ -55,8 +52,7 @@ fun JarvisScreen(
                 Header(onSettings = { showSettings = true })
                 DeviceStrip(device)
                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                    val diameter = (maxHeight * 0.52f).coerceIn(184.dp, 286.dp)
-                    val stacked = LocalDensity.current.fontScale >= 1.35f || maxWidth < 350.dp
+                    val diameter = (maxHeight * 0.60f).coerceIn(184.dp, 320.dp)
                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
                         .heightIn(min = maxHeight).testTag("jarvis-content")
                         .padding(horizontal = 22.dp).padding(top = 6.dp, bottom = 14.dp),
@@ -84,22 +80,6 @@ fun JarvisScreen(
                         }
                         Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
                             CommunicationPanel(state)
-                            Spacer(Modifier.height(12.dp))
-                            if (stacked) {
-                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    HudAction("CHATGPT", "Abrir aplicativo", Symbols.Chat, "Abrir ChatGPT",
-                                        onChatGpt, Modifier.fillMaxWidth())
-                                    HudAction("ALARMES", "Definir horário", Symbols.Alarm, "Criar alarme",
-                                        onAlarm, Modifier.fillMaxWidth())
-                                }
-                            } else {
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    HudAction("CHATGPT", "Abrir aplicativo", Symbols.Chat, "Abrir ChatGPT",
-                                        onChatGpt, Modifier.weight(1f))
-                                    HudAction("ALARMES", "Definir horário", Symbols.Alarm, "Criar alarme",
-                                        onAlarm, Modifier.weight(1f))
-                                }
-                            }
                             if (state.notice.isNotBlank()) {
                                 TextButton(onClick = { showSettings = true },
                                     contentPadding = PaddingValues(horizontal = 0.dp),
@@ -135,9 +115,11 @@ fun JarvisScreen(
                 Text("Como falar", fontSize = 15.sp, color = Gold, fontWeight = FontWeight.Medium)
                 Text("Ative o microfone e diga “Jarvis”. Depois da resposta, fale seu comando em até 20 segundos.",
                     color = Muted, fontSize = 14.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
-                Text("“Jarvis, abrir ChatGPT”\n“Jarvis, alarme para 7:30”", color = Cyan,
+                Text("“Jarvis, abrir WhatsApp”\n“Jarvis, agende dentista amanhã às 15 horas”\n“Jarvis, alarme para sete e trinta”", color = Cyan,
                     fontSize = 14.sp, lineHeight = 25.sp, modifier = Modifier.padding(top = 12.dp))
                 HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
+                Text("Agenda: permita o calendário no primeiro pedido. O compromisso dura uma hora se você não disser a duração. Com várias agendas, escolha por voz no primeiro uso. Ao abrir outro aplicativo, o microfone é desligado.", color = Muted, fontSize = 14.sp, lineHeight = 22.sp)
+                Spacer(Modifier.height(18.dp))
                 Text("Reconhecimento de voz", fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Text(state.voiceInfo, color = Muted, fontSize = 14.sp, lineHeight = 22.sp,
                     modifier = Modifier.padding(top = 8.dp))
@@ -155,7 +137,7 @@ fun JarvisScreen(
                     Spacer(Modifier.width(10.dp))
                     Text("Abrir permissões do aplicativo")
                 }
-                Text("JARVIS Mobile · 0.3.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
+                Text("JARVIS Mobile · 0.4.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 18.dp))
             }
         }
@@ -268,22 +250,6 @@ private fun CommunicationPanel(state: JarvisState) {
 }
 
 @Composable
-private fun HudAction(title: String, subtitle: String, symbol: ImageVector,
-    description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    HudPanel(modifier.semantics { contentDescription = description }.clickable(role = Role.Button, onClick = onClick)) {
-        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(symbol, null, Modifier.size(22.dp), tint = Cyan)
-            Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(title, color = Color(0xFFE2FAFF), fontSize = 11.sp,
-                    fontFamily = FontFamily.Monospace, letterSpacing = 1.sp)
-                Text(subtitle, color = Muted, fontSize = 10.sp, lineHeight = 15.sp,
-                    modifier = Modifier.padding(top = 4.dp))
-            }
-        }
-    }
-}
-
-@Composable
 private fun PrivacyLine(state: JarvisState) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 9.dp),
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -301,8 +267,8 @@ private fun PrivacyLine(state: JarvisState) {
 
 @Preview(showBackground = true, widthDp = 412, heightDp = 915)
 @Composable
-private fun JarvisPreview() { JarvisTheme { JarvisScreen(JarvisState(), {}, {}, {}, {}) } }
+private fun JarvisPreview() { JarvisTheme { JarvisScreen(JarvisState(), {}, {}) } }
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 740, fontScale = 1.5f)
 @Composable
-private fun JarvisLargeFontPreview() { JarvisTheme { JarvisScreen(JarvisState(), {}, {}, {}, {}) } }
+private fun JarvisLargeFontPreview() { JarvisTheme { JarvisScreen(JarvisState(), {}, {}) } }

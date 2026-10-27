@@ -37,8 +37,8 @@ for path in xmls:
 android = '{http://schemas.android.com/apk/res/android}'
 manifest = ET.parse(ROOT / 'app/src/main/AndroidManifest.xml').getroot()
 permissions = {el.get(android + 'name') for el in manifest.findall('uses-permission')}
-check(permissions == {'android.permission.RECORD_AUDIO', 'com.android.alarm.permission.SET_ALARM'},
-      'Permissões limitadas a microfone e intent de alarme')
+check(permissions == {'android.permission.RECORD_AUDIO', 'android.permission.READ_CALENDAR', 'android.permission.WRITE_CALENDAR', 'com.android.alarm.permission.SET_ALARM'},
+      'Permissões limitadas a microfone, calendário solicitado por voz e intent de alarme')
 check(not manifest.findall('.//service') and not manifest.findall('.//receiver'),
       'Sem serviço de escuta ou receiver de background nesta versão')
 for activity in manifest.findall('.//activity'):

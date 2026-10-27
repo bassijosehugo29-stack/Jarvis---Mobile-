@@ -10,14 +10,20 @@ Assistente Android nativo em **Kotlin + Jetpack Compose**, com interface preta, 
 - “Jarvis” → **“Às suas ordens, senhor”**, usando TextToSpeech do Android.
 - Após a resposta, aceita comandos por 20 segundos; também aceita a ativação e o comando numa frase.
 - “Jarvis, abrir ChatGPT” abre apenas o pacote oficial `com.openai.chatgpt`, se instalado.
-- “Jarvis, alarme para 7:30” abre o relógio do Android com o horário preenchido. **Confirme e salve no relógio**. Não afirma que um alarme foi salvo.
-- “Jarvis, criar alarme” ou horários por extenso/ambíguos abrem a interface do relógio para escolher o horário.
+- “Jarvis, abrir WhatsApp” / “entrar no Instagram” procura o nome entre aplicativos instalados do perfil atual. Se houver ambiguidade, pergunta por voz.
+- “Jarvis, agende dentista amanhã às quinze horas” salva diretamente no calendário Android, com permissão no primeiro uso. Pergunta os dados ausentes e qual agenda usar se houver várias.
+- “Jarvis, alarme para sete e trinta” solicita o alarme ao relógio oficial com dispensa de UI quando suportada; o relógio pode ainda exigir confirmação. Não afirma que verificou um alarme salvo.
 - “Jarvis, ajuda” explica os comandos; “Jarvis, parar” desliga a escuta.
-- Os botões ChatGPT e alarme funcionam sem acesso ao microfone.
+- A tela principal usa o núcleo para ativar/pausar a voz; os atalhos de aplicativos foram removidos.
+
+## Versão 0.4.0 — ações por voz
+
+A revisão amplia os comandos e remove os botões individuais. Veja exemplos, permissões e limites em [COMANDOS-0.4.md](docs/COMANDOS-0.4.md). A compilação desta revisão ainda está em validação; os resultados da 0.3 abaixo são históricos e não validam o código novo.
+
 
 Não é um modelo de linguagem nem controla a interface interna do ChatGPT. Não exige assinatura ou chave de API. Nenhum áudio ou histórico é salvo pelo app; o texto exibido permanece apenas na memória da tela/ViewModel.
 
-## Versão 0.3.0 — HUD holográfico
+## Histórico: versão 0.3.0 — HUD holográfico
 
 Interface inspirada na referência visual enviada pelo proprietário: núcleo geométrico projetado em 3D, anéis luminosos em movimento, grade de fundo e painéis angulares. O relógio e a bateria mostram dados reais do Android. A animação ambiente funciona enquanto a tela está visível; o microfone só é ativado pelo usuário.
 
@@ -86,7 +92,7 @@ O app não declara permissão de internet; um serviço de voz instalado tem perm
 - `domain/`: parser de comandos e janela de ativação, sem dependências Android.
 - `voice/`: contrato substituível `SpeechInput`, adaptador `SpeechRecognizer`, saída TextToSpeech com tratamento de inicialização/timeout.
 - `JarvisViewModel`: estado, ciclo de conversa, pausa de reconhecimento durante a fala e repetição limitada de erros.
-- `actions/`: intents oficiais para abrir ChatGPT e preencher alarme; a Activity inicia a ação.
+- `actions/`: launcher oficial de apps, intent de alarme e gravação/consulta de confirmação pelo Calendar Provider; a Activity solicita permissões e inicia intents.
 - `ui/`: tela Compose, tema escuro e núcleo animado apenas durante atividade.
 - `MainActivity`: permissão em runtime, estado visível e execução dos intents.
 

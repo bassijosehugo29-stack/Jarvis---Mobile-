@@ -30,6 +30,9 @@ class MainActivity : ComponentActivity() {
     private val requestMicrophone = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) model.start() else model.permissionDenied()
     }
+    private val requestCalendar = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        model.onCalendarPermissionResult()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +42,11 @@ class MainActivity : ComponentActivity() {
         )
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                model.actions.collect { action -> actions.execute(this@MainActivity, action)?.let(model::report) }
+                model.actions.collect { action ->
+                    if (action == AppAction.RequestCalendarPermission) {
+                        requestCalendar.launch(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR))
+                    } else actions.execute(this@MainActivity, action)?.let(model::actionFailed)
+                }
             }
         }
         setContent {
@@ -52,8 +59,6 @@ class MainActivity : ComponentActivity() {
                         else if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) model.start()
                         else requestMicrophone.launch(Manifest.permission.RECORD_AUDIO)
                     },
-                    onChatGpt = { model.requestAction(AppAction.OpenChatGpt) },
-                    onAlarm = { model.requestAction(AppAction.SetAlarm()) },
                     onSettings = {
                         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                             Uri.parse("package:$packageName")))
