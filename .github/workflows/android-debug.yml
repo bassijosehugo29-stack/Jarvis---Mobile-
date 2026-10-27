@@ -102,6 +102,10 @@ jobs:
             ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest
             mkdir -p app/build/reports/screenshots
             adb pull /sdcard/Pictures/JARVIS/. app/build/reports/screenshots/
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -W -n br.com.jarvis.mobile/.MainActivity
+            adb shell screenrecord --size 720x1600 --bit-rate 2500000 --time-limit 6 /sdcard/jarvis-hud.mp4
+            adb pull /sdcard/jarvis-hud.mp4 app/build/reports/screenshots/jarvis-hud.mp4
       - name: Guardar resultados instrumentados
         if: always()
         uses: actions/upload-artifact@v4

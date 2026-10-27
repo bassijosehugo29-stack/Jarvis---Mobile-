@@ -30,7 +30,8 @@ data class JarvisState(
     val heard: String = "",
     val reply: String = "Toque em ativar e diga: Jarvis.",
     val voiceInfo: String = "Microfone desligado • escuta apenas com o app visível",
-    val notice: String = ""
+    val notice: String = "",
+    val audioLevel: Float = 0f
 )
 
 class JarvisViewModel(application: Application) : AndroidViewModel(application) {
@@ -65,9 +66,15 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         try {
             input?.close()
             input = AndroidSpeechInput(getApplication(),
-                onReady = { _state.update { it.copy(listening = true, status = "Ouvindo • diga Jarvis") } },
+                onReady = { _state.update { it.copy(listening = true, audioLevel = 0f, status = "Ouvindo • diga Jarvis") } },
                 onResult = ::onRecognized,
-                onFailure = ::onRecognitionError
+                onFailure = ::onRecognitionError,
+                onLevel = { rms ->
+                    if (foreground && _state.value.enabled && _state.value.listening && !_state.value.speaking) {
+                        val level = if (rms.isFinite()) ((rms + 2f) / 12f).coerceIn(0f, 1f) else 0f
+                        _state.update { it.copy(audioLevel = level) }
+                    }
+                }
             )
         } catch (_: RuntimeException) {
             stop("Falha ao iniciar o serviço de voz")
@@ -91,7 +98,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         input = null
         output.stop()
         gate.reset()
-        _state.update { it.copy(enabled = false, listening = false, speaking = false, status = message) }
+        _state.update { it.copy(enabled = false, listening = false, speaking = false, audioLevel = 0f, status = message) }
     }
     fun permissionDenied() {
         stop("Permissão de microfone necessária")
@@ -108,7 +115,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private fun onRecognized(text: String) {
         if (!foreground || !_state.value.enabled) return
         failures = 0
-        _state.update { it.copy(heard = text, listening = false) }
+        _state.update { it.copy(heard = text, listening = false, audioLevel = 0f) }
         val parsed = parser.parse(text)
         if (!gate.accept(parsed)) { scheduleListening(); return }
         when (val command = parsed.command) {
@@ -129,7 +136,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private fun respond(text: String, action: AppAction? = null) {
         handler.removeCallbacks(restart)
         input?.stop()
-        _state.update { it.copy(reply = text, listening = false, speaking = true, status = "JARVIS respondendo") }
+        _state.update { it.copy(reply = text, listening = false, speaking = true, audioLevel = 0f, status = "JARVIS respondendo") }
         output.speak(text) {
             _state.update { it.copy(speaking = false, status = if (it.enabled) "Aguardando comando" else "Microfone desligado") }
             if (foreground) {
@@ -146,7 +153,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun onRecognitionError(error: Int) {
         if (!foreground || !_state.value.enabled) return
-        _state.update { it.copy(listening = false) }
+        _state.update { it.copy(listening = false, audioLevel = 0f) }
         if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
             _state.update { it.copy(status = "Aguardando voz • diga Jarvis") }
             scheduleListening(1_000L)

@@ -12,7 +12,8 @@ class AndroidSpeechInput(
     context: Context,
     private val onReady: () -> Unit,
     private val onResult: (String) -> Unit,
-    private val onFailure: (Int) -> Unit
+    private val onFailure: (Int) -> Unit,
+    private val onLevel: (Float) -> Unit = {}
 ) : SpeechInput, RecognitionListener {
     override val available = SpeechRecognizer.isRecognitionAvailable(context)
     override val onDevice = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -62,7 +63,7 @@ class AndroidSpeechInput(
         onFailure(error)
     }
     override fun onBeginningOfSpeech() = Unit
-    override fun onRmsChanged(rmsdB: Float) = Unit
+    override fun onRmsChanged(rmsdB: Float) { if (accepting && !closed) onLevel(rmsdB) }
     override fun onBufferReceived(buffer: ByteArray?) = Unit
     override fun onEndOfSpeech() = Unit
     override fun onPartialResults(partialResults: Bundle?) = Unit
