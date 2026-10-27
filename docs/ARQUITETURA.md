@@ -32,7 +32,7 @@ Para escutar além da tela atual, será preciso implementar e validar:
 - Abertura de aplicativos a partir do background deve respeitar as restrições de início de Activity. Preferir uma ação de notificação que o usuário toque. Não usar overlay, acessibilidade, bypass de bateria ou permissões extras para contornar essas regras.
 - Não iniciar gravação por boot, não pedir exclusão de otimização de bateria como padrão, não prometer funcionamento permanente.
 
-Esta fase requer trabalho adicional e testes no Android/One UI alvo. A v0.2 não inclui serviço, notificação, permissões de background nem gravação oculta.
+Esta fase requer trabalho adicional e testes no Android/One UI alvo. A v0.3 não inclui serviço, notificação, permissões de background nem gravação oculta.
 
 ## Alarmes
 
@@ -48,4 +48,10 @@ Sem analytics, banco de dados, gravação de áudio, HTTP próprio ou credenciai
 
 A UI consome estado da ViewModel e os comandos são representados por tipos de domínio; não dependem do transporte. Para sincronização futura, adicione uma interface de repositório de sincronização que receba apenas eventos explicitamente permitidos, com implementações separadas por plataforma. Um transporte gratuito em rede local poderá usar pareamento autorizado, autenticação por dispositivo, conexão cifrada, expiração/revogação de sessão e resolução explícita de conflitos. A Activity continua sendo dona das ações que precisam de interação Android.
 
-A v0.2 não implementa sincronização, servidor, acesso ao notebook ou transmissão de áudio. Nenhum endpoint ou credencial foi incluído. A separação atual permite adicionar esse recurso sem acoplar o parser a uma API paga.
+A v0.3 não implementa sincronização, servidor, acesso ao notebook ou transmissão de áudio. Nenhum endpoint ou credencial foi incluído. A separação atual permite adicionar esse recurso sem acoplar o parser a uma API paga.
+
+## HUD e nível de voz na 0.3
+
+O reconhecedor encaminha onRmsChanged somente durante uma sessão aceita. A ViewModel normaliza o valor finito para 0..1, ignora eventos fora do foreground/escuta e zera o nível em parada, erro, resultado e TTS. O HUD usa esse nível como envelope visual, sem gravar áudio e sem adicionar APIs ou permissões.
+
+Um observador do ciclo de vida liga/desliga o relógio e a animação com o estado STARTED. A bateria é lida por BatteryManager; o relógio usa o fuso do aparelho. O poliedro é projetado matematicamente e desenhado em Canvas. Não há leituras fictícias de CPU, rede ou localização.

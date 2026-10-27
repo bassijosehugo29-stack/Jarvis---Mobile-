@@ -1,6 +1,6 @@
 # Plano de testes
 
-**Resultado confirmado da 0.2.0:** 14 testes de unidade e 8 instrumentados aprovados; compilação e Lint sem erros (9 avisos). [Execução validada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171). Inclui abertura real da Activity, captura da tela, fonte ampliada, manutenção do cabeçalho ao rolar, atalhos e acesso às permissões. Voz e Samsung Clock ainda exigem teste físico.
+**Resultado confirmado da 0.3.0:** 14 testes de unidade e 8 instrumentados aprovados; compilação e Lint sem erros (9 avisos). [Execução validada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40586959439). Inclui abertura real da Activity, captura da tela, fonte ampliada, manutenção do cabeçalho ao rolar, atalhos e acesso às permissões. Voz e Samsung Clock ainda exigem teste físico.
 
 ## Automatizados incluídos
 
@@ -51,3 +51,9 @@ Registre versão Android/One UI, provedor de voz, modelo pt-BR instalado e vers�
 | Aumentar fonte / TalkBack / navegação por gestos | Tela rolável, botões acessíveis, conteúdo fora das barras do sistema |
 
 Faça testes de alarmes próximos de um horário seguro e remova os alarmes criados ao terminar. O app só prepara a tela oficial; não consegue verificar se o usuário salvou o alarme.
+
+## Verificações do HUD na 0.3
+
+No aparelho, conferir que o núcleo gira com a tela aberta, o relógio e a bateria correspondem ao sistema e a indicação de microfone permanece desligada antes da ativação. Após permitir voz e ativar, verificar a reação da barra durante a fala (se o provedor emitir RMS). Ao sair/bloquear, conferir o fim do uso de microfone. A animação de saída durante TTS é decorativa.
+
+O CI grava uma prévia silenciosa com animações do Android habilitadas depois dos testes. O launcher do emulador é encerrado para evitar que o diálogo de ANR desse processo se sobreponha às capturas. Erros do aplicativo sob teste não são suprimidos.

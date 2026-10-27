@@ -2,7 +2,7 @@
 
 **JARVIS Mobile**
 
-Assistente Android nativo em **Kotlin + Jetpack Compose**, com interface preta, azul e dourada. Versão 0.2.0, destinada primeiro ao Samsung Galaxy S25 FE. Android 8+ (API 26); compilação e target API 35.
+Assistente Android nativo em **Kotlin + Jetpack Compose**, com interface preta, azul e dourada. Versão 0.3.0, destinada primeiro ao Samsung Galaxy S25 FE. Android 8+ (API 26); compilação e target API 35.
 
 ## O que esta versão faz
 
@@ -17,20 +17,21 @@ Assistente Android nativo em **Kotlin + Jetpack Compose**, com interface preta, 
 
 Não é um modelo de linguagem nem controla a interface interna do ChatGPT. Não exige assinatura ou chave de API. Nenhum áudio ou histórico é salvo pelo app; o texto exibido permanece apenas na memória da tela/ViewModel.
 
-## Versão 0.2.0 — interface renovada
+## Versão 0.3.0 — HUD holográfico
 
-Controle de voz central com microfone, fundo preto com iluminação azul discreta, detalhes dourados, atalhos em cartões e cabeçalho fixo protegido das barras do Android. As orientações e permissões ficam em **Configurações → Voz e permissões**. Com fonte ampliada, os atalhos se reorganizam em uma coluna. Os comandos e o desligamento do microfone ao sair continuam funcionando como antes.
+Interface inspirada na referência visual enviada pelo proprietário: núcleo geométrico projetado em 3D, anéis luminosos em movimento, grade de fundo e painéis angulares. O relógio e a bateria mostram dados reais do Android. A animação ambiente funciona enquanto a tela está visível; o microfone só é ativado pelo usuário.
 
-- [Baixar APK de teste (artefato ZIP)](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171/artifacts/12769968379).
-- [Compilação e 22 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171): 14 de unidade e 8 instrumentados Android 35; Lint com 0 erros e 9 avisos não impeditivos.
-- [Capturas reais do emulador e relatórios instrumentados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171/artifacts/12769648745). As imagens incluem a Activity real e a tela com fonte ampliada.
-- Commit validado: `8fe8c04b306f7e0507f2f5bd6f0a63b523a07427`.
-- APK universal de 10,368,766 bytes, com suporte ARM64 para o Galaxy S25 FE.
-- SHA-256 do APK extraído: `d714a6f376a45905983435902fab02b67df6d370526da42036bb01b1967df463`.
+Quando o serviço Android fornece eventos RMS, os anéis e a barra de entrada reagem ao nível de voz. Ao responder, o núcleo exibe uma animação de saída; isso não representa medição de áudio do TTS. A captura de áudio e as animações são interrompidas quando a Activity deixa de estar visível.
 
-**Instalação sobre a 0.1:** desinstale a versão anterior antes de instalar a 0.2, pois o certificado de debug mudou. Nenhuma chave de assinatura foi publicada no repositório; compilações futuras também podem exigir reinstalação. Permita novamente o microfone ao abrir o app.
+- [APK de teste 0.3.0](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40586959439/artifacts/12771677174).
+- [Compilação e 22 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40586959439): 14 de unidade e 8 instrumentados Android 35; Lint com 0 erros e 9 avisos não impeditivos.
+- [Capturas e vídeo real da interface no emulador](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40586959439/artifacts/12771093811). O vídeo é uma prévia silenciosa do HUD, com o microfone desligado.
+- Commit validado: `5870ac9ee8246486554600c332a41cd89ca72046`.
+- APK universal de 10401534 bytes, incluindo ARM64. SHA-256: `49a90f913e33d16ea6fd26640cf543766769af5034c8978ad2bf916192cb5433`.
 
-Os fontes originais e o histórico foram preservados. A validação física da nova interface, voz e Samsung Clock no Galaxy S25 FE continua necessária. Evidências em [VALIDATION.md](docs/VALIDATION.md) e alterações visuais em [VISUAL-0.2.md](docs/VISUAL-0.2.md).
+Desinstale a versão anterior antes de instalar esta compilação debug: o certificado de assinatura mudou. Depois permita novamente o microfone.
+
+Os comandos existentes foram mantidos. Esta revisão prioriza o visual e as animações no celular; conversa livre com modelo de linguagem e controle/sincronização do notebook continuam como evoluções futuras. Mais detalhes em [VISUAL-0.3.md](docs/VISUAL-0.3.md) e [VALIDATION.md](docs/VALIDATION.md).
 
 ## Gerar APK pelo celular
 

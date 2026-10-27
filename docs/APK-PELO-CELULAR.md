@@ -1,12 +1,12 @@
 # Baixar e instalar no Galaxy S25 FE
 
-O projeto já foi enviado ao repositório e o APK debug 0.2.0 foi compilado com sucesso. Você não precisa instalar ferramentas de programação no celular.
+O projeto já foi enviado ao repositório e o APK debug 0.3.0 foi compilado com sucesso. Você não precisa instalar ferramentas de programação no celular.
 
 ## Instalar o APK gerado
 
-**Se você instalou a versão 0.1, desinstale-a primeiro.** A nova compilação de teste usa outro certificado e não atualiza diretamente a versão anterior. Os modelos de voz do Samsung/Google não pertencem ao app JARVIS e não precisam ser removidos.
+**Se você instalou a versão anterior, desinstale-a primeiro.** A nova compilação de teste usa outro certificado e não atualiza diretamente a versão anterior. Os modelos de voz do Samsung/Google não pertencem ao app JARVIS e não precisam ser removidos.
 
-1. Abra [o artefato JARVIS-Mobile-debug](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171/artifacts/12769968379) no navegador. Entre na sua conta GitHub se solicitado.
+1. Abra [o artefato JARVIS-Mobile-debug](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40586959439/artifacts/12771677174) no navegador. Entre na sua conta GitHub se solicitado.
 2. Baixe o ZIP e use **Meus Arquivos** da Samsung para extraí-lo. O arquivo de instalação é `app-debug.apk`.
 3. Toque no APK e, se o Android solicitar, permita a instalação dessa origem. O **Bloqueador Automático** da Samsung pode impedir a instalação externa. Se você optar por desativá-lo para instalar este APK de teste, reative-o depois.
 4. Abra **JARVIS Mobile**, toque no **microfone central / Ativar JARVIS** e conceda permissão de microfone durante o uso.
@@ -32,4 +32,6 @@ A escuta para ao sair do app. Ao voltar, ative novamente. Os botões ChatGPT e a
 
 O repositório é público e usa runners padrão do GitHub. Nenhuma API paga, chave OpenAI, publicação na Play Store ou assinatura adicional foi usada.
 
-Na versão 0.2, toque no ícone de ajustes no canto superior direito para abrir **Voz e permissões**, consultar os exemplos de comandos ou abrir as permissões do Android.
+Na versão 0.3, toque no ícone de ajustes no canto superior direito para abrir **Voz e permissões**, consultar os exemplos de comandos ou abrir as permissões do Android.
+
+A versão 0.3 tem HUD animado. O movimento ambiente não indica microfone ativo: confira a indicação de microfone no rodapé e o indicador de privacidade do Android. Os eventos de nível de voz dependem do serviço de reconhecimento instalado.
