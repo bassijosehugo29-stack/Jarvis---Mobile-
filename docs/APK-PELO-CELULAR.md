@@ -1,76 +1,31 @@
-# Gerar e instalar o APK usando o celular
+# Baixar e instalar no Galaxy S25 FE
 
-O repositório deste projeto já está definido: https://github.com/bassijosehugo29-stack/Jarvis---Mobile-. Para baixar um APK gerado, avance para as etapas 2 e 3. A etapa 1 serve para importar uma cópia em outro repositório.
+O projeto já foi enviado ao repositório e o APK debug 0.1.0 foi compilado com sucesso. Você não precisa instalar ferramentas de programação no celular.
 
-Não é necessário compilar no telefone. O GitHub Actions compila e você baixa o APK pelo navegador. Nenhuma chave OpenAI, cartão, assinatura ou serviço de compilação pago é necessário. Este guia não publica o aplicativo.
+## Instalar o APK gerado
 
-## 1. Colocar os arquivos no seu GitHub
+1. Abra [o artefato JARVIS-Mobile-debug](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460/artifacts/12766140769) no navegador. Entre na sua conta GitHub se solicitado.
+2. Baixe o ZIP e use **Meus Arquivos** da Samsung para extraí-lo. O arquivo de instalação é `app-debug.apk`.
+3. Toque no APK e, se o Android solicitar, permita a instalação dessa origem. O **Bloqueador Automático** da Samsung pode impedir a instalação externa. Se você optar por desativá-lo para instalar este APK de teste, reative-o depois.
+4. Abra **JARVIS Mobile**, toque em **ATIVAR JARVIS** e conceda permissão de microfone durante o uso.
+5. Diga **“Jarvis”**, aguarde **“Às suas ordens, senhor”** e fale **“abrir ChatGPT”**. O aplicativo oficial do ChatGPT precisa estar instalado.
+6. Volte ao JARVIS, ative a escuta e diga **“Jarvis, alarme para 7:30”**. Confirme e salve na tela do relógio.
 
-Baixe `JARVIS-Mobile.zip` desta entrega. **Enviar apenas esse ZIP ao GitHub não funciona**: os arquivos precisam estar extraídos na raiz do repositório, inclusive `.github/workflows/android-debug.yml`.
+Se você baixou o APK direto na conversa, pode começar no passo 3, sem extrair ZIP. Não use os ZIPs da release antiga `Javis`: aquela tag aponta para o commit inicial e não contém este APK.
 
-Você pode fazer o envio com um cliente Git Android de sua confiança, preservando as pastas ocultas. Uma opção gratuita, com comandos reproduzíveis, é o **Termux obtido do F-Droid oficial** (`https://f-droid.org/packages/com.termux/`):
+## Gerar outro APK pelo navegador do celular
 
-1. Salve o ZIP na pasta Downloads do celular com o nome `JARVIS-Mobile.zip`.
-2. Abra o Termux e execute:
+1. Abra [Actions do repositório](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions).
+2. Selecione **Android - APK de teste → Run workflow → main → Run workflow**. Use **Site para computador** no navegador se necessário para ver o botão.
+3. Aguarde os jobs **debug-apk** e **Testes instrumentados Android 35**. Confirme os resultados reais; não considere uma execução com erro como validada.
+4. Abra a execução concluída e baixe **JARVIS-Mobile-debug** em **Artifacts**.
 
-```sh
-pkg update
-pkg install git gh unzip
-termux-setup-storage
-```
+Os artefatos ficam disponíveis por 7 dias. APK debug de outra execução pode ter chave de assinatura diferente; um conflito de assinatura exige desinstalar a versão anterior antes de instalar a nova. Isso apaga os dados locais do app.
 
-Conceda acesso aos arquivos quando o Android solicitar. Depois:
+## Voz e limitações
 
-```sh
-mkdir -p ~/projetos
-unzip ~/storage/downloads/JARVIS-Mobile.zip -d ~/projetos
-cd ~/projetos/JARVIS-Mobile
-git init -b main
-git config user.name "Seu nome"
-git config user.email "SEU_EMAIL_PRIVADO_DO_GITHUB"
-git add .
-git commit -m "Versao inicial JARVIS Mobile"
-gh auth login --web --git-protocol https --scopes workflow
-gh auth setup-git
-```
+O app prefere reconhecimento no dispositivo e solicita pt-BR. Baixe o modelo de reconhecimento e a voz de texto para fala em português brasileiro nas configurações do Samsung. Um provedor convencional pode exigir internet; a preferência offline não é uma garantia.
 
-Use o e-mail `noreply` mostrado em GitHub → Settings → Emails se desejar manter seu e-mail pessoal privado. O login abre um fluxo oficial do GitHub com código de dispositivo. Não coloque tokens no código ou aqui na conversa.
+A escuta para ao sair do app. Ao voltar, ative novamente. Os botões ChatGPT e alarme funcionam sem microfone. Ainda não há sincronização com notebook nem escuta em segundo plano.
 
-Antes de continuar, em GitHub → Settings → Billing and licensing (o nome pode variar), verifique a franquia de Actions e armazenamento para repositórios privados. Mantenha gastos adicionais bloqueados e **não habilite cobrança**. Se não houver franquia disponível, espere a renovação ou compile localmente no computador.
-
-Para criar um repositório **privado na sua conta**, conectar o Git e enviar os fontes, execute no Termux:
-
-```sh
-gh repo create JARVIS-Mobile --private --source=. --remote=origin --push
-```
-
-Se já existe um repositório vazio seu, use em vez desse último comando:
-
-```sh
-git remote add origin https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
-gh auth setup-git
-git push -u origin main
-```
-
-Não use os dois métodos para o mesmo repositório. O projeto não contém sua conta nem credenciais. Se optar por um repositório público para a gratuidade de runners padrão, os fontes ficarão públicos; essa decisão é sua e não é necessária para o guia acima.
-
-## 2. Executar o workflow
-
-1. Pelo Chrome/Samsung Internet, abra o seu repositório em `github.com`. Ative **Site para computador** se algum controle não aparecer.
-2. Abra **Actions**. Habilite os workflows se o GitHub solicitar.
-3. O primeiro push em `main` já deve iniciar **Android - APK de teste**.
-4. Para executar novamente: selecione esse workflow → **Run workflow** → branch `main` → **Run workflow**.
-5. Aguarde o resultado verde. O fluxo instala SDK/Java/Gradle, gera o wrapper oficial, executa testes de unidade e lint e monta o APK.
-6. Se ficar vermelho, abra o job `debug-apk` e veja o primeiro passo com erro. Não há APK válido enquanto o passo de compilação não passar. Os relatórios ficam em `JARVIS-relatorios` quando disponíveis.
-
-## 3. Baixar e instalar
-
-1. Abra a execução verde. Em **Artifacts**, toque em **JARVIS-Mobile-debug**. Você precisa estar conectado à conta que tem acesso ao repositório privado.
-2. Extraia o ZIP de artefato pelo app **Meus Arquivos** da Samsung. Dentro estará `app-debug.apk`.
-3. Toque nesse APK e autorize a instalação dessa origem quando o Android solicitar. Dependendo da One UI, o **Bloqueador Automático** pode impedir instalações externas; se você escolher desativá-lo para este teste, reative-o depois.
-4. Instale, abra **JARVIS Mobile**, toque em **ATIVAR JARVIS** e permita acesso ao microfone durante o uso.
-5. Diga “Jarvis”, aguarde “Às suas ordens, senhor” e depois diga “abrir ChatGPT”. Para um alarme, ative novamente e diga “Jarvis, alarme para 7:30”. Confirme no relógio.
-
-Os artefatos expiram em 7 dias; execute novamente se precisar. APK debug é para teste pessoal. Uma chave diferente entre execuções pode exigir desinstalar a versão anterior. Os botões de acesso direto funcionam mesmo quando a voz ainda não está configurada.
-
-Consulte o resultado real da compilação no Actions. Testes com voz e relógio no Galaxy precisam ser realizados no aparelho; os testes automatizados não substituem essa verificação.
+O repositório é público e usa runners padrão do GitHub. Nenhuma API paga, chave OpenAI, publicação na Play Store ou assinatura adicional foi usada.

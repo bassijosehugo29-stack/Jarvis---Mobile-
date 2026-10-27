@@ -19,11 +19,20 @@ Não é um modelo de linguagem nem controla a interface interna do ChatGPT. Não
 
 ## Estado da entrega e validação
 
-Os 37 arquivos originais foram preservados como base deste projeto. O repositório oficial é [bassijosehugo29-stack/Jarvis---Mobile-](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-), branch `main`. Consulte [as execuções do Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) e [VALIDATION.md](docs/VALIDATION.md) para o resultado real de compilação e testes. A homologação de voz, permissões e relógio no Galaxy S25 FE exige os testes manuais em [TESTES.md](docs/TESTES.md).
+**APK debug 0.1.0 compilado com sucesso** em 27/10/2026 no GitHub Actions, commit `456f5a33efd1c830d49e7d86e7f8d1e13d8bf409`.
+
+- [Baixar o APK de teste como artefato ZIP](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460/artifacts/12766140769) — entre na conta GitHub, extraia o ZIP e instale `app-debug.apk`.
+- [Execução com logs e relatórios](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460).
+- 14 testes de unidade aprovados, sem falhas ou testes ignorados.
+- Android Lint: 0 erros e 9 avisos não impeditivos, detalhados no relatório.
+- 4 testes instrumentados aprovados no emulador Android 35, sem falhas. A execução completa concluiu com **success**.
+- APK universal de 10.335.998 bytes, com suporte ARM64 para o Galaxy S25 FE. SHA-256 do APK: `e9a589a5bfa73eae0c20e8885dc8574741800d599d555278aec956f4b409f8c5`.
+
+O ZIP original de 37 arquivos foi preservado. O projeto foi enviado à branch `main`, mantendo o histórico e o título do README existente. A voz, as permissões e o Samsung Clock precisam da validação física no Galaxy S25 FE conforme [TESTES.md](docs/TESTES.md). Mais evidências em [VALIDATION.md](docs/VALIDATION.md).
 
 ## Gerar APK pelo celular
 
-Guia completo em **[APK-PELO-CELULAR.md](docs/APK-PELO-CELULAR.md)**. Você envia este projeto para um repositório GitHub seu e executa **Actions → Android - APK de teste → Run workflow**. Quando ficar verde, baixe o artefato **JARVIS-Mobile-debug**, extraia o ZIP e instale `app-debug.apk`.
+Guia completo em **[APK-PELO-CELULAR.md](docs/APK-PELO-CELULAR.md)**. O projeto já está no repositório oficial. Para gerar outro APK, execute **Actions → Android - APK de teste → Run workflow**. Quando ficar verde, baixe o artefato **JARVIS-Mobile-debug**, extraia o ZIP e instale `app-debug.apk`.
 
 O workflow executa testes de unidade, Android Lint, `assembleDebug` e compila o APK de testes. Um segundo job executa os testes instrumentados no emulador Android 35. Só disponibiliza APK se todos esses passos passarem. Ele não publica na Play Store nem cria uma release pública.
 
@@ -34,7 +43,7 @@ Requisitos: JDK **17**, Android Studio Meerkat ou superior compatível com AGP 8
 1. Abra esta pasta como projeto no Android Studio e aceite instalar os SDKs indicados.
 2. Em Gradle JDK, selecione JDK 17.
 3. Configure `local.properties` com `sdk.dir=/caminho/do/android-sdk`, ou a variável `ANDROID_HOME`. Não versione `local.properties`.
-4. Se o Studio solicitar o wrapper antes da sincronização, execute o comando abaixo no terminal da pasta do projeto. O launcher busca o JAR **oficial** do wrapper e valida seu SHA-256 antes de executá-lo. Requer `curl`/`wget` e `sha256sum`/`shasum` no Linux/macOS; PowerShell no Windows. O JAR não foi incluído nesta entrega por falta de acesso à rede. Você também pode usar Gradle 8.11.1 instalado para executar `gradle wrapper --gradle-version 8.11.1 --distribution-type bin`.
+4. Se o Studio solicitar o wrapper antes da sincronização, execute o comando abaixo no terminal da pasta do projeto. O launcher busca o JAR **oficial** do wrapper e valida seu SHA-256 antes de executá-lo. Requer `curl`/`wget` e `sha256sum`/`shasum` no Linux/macOS; PowerShell no Windows. O JAR é obtido automaticamente pelo launcher ou gerado pelo CI; o ZIP original foi preparado sem esse binário. Você também pode usar Gradle 8.11.1 instalado para executar `gradle wrapper --gradle-version 8.11.1 --distribution-type bin`.
 
 Linux/macOS:
 

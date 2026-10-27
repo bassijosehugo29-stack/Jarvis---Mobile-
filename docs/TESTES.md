@@ -1,5 +1,7 @@
 # Plano de testes
 
+**Resultado confirmado em 27/10/2026:** 14 testes de unidade e 4 testes instrumentados aprovados; compilação e Lint sem erros (9 avisos). [Execução validada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460). Os testes de voz e Samsung Clock no aparelho físico permanecem pendentes.
+
 ## Automatizados incluídos
 
 - `CommandParserTest`: palavra-chave completa/acentuação, ChatGPT explícito, formatos de horário, limites 00:00/23:59, horários inválidos, fallback para ambiguidade, ajuda e parada.

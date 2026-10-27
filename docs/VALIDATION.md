@@ -1,32 +1,43 @@
-# Registro de validação da entrega
+# Registro de validação — JARVIS Mobile 0.1.0
 
-## Verificações locais
+Data: 27/10/2026. Repositório: https://github.com/bassijosehugo29-stack/Jarvis---Mobile-. Branch: `main`.
 
-- Estrutura de arquivos Android/Gradle/Actions e permissões revisadas.
-- XMLs de manifesto, tema, strings e ícone analisados com parser XML.
-- Workflow YAML analisado; tarefas de testes, lint, montagem e artefatos conferidas.
-- Sintaxe dos scripts POSIX verificada com `sh -n`.
-- A expressão de horário extraída do fonte foi exercitada no motor de regex da JVM em 9 formatos. Isso não executa o parser Kotlin nem substitui seus testes.
-- Dependências com versões fixas, sem SDK comercial, endpoint de aplicação ou segredo.
+## Compilação confirmada
 
-Consulte a saída reproduzível de `python3 scripts/check_project.py`.
+- Commit de código validado: `456f5a33efd1c830d49e7d86e7f8d1e13d8bf409`.
+- Execução: [https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460).
+- Job `debug-apk`: **success**.
+- Tarefas: `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest`.
+- Resultado do Gradle: **BUILD SUCCESSFUL**.
+- APK: [artefato JARVIS-Mobile-debug](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460/artifacts/12766140769), disponível por 7 dias após a geração.
+- 14 testes de unidade: 0 falhas, 0 ignorados.
+- Android Lint: 0 erros e 9 avisos. Os avisos são sobre target/dependências mais recentes, regras de transferência/backup e uma sugestão de extensão KTX; estão preservados no relatório, sem baseline para ocultar erros.
+- 4 testes instrumentados Android 35: aprovados, sem falhas. O log registra `Starting 4 tests`, `Finished 4 tests` e `BUILD SUCCESSFUL`. A execução completa concluiu com **success** em 27/10/2026 às 19:56 UTC.
 
-## Limitação constatada
+## Integridade do APK
 
-O ambiente fornece Java 21, mas não SDK Android, Gradle nem compilador Kotlin. O proxy `proxy:8080` não aceitou conexão aos downloads oficiais. A tentativa anterior de obter acesso adicional foi interrompida; não foi repetida.
+O ZIP de artefato foi baixado, sua integridade foi conferida e o APK foi extraído. O APK contém `AndroidManifest.xml`, `classes.dex`, `resources.arsc`, bibliotecas ARM64, ARMv7, x86 e x86_64 e um bloco de assinatura APK.
 
-**Não foram executados:** compilação Kotlin/Compose, resolução de dependências, Gradle unit tests, Android Lint, testes instrumentados ou testes no Samsung. **Nenhum APK foi produzido aqui.** A revisão estática não comprova que a compilação passe.
+- Tamanho do APK: 10.335.998 bytes.
+- SHA-256 do APK: `e9a589a5bfa73eae0c20e8885dc8574741800d599d555278aec956f4b409f8c5`.
+- O hash se refere ao APK extraído, não ao ZIP de artefato.
+- A checagem de estrutura e presença do bloco de assinatura não é uma verificação criptográfica independente nem um teste físico no Samsung.
 
-## Verificação remota
+## Correções feitas com base nas execuções reais
 
-O repositório autorizado é https://github.com/bassijosehugo29-stack/Jarvis---Mobile-, branch `main`. As execuções de compilação/testes e os artefatos são consultados em https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions. A consulta real às execuções retornou `total_count: 0`: nenhum workflow foi executado. A integração recusou `POST /git/trees` e `POST /git/blobs` com HTTP 403 e mensagem `Resource not accessible by integration`. O bloqueio ocorre também com um arquivo Kotlin comum, portanto não se limita ao arquivo de workflow. A conta autenticada e o repositório puderam ser lidos, mas não há acesso de escrita efetivo por essa conexão. A impossibilidade de compilar neste contêiner não impede a compilação no runner do GitHub.
+1. O pacote antigo `tools` deixou de estar disponível no SDK. O workflow agora solicita apenas `platform-tools` na preparação, além da plataforma Android 35 e Build Tools 35.0.0.
+2. O Lint identificou `windowLightNavigationBar` em recurso usado desde API 26, embora o atributo exija API 27. O atributo foi removido do tema base; a Activity configura barras escuras com `SystemBarStyle`, compatível com a faixa suportada.
+3. A criação do reconhecedor local contém uma condição explícita para Android 12+.
 
-O ZIP original de 37 arquivos foi conferido e preservado. O único arquivo existente no repositório antes da importação era `README.md`; seu título foi mantido. O commit remoto original é `7344899019a5e6fe3562617909d93fbe41e90b44`. Nenhuma atualização foi aplicada à branch. O plano de envio usa esse commit como pai e preserva o histórico, sem force push.
+## Preservação e verificações locais
 
-A validação física no Galaxy S25 FE permanece necessária. Nenhum aplicativo foi publicado na Play Store.
+- O ZIP original de 37 arquivos foi preservado, SHA-256 `ac608e5ea957978a3bcedabf0766d0ba06f1db16bf82edc89694790acbdd5ab5`.
+- O commit inicial remoto `7344899019a5e6fe3562617909d93fbe41e90b44` foi mantido no histórico. Nenhum force push foi usado.
+- Os XMLs, a estrutura de pacotes, o YAML do workflow e a sintaxe dos launchers POSIX passaram nas verificações locais. Reproduzir com `python3 scripts/check_project.py`.
+- O bloqueio anterior de escrita foi resolvido após a instalação do GitHub App pelo proprietário. A compilação ocorreu no runner do Actions; o contêiner local não tem o SDK Android.
 
-## Menor ação para desbloquear
+## Validação ainda necessária no Galaxy S25 FE
 
-Reconectar a integração GitHub do ChatGPT com autorização de escrita de conteúdo e workflows para este repositório. A permissão da conta consultada não substitui a permissão do token/integração. Não enviar tokens pela conversa. O CLI deste ambiente também não é alternativa utilizável: `gh auth status` informou token inválido, e a conexão de rede do shell falhou no proxy.
+Executar a lista em `TESTES.md`, especialmente pt-BR offline, síntese de voz, permissões, desligamento do microfone ao sair, abertura do ChatGPT e confirmação no Samsung Clock. Nenhum teste físico no aparelho foi realizado por esta entrega. Os testes automatizados não validam disponibilidade do modelo de voz nem todos os comportamentos da One UI.
 
-Alternativa gratuita: importar o ZIP atualizado pelo Git do celular/computador, preservando o histórico, conforme `ENVIAR-REPOSITORIO.md`. O push em `main` iniciará o workflow; depois verificar o resultado real. A existência de um workflow configurado localmente não comprova compilação.
+Nenhum aplicativo foi publicado na Play Store nem foi habilitado serviço pago. A release antiga criada pelo proprietário aponta para o commit inicial; o download correto desta versão é o artefato indicado acima.

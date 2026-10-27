@@ -1,6 +1,6 @@
 # Enviar a versão revisada ao repositório existente
 
-Use apenas se a integração do ChatGPT continuar sem acesso de escrita. O repositório já existe e tem um commit inicial; não crie outro e não use force push. O projeto foi revisado localmente, mas ainda não há APK confirmado.
+O envio inicial já foi concluído e o acesso foi liberado. Guarde este procedimento apenas como alternativa para manutenção futura caso a integração fique sem acesso de escrita. O repositório já existe e tem um commit inicial; não crie outro e não use force push. O APK de teste foi compilado e validado no GitHub Actions; este documento serve para manutenção dos fontes.
 
 No celular, instale Termux pelo F-Droid, salve `JARVIS-Mobile-revisado.zip` em Downloads e execute:
 
