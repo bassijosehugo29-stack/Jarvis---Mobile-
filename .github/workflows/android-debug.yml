@@ -1,0 +1,103 @@
+name: Android - APK de teste
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  debug-apk:
+    # GitHub-hosted runners are free for public repos; see README for private quotas.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar estrutura
+        run: python3 scripts/check_project.py
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+      - name: SDK Android 35
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+      - name: Gerar wrapper oficial e compilar
+        run: |
+          gradle wrapper --gradle-version 8.11.1 --distribution-type bin --no-daemon
+          chmod +x gradlew
+          ./gradlew --no-daemon --max-workers=2 testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+      - name: Guardar APK de teste
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-Mobile-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Guardar relatórios
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-relatorios
+          path: |
+            app/build/reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  android-tests:
+    name: Testes instrumentados Android 35
+    needs: debug-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+          cache-read-only: true
+      - name: Habilitar KVM no runner Linux
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Gerar wrapper
+        run: |
+          gradle wrapper --gradle-version 8.11.1 --distribution-type bin --no-daemon
+          chmod +x gradlew
+      - name: Testar tela e intents no emulador
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          script: ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest
+      - name: Guardar resultados instrumentados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-testes-instrumentados
+          path: app/build/reports/androidTests/
+          if-no-files-found: ignore
+          retention-days: 7
