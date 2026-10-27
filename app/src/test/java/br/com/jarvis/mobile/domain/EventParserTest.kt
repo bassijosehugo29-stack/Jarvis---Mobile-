@@ -89,9 +89,23 @@ class EventParserTest {
         assertEquals("treino", result.draft.title)
     }
     @Test fun invalidDurationsAreRejected() {
-        for (duration in listOf("por 0 minutos", "por 999 minutos", "por duas horas e meia")) {
+        for (duration in listOf("por 0 minutos", "por 999 minutos", "por -30 minutos", "por menos trinta minutos", "por duas horas e noventa minutos")) {
             assertNotNull(parser.parse("Agende treino amanhã às 15 horas $duration").error)
         }
+    }
+    @Test fun commonHalfHourAndCombinedDurationsAreUnderstood() {
+        for ((duration, minutes) in listOf("por meia hora" to 30, "por uma hora e meia" to 90, "por duas horas e quinze minutos" to 135)) {
+            val result = parser.parse("Agende dentista amanhã às 15 horas $duration")
+            assertNull(duration, result.error)
+            assertEquals("dentista", result.draft.title)
+            assertEquals(minutes, result.draft.durationMinutes)
+        }
+    }
+    @Test fun prepositionBeforeDateIsNotPartOfTheTitle() {
+        val result = parser.parse("Jarvis, agende uma consulta para amanhã às 15 horas")
+        assertNull(result.error)
+        assertEquals("consulta", result.draft.title)
+        assertEquals(LocalDate.of(2026, 10, 28), result.draft.date)
     }
     @Test fun conflictingDatesOrTimesAreNotGuessed() {
         for (text in listOf("Agende dentista hoje amanhã às 15 horas", "Agende dentista amanhã às 15 ou às 17 horas")) {

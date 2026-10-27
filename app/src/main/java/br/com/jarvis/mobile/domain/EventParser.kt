@@ -23,12 +23,12 @@ class EventParser(private val clock: Clock = Clock.systemDefaultZone()) {
             return EventParseResult(previous, "Nesta versão, agendo um compromisso por vez. Diga uma data e um horário, senhor.")
         var date = previous.date
         val today = LocalDate.now(clock)
-        val relative = Regex("\\b(depois de amanha|amanha|hoje)\\b").find(folded)
-        val numeric = Regex("\\b(?:dia\\s+)?([0-9]{1,2})\\s*/\\s*([0-9]{1,2})(?:\\s*/\\s*([0-9]{2,4}))?\\b").find(folded)
+        val relative = Regex("\\b(?:(?:para|em)\\s+)?(depois de amanha|amanha|hoje)\\b").find(folded)
+        val numeric = Regex("\\b(?:para\\s+)?(?:dia\\s+)?([0-9]{1,2})\\s*/\\s*([0-9]{1,2})(?:\\s*/\\s*([0-9]{2,4}))?\\b").find(folded)
         val months = listOf("janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
-        val named = Regex("\\b(?:dia\\s+)?([0-9]{1,2})\\s+de\\s+(" + months.joinToString("|") + ")(?:\\s+de\\s+([0-9]{4}))?\\b").find(folded)
+        val named = Regex("\\b(?:para\\s+)?(?:dia\\s+)?([0-9]{1,2})\\s+de\\s+(" + months.joinToString("|") + ")(?:\\s+de\\s+([0-9]{4}))?\\b").find(folded)
         val weekdays = listOf("segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo")
-        val weekday = Regex("\\b(?:(?:na|no)\\s+)?(?:proxim[ao]\\s+)?(" + weekdays.joinToString("|") + ")(?:[ -]feira)?\\b").find(folded)
+        val weekday = Regex("\\b(?:(?:na|no|para)\\s+)?(?:proxim[ao]\\s+)?(" + weekdays.joinToString("|") + ")(?:[ -]feira)?\\b").find(folded)
         if (Regex("\\b(depois de amanha|amanha|hoje)\\b").findAll(folded).count() > 1 ||
             Regex("\\b(?:as|pelas)\\s+").findAll(folded).count() > 1 ||
             listOf(relative, numeric, named, weekday).count { it != null } > 1)
@@ -36,7 +36,7 @@ class EventParser(private val clock: Clock = Clock.systemDefaultZone()) {
         try {
             when {
                 relative != null -> {
-                    date = today.plusDays(when (relative.value) { "hoje" -> 0L; "amanha" -> 1L; else -> 2L })
+                    date = today.plusDays(when (relative.groupValues[1]) { "hoje" -> 0L; "amanha" -> 1L; else -> 2L })
                     ranges += relative.range
                 }
                 numeric != null || named != null -> {
@@ -60,15 +60,21 @@ class EventParser(private val clock: Clock = Clock.systemDefaultZone()) {
         } catch (_: java.time.DateTimeException) {
             return EventParseResult(previous, "Essa data não existe. Diga uma data válida, senhor.")
         }
-        val duration = Regex("\\b(?:por|com duracao de)\\s+($SPOKEN_NUMBER)\\s+(minutos?|horas?)\\b").find(folded)
+        val duration = Regex("\\b(?:por|com duracao de)\\s+(meia|$SPOKEN_NUMBER)\\s+(minutos?|horas?)(?:\\s+e\\s+(meia|$SPOKEN_NUMBER)(?:\\s+minutos?)?)?\\b").find(folded)
         var durationMinutes = previous.durationMinutes
         if (duration != null) {
+            val hours = duration.groupValues[2].startsWith("hora")
+            val half = duration.groupValues[1] == "meia"
+            val extra = when (val value = duration.groupValues[3]) { "" -> 0; "meia" -> 30; else -> spokenNumber(value) ?: -1 }
+            if ((half && (!hours || extra != 0)) || extra !in 0..59 || (!hours && extra != 0))
+                return EventParseResult(previous, "Diga a duração em minutos, entre 1 e 720, senhor.")
             val amount = spokenNumber(duration.groupValues[1]) ?: 0
-            durationMinutes = amount * if (duration.groupValues[2].startsWith("hora")) 60 else 1
+            durationMinutes = if (half) 30 else amount * if (hours) 60 else 1
+            durationMinutes += extra
             if (durationMinutes !in 1..720 || Regex("^\\s+e\\b").containsMatchIn(folded.substring(duration.range.last + 1)))
                 return EventParseResult(previous, "Diga a duração em minutos, entre 1 e 720, senhor.")
             ranges += duration.range
-        } else if (Regex("\\b(duracao|por\\s+[0-9])").containsMatchIn(folded)) {
+        } else if (Regex("\\bduracao\\b|\\bpor\\s+(?:[-+]?\\s*[0-9]|menos\\b|meia\\b|$SPOKEN_NUMBER\\b)").containsMatchIn(folded)) {
             return EventParseResult(previous, "Diga a duração, por exemplo: por 30 minutos, senhor.")
         }
         // Hide the duration and date while searching so they cannot become an appointment time.
