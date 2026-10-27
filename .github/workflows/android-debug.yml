@@ -98,12 +98,17 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest
+          script: |
+            ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest
+            mkdir -p app/build/reports/screenshots
+            adb pull /sdcard/Android/data/br.com.jarvis.mobile/files/screenshots/. app/build/reports/screenshots/
       - name: Guardar resultados instrumentados
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: JARVIS-testes-instrumentados
-          path: app/build/reports/androidTests/
+          path: |
+            app/build/reports/androidTests/
+            app/build/reports/screenshots/
           if-no-files-found: ignore
           retention-days: 7
