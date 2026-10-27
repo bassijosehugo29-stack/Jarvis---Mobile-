@@ -67,6 +67,13 @@ class CommandParserTest {
         assertEquals(Command.PrepareConversation, parser.parse("Jarvis preparar conversa offline").command)
         assertEquals(Command.PrepareConversation, parser.parse("baixar modelo").command)
     }
+    @Test fun conversationalQuestionsDoNotBecomeDeviceActions() {
+        for (text in listOf("Jarvis como funciona um alarme?", "Qual é a vantagem de agendar uma reunião?",
+            "Tenho medo de marcar uma consulta", "Ajuda com matemática")) {
+            assertEquals(text, Command.Unknown, parser.parse(text).command)
+        }
+        assertEquals(Command.AskAlarmTime, parser.parse("criar um alarme").command)
+    }
     @Test fun stopTakesPriority() {
         assertEquals(Command.Stop, parser.parse("Jarvis cancelar alarme").command)
     }

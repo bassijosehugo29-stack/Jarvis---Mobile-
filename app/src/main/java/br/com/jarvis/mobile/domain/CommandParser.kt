@@ -11,7 +11,7 @@ class CommandParser {
         val command = when {
             content.isBlank() && wake -> Command.Wake
             Regex("^(pare|parar|desativar|silencio|cancelar)\\b").containsMatchIn(content) -> Command.Stop
-            Regex("^(ajuda|comandos)\\b").containsMatchIn(content) -> Command.Help
+            Regex("^(ajuda|comandos)$").matches(content) -> Command.Help
             Regex("^(preparar|prepare|baixar|baixe)\\s+(?:o\\s+|a\\s+)?(?:modelo|conversa)(?:\\s+offline)?$").matches(content) -> Command.PrepareConversation
             opening != null -> {
                 val name = opening.groupValues[1].replace(Regex("^(?:\\s*(?:no|na|o|a|aplicativo|app)\\b)+\\s*"), "").trim()
@@ -22,10 +22,10 @@ class CommandParser {
                     else -> Command.OpenApp(name)
                 }
             }
-            Regex("\\b(agende|agendar|marque|marcar)\\b").containsMatchIn(content) ||
-                (Regex("\\b(anote|anotar|criar|crie|coloque|colocar)\\b").containsMatchIn(content) &&
+            Regex("^(?:(?:eu\\s+)?quero\\s+)?(agende|agendar|marque|marcar)\\b").containsMatchIn(content) ||
+                (Regex("^(anote|anotar|criar|crie|coloque|colocar)\\b").containsMatchIn(content) &&
                     Regex("\\b(agenda|compromisso|evento)\\b").containsMatchIn(content)) -> Command.CreateEvent(text)
-            Regex("\\b(alarme|despertador)\\b").containsMatchIn(content) -> parseAlarm(content)
+            Regex("^(?:(?:criar|crie|definir|defina|configurar|configure|colocar|coloque)\\s+(?:(?:um|o)\\s+)?)?(alarme|despertador)\\b").containsMatchIn(content) -> parseAlarm(content)
             else -> Command.Unknown
         }
         return ParsedUtterance(wake, command)

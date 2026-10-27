@@ -23,9 +23,9 @@ class LocalConversation(private val models: ModelStore) {
     @Volatile private var initialized = false
     suspend fun answer(message: String): String {
         val file = models.readyFile() ?: throw IllegalStateException("MODEL_NOT_READY")
-        initialized = true
         val id = LlamaBridge.sequence.incrementAndGet()
         LlamaBridge.activate(id)
+        initialized = true
         return withContext(LlamaBridge.dispatcher) {
             currentCoroutineContext().ensureActive()
             val bytes = try {

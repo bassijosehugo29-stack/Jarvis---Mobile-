@@ -63,7 +63,7 @@ fun JarvisScreen(
         Box(Modifier.fillMaxSize()) {
             HolographicBackground(Modifier.fillMaxSize())
             Column(Modifier.fillMaxHeight().widthIn(max = 620.dp).fillMaxWidth()
-                .safeDrawingPadding().align(Alignment.TopCenter)) {
+                .safeDrawingPadding().imePadding().align(Alignment.TopCenter)) {
                 Header(onSettings = { showSettings = true })
                 DeviceStrip(device)
                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
@@ -304,11 +304,11 @@ private fun CommunicationPanel(state: JarvisState) {
             HorizontalDivider(Modifier.padding(top = 10.dp, bottom = 11.dp), color = Cyan.copy(alpha = 0.13f))
             if (state.heard.isNotBlank()) {
                 Text("> " + state.heard, fontSize = 12.sp, lineHeight = 19.sp,
-                    fontFamily = FontFamily.Monospace, color = Muted)
+                    fontFamily = FontFamily.Monospace, color = Muted, modifier = Modifier.testTag("jarvis-heard"))
             }
             Text(if (state.thinking) "Pensando na sua resposta…" else state.reply,
                 color = Color(0xFFD1F8FF), fontSize = 14.sp, lineHeight = 21.sp,
-                modifier = Modifier.padding(top = if (state.heard.isBlank()) 0.dp else 8.dp))
+                modifier = Modifier.padding(top = if (state.heard.isBlank()) 0.dp else 8.dp).testTag("jarvis-reply"))
         }
     }
 }

@@ -148,6 +148,7 @@ class SpeechOutput(
         if (audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             fail("O Android não liberou o áudio agora. Termine chamadas ou outro áudio e teste novamente."); return
         }
+        onStatus(VoiceStatus(true, "Voz pronta • $selectedLabel • $selectedLocale", selectedPackage, selectedLocale))
         currentId = "jarvis-${++generation}"
         audioBytes = 0L
         val params = Bundle().apply {

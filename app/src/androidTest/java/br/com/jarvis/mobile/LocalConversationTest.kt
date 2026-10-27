@@ -5,17 +5,26 @@ import android.os.Build
 import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import br.com.jarvis.mobile.conversation.LocalConversation
 import br.com.jarvis.mobile.conversation.ModelStore
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Rule
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class LocalConversationTest {
+    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     @Test fun verifiedModelGeneratesAnswersAndRemembersTheConversation() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
@@ -25,17 +34,29 @@ class LocalConversationTest {
             models.importStream(it)
         }
         assertTrue(models.state.value.ready)
-        val conversation = LocalConversation(models)
-        try {
-            val first = conversation.answer("Meu nome é Rafael. Responda em português: qual é meu nome?")
-            val second = conversation.answer("E como eu me chamo? Responda usando meu nome.")
-            exportTranscript("Usuário: Meu nome é Rafael. Qual é meu nome?\nJARVIS: $first\n\nUsuário: E como eu me chamo?\nJARVIS: $second\n")
-            assertTrue("First generated reply: $first", first.contains("Rafael", ignoreCase = true))
-            assertTrue("Generated reply must use previous dialogue: $second", second.contains("Rafael", ignoreCase = true))
-            assertFalse(first.contains("<|im_start|>"))
-            assertFalse(second.contains("<|im_end|>"))
-        } finally { conversation.release() }
+        val first = ask("Meu nome é Rafael. Responda em português: qual é meu nome?")
+        val second = ask("E como eu me chamo? Responda usando meu nome.")
+        exportTranscript("Usuário: Meu nome é Rafael. Qual é meu nome?\nJARVIS: $first\n\nUsuário: E como eu me chamo?\nJARVIS: $second\n")
+        assertTrue("First generated reply shown by Activity: $first", first.contains("Rafael", ignoreCase = true))
+        assertTrue("Reply must use previous dialogue: $second", second.contains("Rafael", ignoreCase = true))
+        assertFalse(first.contains("<|im_start|>"))
+        assertFalse(second.contains("<|im_end|>"))
     }
+
+    private fun ask(question: String): String {
+        compose.waitUntil(35_000) { runCatching { compose.onNodeWithTag("jarvis-message").assertIsEnabled() }.isSuccess }
+        compose.onNodeWithTag("jarvis-message").performScrollTo().performTextInput(question)
+        compose.onNodeWithContentDescription("Enviar mensagem").performScrollTo().performClick()
+        compose.waitUntil(5_000) { runCatching {
+            compose.onNodeWithTag("jarvis-heard").fetchSemanticsNode().config[SemanticsProperties.Text].joinToString { it.text }.contains(question)
+        }.getOrDefault(false) }
+        compose.waitUntil(100_000) { reply().contains("Rafael", ignoreCase = true) &&
+            runCatching { compose.onNodeWithTag("jarvis-message").assertIsEnabled() }.isSuccess }
+        return reply()
+    }
+    private fun reply(): String = runCatching {
+        compose.onNodeWithTag("jarvis-reply").fetchSemanticsNode().config[SemanticsProperties.Text].joinToString { it.text }
+    }.getOrDefault("")
 
     private fun exportTranscript(text: String) {
         if (Build.VERSION.SDK_INT < 29) return

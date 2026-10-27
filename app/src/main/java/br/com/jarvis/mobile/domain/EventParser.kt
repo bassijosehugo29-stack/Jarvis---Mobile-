@@ -88,7 +88,7 @@ class EventParser(private val clock: Clock = Clock.systemDefaultZone()) {
         for (range in ranges) for (index in range) titleChars[index] = ' '
         var title = String(titleChars)
             .replace(Regex("\\bjarvis\\b", RegexOption.IGNORE_CASE), "")
-            .replace(Regex("^\\s*[,.:; -]*\\s*(?:por favor\\s+)?(?:agende|agendar|marque|marcar|anote|anotar|crie|criar|coloque|colocar)\\s+", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("^\\s*[,.:; -]*\\s*(?:por favor\\s+)?(?:(?:eu\\s+)?quero\\s+)?(?:agende|agendar|marque|marcar|anote|anotar|crie|criar|coloque|colocar)\\s+", RegexOption.IGNORE_CASE), "")
             .replace(Regex("\\b(?:na|em minha|na minha)\\s+agenda\\b", RegexOption.IGNORE_CASE), "")
             .replace(Regex("^\\s*(?:um|uma|o|a)\\s+", RegexOption.IGNORE_CASE), "")
             .replace(Regex("^\\s*(?:compromisso|evento)(?:\\s+(?:chamado|de))?\\s*", RegexOption.IGNORE_CASE), "")

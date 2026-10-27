@@ -254,6 +254,9 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
                 val answer = conversation.answer(message)
                 if (foreground) { _state.update { it.copy(thinking = false) }; respond(answer) }
             } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: LinkageError) {
+                if (foreground) { _state.update { it.copy(thinking = false) }; respond("Não foi possível iniciar o motor de conversa nesta instalação. Instale o APK completo compatível com seu aparelho, senhor.") }
+            }
             catch (error: Exception) {
                 if (foreground) {
                     _state.update { it.copy(thinking = false) }
