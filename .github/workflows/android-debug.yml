@@ -105,17 +105,7 @@ jobs:
           script: |
             adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
             adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf
-            ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest
-            mkdir -p app/build/reports/screenshots
-            adb pull /sdcard/Pictures/JARVIS/. app/build/reports/screenshots/
-            mkdir -p app/build/reports/conversation
-            adb pull /sdcard/Download/JARVIS-testes/. app/build/reports/conversation/
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell settings put global animator_duration_scale 1
-            adb shell am start -W -n br.com.jarvis.mobile/.MainActivity
-            adb shell am force-stop com.google.android.apps.nexuslauncher
-            adb shell screenrecord --size 720x1600 --bit-rate 2500000 --time-limit 6 /sdcard/jarvis-hud.mp4
-            adb pull /sdcard/jarvis-hud.mp4 app/build/reports/screenshots/jarvis-hud.mp4
+            sh scripts/test_on_emulator.sh
       - name: Guardar resultados instrumentados
         if: always()
         uses: actions/upload-artifact@v4

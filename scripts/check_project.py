@@ -19,6 +19,8 @@ required = [
     'gradlew.bat', 'gradle/wrapper/gradle-wrapper.properties',
     'scripts/bootstrap-wrapper.sh', 'scripts/bootstrap-wrapper.ps1',
     'app/build.gradle.kts', 'app/proguard-rules.pro',
+    'app/src/main/cpp/CMakeLists.txt', 'app/src/main/cpp/jarvis_conversation.cpp',
+    'app/src/main/assets/conversation-model.json', 'scripts/fetch_test_model.py', 'scripts/test_on_emulator.sh',
     'app/src/main/AndroidManifest.xml',
     'app/src/main/java/br/com/jarvis/mobile/MainActivity.kt',
     'app/src/main/java/br/com/jarvis/mobile/JarvisViewModel.kt',
@@ -66,7 +68,7 @@ check('contents: read' in workflow and 'workflow_dispatch:' in workflow,
       'Workflow manual e sem permissão de escrita no repositório')
 check('publish' not in workflow and 'release' not in workflow,
       'Workflow sem etapa de publicação')
-for script in ['gradlew', 'scripts/bootstrap-wrapper.sh']:
+for script in ['gradlew', 'scripts/bootstrap-wrapper.sh', 'scripts/test_on_emulator.sh']:
     result = subprocess.run(['sh', '-n', str(ROOT / script)], capture_output=True)
     check(result.returncode == 0, f'Sintaxe shell: {script}')
 
