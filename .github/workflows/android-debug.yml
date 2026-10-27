@@ -101,7 +101,7 @@ jobs:
           script: |
             ./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest
             mkdir -p app/build/reports/screenshots
-            adb pull /sdcard/Android/data/br.com.jarvis.mobile/files/screenshots/. app/build/reports/screenshots/
+            adb pull /sdcard/Pictures/JARVIS/. app/build/reports/screenshots/
       - name: Guardar resultados instrumentados
         if: always()
         uses: actions/upload-artifact@v4

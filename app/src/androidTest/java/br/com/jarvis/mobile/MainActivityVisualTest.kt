@@ -1,6 +1,10 @@
 package br.com.jarvis.mobile
 
+import android.content.ContentValues
 import android.graphics.Bitmap
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -31,9 +35,28 @@ class MainActivityVisualTest {
 
 internal fun saveUiScreenshot(name: String, bitmap: Bitmap) {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
-    val directory = File(requireNotNull(context.getExternalFilesDir(null)), "screenshots")
-    check(directory.exists() || directory.mkdirs())
-    FileOutputStream(File(directory, name)).use {
-        check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // Public test images survive the test runner's automatic APK/data cleanup.
+        // This code is only in androidTest, never in the installed assistant APK.
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/JARVIS")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = requireNotNull(resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values))
+        requireNotNull(resolver.openOutputStream(uri)).use {
+            check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+        }
+        values.clear()
+        values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+    } else {
+        val directory = File(requireNotNull(context.getExternalFilesDir(null)), "screenshots")
+        check(directory.exists() || directory.mkdirs())
+        FileOutputStream(File(directory, name)).use {
+            check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it))
+        }
     }
 }
