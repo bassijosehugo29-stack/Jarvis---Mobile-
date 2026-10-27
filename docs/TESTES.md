@@ -1,12 +1,13 @@
 # Plano de testes
 
-**Resultado confirmado em 27/10/2026:** 14 testes de unidade e 4 testes instrumentados aprovados; compilação e Lint sem erros (9 avisos). [Execução validada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460). Os testes de voz e Samsung Clock no aparelho físico permanecem pendentes.
+**Resultado confirmado da 0.2.0:** 14 testes de unidade e 8 instrumentados aprovados; compilação e Lint sem erros (9 avisos). [Execução validada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171). Inclui abertura real da Activity, captura da tela, fonte ampliada, manutenção do cabeçalho ao rolar, atalhos e acesso às permissões. Voz e Samsung Clock ainda exigem teste físico.
 
 ## Automatizados incluídos
 
 - `CommandParserTest`: palavra-chave completa/acentuação, ChatGPT explícito, formatos de horário, limites 00:00/23:59, horários inválidos, fallback para ambiguidade, ajuda e parada.
 - `ConversationGateTest`: ignora antes da ativação, aceita dentro da janela, expira em 20 segundos, reinicia e estende após resposta.
-- `JarvisScreenTest` (instrumentado): controles da tela e callbacks independentes de permissão de áudio.
+- `JarvisScreenTest` (instrumentado): controles sem permissão de áudio, pausa, configurações, cabeçalho fixo e fontes ampliadas.
+- `MainActivityVisualTest` (instrumentado): abertura da Activity real com microfone desligado e captura da tela, incluindo as barras do sistema.
 - `AlarmIntentTest` (instrumentado): ação oficial, horário, interface obrigatória e ausência de horário quando não especificado.
 - Android Lint para APIs, manifesto, recursos e problemas estáticos Android.
 

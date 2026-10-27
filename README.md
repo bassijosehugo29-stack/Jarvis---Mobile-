@@ -2,11 +2,11 @@
 
 **JARVIS Mobile**
 
-Assistente Android nativo em **Kotlin + Jetpack Compose**, com interface preta, azul e dourada. Versão inicial 0.1.0, destinada primeiro ao Samsung Galaxy S25 FE. Android 8+ (API 26); compilação e target API 35.
+Assistente Android nativo em **Kotlin + Jetpack Compose**, com interface preta, azul e dourada. Versão 0.2.0, destinada primeiro ao Samsung Galaxy S25 FE. Android 8+ (API 26); compilação e target API 35.
 
 ## O que esta versão faz
 
-- Escuta pt-BR após tocar em **ATIVAR JARVIS**, somente enquanto a Activity estiver visível.
+- Escuta pt-BR após tocar em **Ativar JARVIS**, somente enquanto a Activity estiver visível.
 - “Jarvis” → **“Às suas ordens, senhor”**, usando TextToSpeech do Android.
 - Após a resposta, aceita comandos por 20 segundos; também aceita a ativação e o comando numa frase.
 - “Jarvis, abrir ChatGPT” abre apenas o pacote oficial `com.openai.chatgpt`, se instalado.
@@ -17,18 +17,20 @@ Assistente Android nativo em **Kotlin + Jetpack Compose**, com interface preta, 
 
 Não é um modelo de linguagem nem controla a interface interna do ChatGPT. Não exige assinatura ou chave de API. Nenhum áudio ou histórico é salvo pelo app; o texto exibido permanece apenas na memória da tela/ViewModel.
 
-## Estado da entrega e validação
+## Versão 0.2.0 — interface renovada
 
-**APK debug 0.1.0 compilado com sucesso** em 27/10/2026 no GitHub Actions, commit `456f5a33efd1c830d49e7d86e7f8d1e13d8bf409`.
+Controle de voz central com microfone, fundo preto com iluminação azul discreta, detalhes dourados, atalhos em cartões e cabeçalho fixo protegido das barras do Android. As orientações e permissões ficam em **Configurações → Voz e permissões**. Com fonte ampliada, os atalhos se reorganizam em uma coluna. Os comandos e o desligamento do microfone ao sair continuam funcionando como antes.
 
-- [Baixar o APK de teste como artefato ZIP](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460/artifacts/12766140769) — entre na conta GitHub, extraia o ZIP e instale `app-debug.apk`.
-- [Execução com logs e relatórios](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460).
-- 14 testes de unidade aprovados, sem falhas ou testes ignorados.
-- Android Lint: 0 erros e 9 avisos não impeditivos, detalhados no relatório.
-- 4 testes instrumentados aprovados no emulador Android 35, sem falhas. A execução completa concluiu com **success**.
-- APK universal de 10.335.998 bytes, com suporte ARM64 para o Galaxy S25 FE. SHA-256 do APK: `e9a589a5bfa73eae0c20e8885dc8574741800d599d555278aec956f4b409f8c5`.
+- [Baixar APK de teste (artefato ZIP)](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171/artifacts/12769968379).
+- [Compilação e 22 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171): 14 de unidade e 8 instrumentados Android 35; Lint com 0 erros e 9 avisos não impeditivos.
+- [Capturas reais do emulador e relatórios instrumentados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171/artifacts/12769648745). As imagens incluem a Activity real e a tela com fonte ampliada.
+- Commit validado: `8fe8c04b306f7e0507f2f5bd6f0a63b523a07427`.
+- APK universal de 10,368,766 bytes, com suporte ARM64 para o Galaxy S25 FE.
+- SHA-256 do APK extraído: `d714a6f376a45905983435902fab02b67df6d370526da42036bb01b1967df463`.
 
-O ZIP original de 37 arquivos foi preservado. O projeto foi enviado à branch `main`, mantendo o histórico e o título do README existente. A voz, as permissões e o Samsung Clock precisam da validação física no Galaxy S25 FE conforme [TESTES.md](docs/TESTES.md). Mais evidências em [VALIDATION.md](docs/VALIDATION.md).
+**Instalação sobre a 0.1:** desinstale a versão anterior antes de instalar a 0.2, pois o certificado de debug mudou. Nenhuma chave de assinatura foi publicada no repositório; compilações futuras também podem exigir reinstalação. Permita novamente o microfone ao abrir o app.
+
+Os fontes originais e o histórico foram preservados. A validação física da nova interface, voz e Samsung Clock no Galaxy S25 FE continua necessária. Evidências em [VALIDATION.md](docs/VALIDATION.md) e alterações visuais em [VISUAL-0.2.md](docs/VISUAL-0.2.md).
 
 ## Gerar APK pelo celular
 

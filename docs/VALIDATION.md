@@ -1,43 +1,33 @@
-# Registro de validação — JARVIS Mobile 0.1.0
+# Registro de validação — JARVIS Mobile 0.2.0
 
-Data: 27/10/2026. Repositório: https://github.com/bassijosehugo29-stack/Jarvis---Mobile-. Branch: `main`.
+## Execução real
 
-## Compilação confirmada
+- Repositório: https://github.com/bassijosehugo29-stack/Jarvis---Mobile-, branch main.
+- Commit de código validado: `8fe8c04b306f7e0507f2f5bd6f0a63b523a07427`.
+- [Execução completa](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171): **success** nos dois jobs.
+- 14 testes de unidade e 8 instrumentados no emulador Android 35, sem falhas.
+- Compilação `assembleDebug` e `assembleDebugAndroidTest`: sucesso. Android Lint: 0 erros e 9 avisos não impeditivos, preservados no relatório.
+- [APK como artefato](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171/artifacts/12769968379). [Capturas e relatórios de interface](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40582352171/artifacts/12769648745). Artefatos retidos por 7 dias.
 
-- Commit de código validado: `456f5a33efd1c830d49e7d86e7f8d1e13d8bf409`.
-- Execução: [https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460).
-- Job `debug-apk`: **success**.
-- Tarefas: `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest`.
-- Resultado do Gradle: **BUILD SUCCESSFUL**.
-- APK: [artefato JARVIS-Mobile-debug](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40572705460/artifacts/12766140769), disponível por 7 dias após a geração.
-- 14 testes de unidade: 0 falhas, 0 ignorados.
-- Android Lint: 0 erros e 9 avisos. Os avisos são sobre target/dependências mais recentes, regras de transferência/backup e uma sugestão de extensão KTX; estão preservados no relatório, sem baseline para ocultar erros.
-- 4 testes instrumentados Android 35: aprovados, sem falhas. O log registra `Starting 4 tests`, `Finished 4 tests` e `BUILD SUCCESSFUL`. A execução completa concluiu com **success** em 27/10/2026 às 19:56 UTC.
+## Conteúdo verificado
 
-## Integridade do APK
+O APK contém manifesto, DEX, recursos, bloco de assinatura e bibliotecas ARM64, ARMv7, x86 e x86_64. O ZIP e o APK passaram na verificação de integridade. Isso não substitui uma verificação criptográfica independente da assinatura.
 
-O ZIP de artefato foi baixado, sua integridade foi conferida e o APK foi extraído. O APK contém `AndroidManifest.xml`, `classes.dex`, `resources.arsc`, bibliotecas ARM64, ARMv7, x86 e x86_64 e um bloco de assinatura APK.
+- Tamanho: 10368766 bytes.
+- SHA-256 do APK extraído: `d714a6f376a45905983435902fab02b67df6d370526da42036bb01b1967df463`.
+- Certificado debug SHA-256: `f1681de8732d4ea8066b45721f2bb4691c924bef4ce5bd65336fb80504f4b62c`.
+- O certificado difere do APK 0.1.0: desinstalar a versão antiga antes de instalar.
 
-- Tamanho do APK: 10.335.998 bytes.
-- SHA-256 do APK: `e9a589a5bfa73eae0c20e8885dc8574741800d599d555278aec956f4b409f8c5`.
-- O hash se refere ao APK extraído, não ao ZIP de artefato.
-- A checagem de estrutura e presença do bloco de assinatura não é uma verificação criptográfica independente nem um teste físico no Samsung.
+## Validação da interface
 
-## Correções feitas com base nas execuções reais
+A tela inicial da Activity real foi capturada pelo emulador e revista. Também há uma captura com fonte ampliada em 150%. Os testes verificam o cabeçalho fixo durante a rolagem, acesso aos atalhos, pausa de escuta, configurações e abertura das permissões.
 
-1. O pacote antigo `tools` deixou de estar disponível no SDK. O workflow agora solicita apenas `platform-tools` na preparação, além da plataforma Android 35 e Build Tools 35.0.0.
-2. O Lint identificou `windowLightNavigationBar` em recurso usado desde API 26, embora o atributo exija API 27. O atributo foi removido do tema base; a Activity configura barras escuras com `SystemBarStyle`, compatível com a faixa suportada.
-3. A criação do reconhecedor local contém uma condição explícita para Android 12+.
+A primeira execução da revisão passou nos 22 testes, mas a exportação das capturas falhou porque a pasta privada foi removida na limpeza automática do runner Android. A rotina de captura foi corrigida para usar MediaStore somente nos testes; nenhuma permissão ou gravação de imagens foi adicionada ao aplicativo entregue. A execução indicada acima confirmou a exportação e a conclusão completa.
 
-## Preservação e verificações locais
+## Preservação e limitações
 
-- O ZIP original de 37 arquivos foi preservado, SHA-256 `ac608e5ea957978a3bcedabf0766d0ba06f1db16bf82edc89694790acbdd5ab5`.
-- O commit inicial remoto `7344899019a5e6fe3562617909d93fbe41e90b44` foi mantido no histórico. Nenhum force push foi usado.
-- Os XMLs, a estrutura de pacotes, o YAML do workflow e a sintaxe dos launchers POSIX passaram nas verificações locais. Reproduzir com `python3 scripts/check_project.py`.
-- O bloqueio anterior de escrita foi resolvido após a instalação do GitHub App pelo proprietário. A compilação ocorreu no runner do Actions; o contêiner local não tem o SDK Android.
+O ZIP original de 37 arquivos e o commit inicial `7344899019a5e6fe3562617909d93fbe41e90b44` foram preservados. Não houve force push. A versão 0.1 havia sido validada na execução 40572705460. O redesign preserva os comandos, reconhecimento pt-BR, TTS e liberação do microfone em onStop.
 
-## Validação ainda necessária no Galaxy S25 FE
+As verificações de estrutura, XML, YAML e scripts passaram localmente (`python3 scripts/check_project.py`). A compilação e os testes Android foram executados no GitHub Actions.
 
-Executar a lista em `TESTES.md`, especialmente pt-BR offline, síntese de voz, permissões, desligamento do microfone ao sair, abertura do ChatGPT e confirmação no Samsung Clock. Nenhum teste físico no aparelho foi realizado por esta entrega. Os testes automatizados não validam disponibilidade do modelo de voz nem todos os comportamentos da One UI.
-
-Nenhum aplicativo foi publicado na Play Store nem foi habilitado serviço pago. A release antiga criada pelo proprietário aponta para o commit inicial; o download correto desta versão é o artefato indicado acima.
+A versão 0.2 ainda precisa de teste físico no Galaxy S25 FE, especialmente disponibilidade dos modelos de voz, One UI e confirmação no Samsung Clock. Não há escuta em segundo plano nem sincronização implementada. Nenhuma API paga, nova assinatura, publicação na Play Store ou chave de API foi utilizada.
