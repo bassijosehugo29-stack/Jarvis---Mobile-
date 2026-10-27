@@ -34,6 +34,7 @@ class AppResolverTest {
         assertNull(choiceIndex("Agenda", listOf("Agenda", "Agenda")))
         assertEquals(1, choiceIndex("opção duas", listOf("Agenda", "Agenda")))
         assertNull(choiceIndex("3", listOf("Agenda", "Agenda")))
+        assertEquals(1, choiceIndex("Jarvis, opção duas", listOf("Agenda", "Agenda")))
         assertEquals(0, choiceIndex("um", listOf("Pessoal", "Trabalho")))
         assertEquals(1, choiceIndex("trabalho", listOf("Pessoal", "Trabalho")))
     }

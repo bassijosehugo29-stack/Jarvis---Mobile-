@@ -5,12 +5,14 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.provider.AlarmClock
+import android.provider.Settings
 import br.com.jarvis.mobile.domain.LaunchableApp
 
 sealed interface AppAction {
     data object OpenChatGpt : AppAction
     data class OpenApp(val app: LaunchableApp) : AppAction
     data object RequestCalendarPermission : AppAction
+    data object OpenVoiceSettings : AppAction
     data class SetAlarm(val hour: Int? = null, val minute: Int? = null) : AppAction
 }
 
@@ -24,6 +26,9 @@ class AndroidActions {
                 is AppAction.SetAlarm -> alarmIntent(action)
                 is AppAction.OpenApp -> launchIntent(action.app)
                 AppAction.RequestCalendarPermission -> return "A permissão da agenda deve ser solicitada pela Activity."
+                AppAction.OpenVoiceSettings -> Intent("com.android.settings.TTS_SETTINGS").takeIf {
+                    it.resolveActivity(activity.packageManager) != null
+                } ?: Intent(Settings.ACTION_SETTINGS)
             }
             activity.startActivity(intent)
             null

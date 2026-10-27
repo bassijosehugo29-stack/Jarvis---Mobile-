@@ -60,6 +60,13 @@ class CommandParserTest {
         }
         assertEquals(Command.SetAlarm(15, 0), parser.parse("alarme para três da tarde").command)
     }
+    @Test fun recognizesPortugueseWakeTranscriptionsAndOfflinePreparation() {
+        for (name in listOf("Jarvis", "Járvis", "Jarves", "Javis", "Javes")) {
+            assertEquals(Command.OpenApp("whatsapp"), parser.parse("$name abrir WhatsApp").command)
+        }
+        assertEquals(Command.PrepareConversation, parser.parse("Jarvis preparar conversa offline").command)
+        assertEquals(Command.PrepareConversation, parser.parse("baixar modelo").command)
+    }
     @Test fun stopTakesPriority() {
         assertEquals(Command.Stop, parser.parse("Jarvis cancelar alarme").command)
     }

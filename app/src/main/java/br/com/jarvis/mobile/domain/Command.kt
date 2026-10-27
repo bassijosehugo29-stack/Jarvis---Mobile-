@@ -10,6 +10,7 @@ sealed interface Command {
     data object InvalidAlarmTime : Command
     data object Stop : Command
     data object Help : Command
+    data object PrepareConversation : Command
     data object Unknown : Command
 }
 

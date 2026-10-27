@@ -1,3 +1,7 @@
+# JARVIS Mobile 0.5 — voz e conversa em validação
+
+Revisão em desenvolvimento para corrigir a saída de voz e adicionar conversa local. Ainda não considere o APK 0.5 aprovado; a evidência abaixo é da versão 0.4. Veja [CONVERSA-0.5.md](docs/CONVERSA-0.5.md).
+
 # Jarvis---Mobile-
 
 JARVIS Mobile **0.4.0** — assistente Android nativo em Kotlin e Jetpack Compose, com HUD holográfico preto, azul e dourado. Destinado inicialmente ao Samsung Galaxy S25 FE. Android 8+ (minSdk 26), compileSdk/targetSdk 35 e Java 17.

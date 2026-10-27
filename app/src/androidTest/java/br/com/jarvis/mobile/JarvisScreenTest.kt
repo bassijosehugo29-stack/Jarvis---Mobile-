@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import br.com.jarvis.mobile.ui.JarvisScreen
@@ -34,6 +35,20 @@ class JarvisScreenTest {
         compose.onNodeWithText("CHATGPT").assertDoesNotExist()
         compose.onNodeWithText("ALARMES").assertDoesNotExist()
         compose.runOnIdle { assertEquals(1, activations) }
+    }
+
+    @Test fun typedConversationAndVoiceDiagnosticsAreAvailableWithoutMicrophone() {
+        var message = ""
+        var tests = 0
+        compose.setContent {
+            JarvisTheme { JarvisScreen(JarvisState(), {}, {}, onVoiceTest = { tests++ }, onSendMessage = { message = it }) }
+        }
+        compose.onNodeWithTag("jarvis-message").performScrollTo().performTextInput("Como você está?")
+        compose.onNodeWithContentDescription("Enviar mensagem").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals("Como você está?", message) }
+        compose.onNodeWithContentDescription("Configurações").performClick()
+        compose.onNodeWithText("Testar voz").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(1, tests) }
     }
 
     @Test fun activeScreenOffersPauseControl() {

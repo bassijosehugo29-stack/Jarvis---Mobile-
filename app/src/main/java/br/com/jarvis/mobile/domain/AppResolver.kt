@@ -35,7 +35,8 @@ class AppResolver {
 
 /** Number or an unambiguous complete label; ambiguous replies never choose an app/calendar. */
 internal fun choiceIndex(text: String, labels: List<String>): Int? {
-    val answer = voiceText(text).replace(Regex("^(?:opcao|numero|agenda|aplicativo)\\s+"), "")
+    val answer = voiceText(text).replace(Regex("\\b(jarvis|jarves|javis|javes)\\b"), "").trim()
+        .replace(Regex("^(?:opcao|numero|agenda|aplicativo)\\s+"), "")
     spokenNumber(answer)?.let { return (it - 1).takeIf { index -> index in labels.indices } }
     val matches = labels.indices.filter { voiceText(labels[it]) == answer }
     return matches.singleOrNull()

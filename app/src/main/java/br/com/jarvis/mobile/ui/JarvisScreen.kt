@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +25,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -40,10 +43,22 @@ import kotlin.math.sin
 fun JarvisScreen(
     state: JarvisState,
     onToggle: () -> Unit,
-    onSettings: () -> Unit
+    onSettings: () -> Unit,
+    onVoiceTest: () -> Unit = {},
+    onVoiceSettings: () -> Unit = {},
+    onDownloadModel: () -> Unit = {},
+    onImportModel: () -> Unit = {},
+    onSendMessage: (String) -> Unit = {},
+    onCancelModel: () -> Unit = {}
 ) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val device = rememberHudDeviceState()
+    var message by rememberSaveable { mutableStateOf("") }
+    val send = {
+        if (message.isNotBlank() && !state.thinking && !state.speaking) {
+            onSendMessage(message.trim()); message = ""
+        }
+    }
     Surface(Modifier.fillMaxSize(), color = Background) {
         Box(Modifier.fillMaxSize()) {
             HolographicBackground(Modifier.fillMaxSize())
@@ -62,6 +77,7 @@ fun JarvisScreen(
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.size(4.dp).background(if (state.listening) Cyan else Gold, CircleShape))
                                 HudLabel(when {
+                                    state.thinking -> "PENSANDO"
                                     state.speaking -> "RESPONDENDO"
                                     state.listening -> "OUVINDO"
                                     state.enabled -> "PREPARANDO A VOZ"
@@ -80,6 +96,28 @@ fun JarvisScreen(
                         }
                         Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
                             CommunicationPanel(state)
+                            if (state.voiceIssue.isNotBlank()) {
+                                Text(state.voiceIssue, color = Gold, fontSize = 13.sp, lineHeight = 20.sp,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
+                                TextButton(onClick = { showSettings = true }) { Text("Ajustar a voz", color = Cyan) }
+                            }
+                            OutlinedTextField(value = message, onValueChange = { message = it.take(480) },
+                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("jarvis-message"),
+                                label = { Text("Converse com o JARVIS") },
+                                placeholder = { Text("Fale ou escreva sua mensagem") },
+                                minLines = 1, maxLines = 3, enabled = !state.thinking && !state.speaking,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                                keyboardActions = KeyboardActions(onSend = { send() }),
+                                trailingIcon = {
+                                    IconButton(onClick = { send() }, enabled = message.isNotBlank() && !state.thinking && !state.speaking) {
+                                        Icon(Symbols.External, "Enviar mensagem", tint = Cyan)
+                                    }
+                                })
+                            if (!state.modelReady) {
+                                TextButton(onClick = { showSettings = true }, modifier = Modifier.fillMaxWidth()) {
+                                    Text(if (state.modelBusy) state.modelInfo else "Preparar conversa offline • grátis", color = Gold, fontSize = 12.sp)
+                                }
+                            }
                             if (state.notice.isNotBlank()) {
                                 TextButton(onClick = { showSettings = true },
                                     contentPadding = PaddingValues(horizontal = 0.dp),
@@ -113,13 +151,38 @@ fun JarvisScreen(
                     fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 8.dp))
                 HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
                 Text("Como falar", fontSize = 15.sp, color = Gold, fontWeight = FontWeight.Medium)
-                Text("Ative o microfone e diga “Jarvis”. Depois da resposta, fale seu comando em até 20 segundos.",
+                Text("Ative o núcleo para iniciar a conversa. O JARVIS responde e volta a ouvir sem você precisar repetir o nome em cada frase. Para parar, toque no núcleo ou diga parar.",
                     color = Muted, fontSize = 14.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
                 Text("“Jarvis, abrir WhatsApp”\n“Jarvis, agende dentista amanhã às 15 horas”\n“Jarvis, alarme para sete e trinta”", color = Cyan,
                     fontSize = 14.sp, lineHeight = 25.sp, modifier = Modifier.padding(top = 12.dp))
                 HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
                 Text("Agenda: permita o calendário no primeiro pedido. O compromisso dura uma hora se você não disser a duração. Com várias agendas, escolha por voz no primeiro uso. Ao abrir outro aplicativo, o microfone é desligado.", color = Muted, fontSize = 14.sp, lineHeight = 22.sp)
                 Spacer(Modifier.height(18.dp))
+                Text("Saída de voz", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(state.speechInfo, color = Muted, fontSize = 14.sp, lineHeight = 22.sp,
+                    modifier = Modifier.padding(top = 8.dp))
+                Text("Com o JARVIS aberto, os botões de volume ajustam a mídia. Se o áudio sair em fones ou Bluetooth, confira a saída de mídia do Samsung.",
+                    color = Muted, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
+                Button(onClick = onVoiceTest, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text("Testar voz") }
+                OutlinedButton(onClick = { showSettings = false; onVoiceSettings() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    Text("Ajustar voz do Android")
+                }
+                HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
+                Text("Conversa offline", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(state.modelInfo, color = Muted, fontSize = 14.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
+                Text("Modelo gratuito de 491 MB, baixado uma vez por Wi-Fi. Depois, as respostas são geradas no celular. O modelo é leve: pode errar, responder de forma simples e levar alguns segundos. Ao desinstalar o app, o arquivo local é removido.",
+                    color = Muted, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
+                if (state.modelBusy) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
+                    TextButton(onClick = onCancelModel, modifier = Modifier.fillMaxWidth()) { Text("Cancelar preparação") }
+                }
+                if (!state.modelReady) {
+                    Button(onClick = onDownloadModel, enabled = !state.modelBusy,
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text("Baixar conversa offline • 491 MB") }
+                    OutlinedButton(onClick = { showSettings = false; onImportModel() }, enabled = !state.modelBusy,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Importar modelo já baixado") }
+                }
+                HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
                 Text("Reconhecimento de voz", fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Text(state.voiceInfo, color = Muted, fontSize = 14.sp, lineHeight = 22.sp,
                     modifier = Modifier.padding(top = 8.dp))
@@ -137,7 +200,7 @@ fun JarvisScreen(
                     Spacer(Modifier.width(10.dp))
                     Text("Abrir permissões do aplicativo")
                 }
-                Text("JARVIS Mobile · 0.4.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
+                Text("JARVIS Mobile · 0.5.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 18.dp))
             }
         }
@@ -193,7 +256,12 @@ private fun HudLabel(text: String, modifier: Modifier = Modifier, color: Color =
 
 @Composable
 private fun VoiceControl(state: JarvisState, visible: Boolean, diameter: Dp, onToggle: () -> Unit) {
-    val label = if (state.enabled) "Pausar escuta" else "Ativar JARVIS"
+    val label = when {
+        state.thinking -> "Parar resposta"
+        state.speaking && !state.enabled -> "Interromper fala"
+        state.enabled -> "Pausar escuta"
+        else -> "Ativar JARVIS"
+    }
     Column(Modifier.width(diameter).semantics(mergeDescendants = true) {
         contentDescription = label
         stateDescription = if (state.enabled) "Escuta ativada" else "Escuta desativada"
@@ -237,14 +305,10 @@ private fun CommunicationPanel(state: JarvisState) {
             if (state.heard.isNotBlank()) {
                 Text("> " + state.heard, fontSize = 12.sp, lineHeight = 19.sp,
                     fontFamily = FontFamily.Monospace, color = Muted)
-                Text(state.reply, color = Color(0xFFD1F8FF), fontSize = 14.sp, lineHeight = 21.sp,
-                    modifier = Modifier.padding(top = 8.dp))
-            } else {
-                Text(when { state.listening -> "Diga “Jarvis”. Estou ouvindo."; state.enabled -> "Preparando o microfone…"; else -> "Às suas ordens, senhor." },
-                    color = Color(0xFFD1F8FF), fontSize = 15.sp, lineHeight = 22.sp)
-                Text(when { state.listening -> "Depois, fale seu comando."; state.enabled -> "Aguarde o indicador de escuta."; else -> "Ative o núcleo e diga “Jarvis”." },
-                    color = Muted, fontSize = 12.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 4.dp))
             }
+            Text(if (state.thinking) "Pensando na sua resposta…" else state.reply,
+                color = Color(0xFFD1F8FF), fontSize = 14.sp, lineHeight = 21.sp,
+                modifier = Modifier.padding(top = if (state.heard.isBlank()) 0.dp else 8.dp))
         }
     }
 }
@@ -256,6 +320,7 @@ private fun PrivacyLine(state: JarvisState) {
         Icon(Symbols.Shield, null, Modifier.size(12.dp), tint = Muted)
         Text(when {
             state.listening -> "Microfone em uso nesta tela"
+            state.thinking -> "Microfone pausado enquanto penso"
             state.speaking -> "Microfone pausado durante a resposta"
             state.enabled -> "Preparando a escuta"
             else -> "Microfone desligado"

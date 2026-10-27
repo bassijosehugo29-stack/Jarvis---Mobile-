@@ -3,6 +3,7 @@ package br.com.jarvis.mobile
 import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -16,13 +17,18 @@ import br.com.jarvis.mobile.actions.CalendarStore
 import br.com.jarvis.mobile.actions.InstalledApps
 import br.com.jarvis.mobile.actions.WritableCalendar
 import br.com.jarvis.mobile.domain.*
+import br.com.jarvis.mobile.conversation.LocalConversation
+import br.com.jarvis.mobile.conversation.ModelStore
 import br.com.jarvis.mobile.voice.AndroidSpeechInput
 import br.com.jarvis.mobile.voice.SpeechInput
 import br.com.jarvis.mobile.voice.SpeechOutput
+import br.com.jarvis.mobile.voice.SpeechResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,10 +46,16 @@ data class JarvisState(
     val speaking: Boolean = false,
     val status: String = "Sistema pronto",
     val heard: String = "",
-    val reply: String = "Toque no núcleo e diga: Jarvis.",
+    val reply: String = "Às suas ordens, senhor. Ative o núcleo para falar ou escreva uma mensagem.",
     val voiceInfo: String = "Microfone desligado • escuta apenas com o app visível",
     val notice: String = "",
-    val audioLevel: Float = 0f
+    val audioLevel: Float = 0f,
+    val thinking: Boolean = false,
+    val speechInfo: String = "Use Testar voz nos ajustes para conferir o som.",
+    val voiceIssue: String = "",
+    val modelReady: Boolean = false,
+    val modelBusy: Boolean = false,
+    val modelInfo: String = "Prepare a conversa offline nos ajustes • download gratuito de 491 MB"
 )
 
 private sealed interface PendingVoice {
@@ -64,6 +76,11 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private val appResolver = AppResolver()
     private val installedApps = InstalledApps(application)
     private val calendar = CalendarStore(application)
+    private val models = ModelStore(application)
+    private val conversation = LocalConversation(models)
+    private var modelMonitor: Job? = null
+    private var preparation: Job? = null
+    private var permissionResumeVoice = false
     private val gate = ConversationGate(SystemClock::elapsedRealtime)
     private var input: SpeechInput? = null
     private var foreground = false
@@ -73,7 +90,16 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private var permissionUntil = 0L
     private var work: Job? = null
     private var session = 0L
-    private val output = SpeechOutput(application) { message -> _state.update { it.copy(notice = message) } }
+    private val output = SpeechOutput(application, onStatus = { status ->
+        _state.update { it.copy(speechInfo = status.message, voiceIssue = if (status.failure) status.message else "") }
+    })
+    init {
+        viewModelScope.launch {
+            models.state.collect { model ->
+                _state.update { it.copy(modelReady = model.ready, modelBusy = model.downloading, modelInfo = model.message) }
+            }
+        }
+    }
     private val restart = Runnable {
         if (foreground && _state.value.enabled && !_state.value.speaking) {
             _state.update { it.copy(status = "Preparando microfone", listening = false) }
@@ -81,8 +107,47 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun onForeground() { foreground = true }
-    fun onBackground() { foreground = false; stop() }
+    fun onForeground() {
+        foreground = true
+        modelMonitor?.cancel()
+        modelMonitor = viewModelScope.launch {
+            while (isActive && foreground) {
+                try { models.refresh() }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: RuntimeException) { models.reportFailure("Não foi possível conferir o modelo. Verifique armazenamento e Wi-Fi.") }
+                delay(1_500L)
+            }
+        }
+    }
+    fun onBackground() { foreground = false; modelMonitor?.cancel(); stop() }
+
+    fun testVoice() {
+        if (!foreground) return
+        work?.cancel(); conversation.cancel(); pending = null
+        respond("Teste de voz do JARVIS. Às suas ordens, senhor.")
+    }
+    fun voiceSettings() { requestAction(AppAction.OpenVoiceSettings) }
+    fun sendMessage(message: String) { handleText(message.take(480), fromVoice = false) }
+    fun downloadConversation() {
+        if (!foreground || preparation?.isActive == true) return
+        preparation = viewModelScope.launch {
+            try { models.download() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { models.reportFailure(error.message ?: "Não foi possível iniciar o download. Confira o Wi-Fi e o armazenamento.") }
+        }
+    }
+    fun cancelModelPreparation() {
+        preparation?.cancel()
+        preparation = viewModelScope.launch { models.cancelDownload() }
+    }
+    fun importConversation(uri: Uri) {
+        if (preparation?.isActive == true) return
+        preparation = viewModelScope.launch {
+            try { models.importModel(uri) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { models.reportFailure(error.message ?: "Não foi possível importar o modelo oficial.") }
+        }
+    }
 
     fun start() {
         if (!foreground || _state.value.enabled) return
@@ -118,19 +183,21 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         _state.update { it.copy(enabled = true, notice = "", voiceInfo =
             if (input?.onDevice == true) "Reconhecimento no dispositivo • pt-BR depende do modelo instalado"
             else "Serviço do Android • offline preferencial; o provedor pode usar internet") }
-        scheduleListening(0)
+        gate.extend()
+        respond("Às suas ordens, senhor")
     }
 
     fun stop(message: String = "Microfone desligado") {
         session++
         work?.cancel(); work = null
+        conversation.release()
         pending = null
         permissionEvent = null
         handler.removeCallbacks(restart)
         input?.close(); input = null
         output.stop()
         gate.reset()
-        _state.update { it.copy(enabled = false, listening = false, speaking = false, audioLevel = 0f, status = message) }
+        _state.update { it.copy(enabled = false, listening = false, speaking = false, audioLevel = 0f, thinking = false, status = message) }
     }
     fun permissionDenied() {
         stop("Permissão de microfone necessária")
@@ -146,13 +213,14 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         if (!_actions.tryEmit(action)) report("Não consegui iniciar a ação. Peça novamente, senhor.")
     }
 
-    private fun onRecognized(text: String) {
-        if (!foreground || !_state.value.enabled || _state.value.speaking || work?.isActive == true) return
+    private fun onRecognized(text: String) { handleText(text, fromVoice = true) }
+    private fun handleText(text: String, fromVoice: Boolean) {
+        if (!foreground || text.isBlank() || (fromVoice && !_state.value.enabled) || _state.value.speaking || work?.isActive == true) return
         failures = 0
         _state.update { it.copy(heard = text, listening = false, audioLevel = 0f) }
         val parsed = parser.parse(text)
         val continuing = gate.isOpen()
-        if (!gate.accept(parsed)) { scheduleListening(); return }
+        gate.extend()
         if (!continuing) pending = null
         if (parsed.command == Command.Unknown && pending != null) { continueRequest(text); return }
         // An explicit new request replaces an incomplete request; nothing is left queued.
@@ -165,9 +233,34 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             is Command.SetAlarm -> setAlarm(command)
             Command.AskAlarmTime -> { pending = PendingVoice.Alarm; respond("Para qual horário, senhor? Diga, por exemplo, sete e trinta.") }
             Command.InvalidAlarmTime -> { pending = PendingVoice.Alarm; respond("Horário inválido, senhor. Diga, por exemplo, sete e trinta.") }
-            Command.Help -> respond("Peça abrir um aplicativo pelo nome, agendar um compromisso amanhã às quinze horas, alarme para sete e trinta, ou parar.")
+            Command.Help -> respond("Você pode conversar comigo depois de preparar o modelo offline, abrir aplicativos pelo nome, agendar compromissos, definir alarmes ou pedir para parar.")
+            Command.PrepareConversation -> { downloadConversation(); respond("Solicitei o modelo gratuito de conversa. São 491 megabytes, por Wi-Fi. Você pode acompanhar pelos ajustes, senhor.") }
             Command.Stop -> { stop(); respond("Escuta desativada, senhor.") }
-            Command.Unknown -> respond("Não entendi, senhor. Peça abrir um aplicativo, agendar um compromisso ou diga ajuda.")
+            Command.Unknown -> converse(text)
+        }
+    }
+
+    private fun converse(message: String) {
+        if (models.readyFile() == null) {
+            respond(if (_state.value.modelBusy) "O modelo de conversa ainda está sendo preparado. Acompanhe o progresso pelos ajustes, senhor."
+                else "Para conversarmos sobre outros assuntos, prepare a conversa offline nos ajustes. O modelo é gratuito e ocupa 491 megabytes, senhor.")
+            return
+        }
+        runWork("Pensando") {
+            _state.update { it.copy(thinking = true) }
+            val deadline = Runnable { conversation.cancel() }
+            handler.postDelayed(deadline, 120_000L)
+            try {
+                val answer = conversation.answer(message)
+                if (foreground) { _state.update { it.copy(thinking = false) }; respond(answer) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) {
+                if (foreground) {
+                    _state.update { it.copy(thinking = false) }
+                    respond(if (error.message == "NOT_ENOUGH_MEMORY") "Faltou memória para conversar. Feche outros aplicativos e tente novamente, senhor."
+                        else "Não consegui gerar a resposta local. Confira o modelo nos ajustes e tente uma pergunta curta, senhor.")
+                }
+            } finally { handler.removeCallbacks(deadline) }
         }
     }
 
@@ -231,6 +324,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun chooseCalendar(event: CalendarEvent) {
         if (!calendar.hasPermission()) {
+            permissionResumeVoice = _state.value.enabled
             permissionEvent = event
             respond("Para salvar na sua agenda, permita o acesso ao calendário do Android, senhor.",
                 AppAction.RequestCalendarPermission)
@@ -259,7 +353,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             respond("Acesso à agenda não permitido. Não salvei o compromisso, senhor. Você pode permitir nas configurações do aplicativo.")
             return
         }
-        start()
+        if (permissionResumeVoice) start()
         gate.extend()
         chooseCalendar(event)
     }
@@ -298,9 +392,13 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private fun respond(text: String, action: AppAction? = null) {
         handler.removeCallbacks(restart)
         input?.stop()
-        _state.update { it.copy(reply = text, listening = false, speaking = true, audioLevel = 0f, status = "JARVIS respondendo") }
-        output.speak(text) {
-            _state.update { it.copy(speaking = false, status = if (it.enabled) "Aguardando comando" else "Microfone desligado") }
+        _state.update { it.copy(reply = text, listening = false, speaking = true, thinking = false, audioLevel = 0f, status = "JARVIS respondendo") }
+        output.speak(text) { result ->
+            _state.update { it.copy(speaking = false, status = when {
+                result is SpeechResult.Failed -> "Falha na saída de voz"
+                it.enabled -> "Aguardando sua fala"
+                else -> "Microfone desligado"
+            }) }
             if (foreground) {
                 if (action == AppAction.RequestCalendarPermission) {
                     val event = permissionEvent

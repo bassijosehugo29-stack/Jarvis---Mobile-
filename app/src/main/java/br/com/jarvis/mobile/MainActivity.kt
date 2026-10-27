@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.AudioManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -33,9 +34,13 @@ class MainActivity : ComponentActivity() {
     private val requestCalendar = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         model.onCalendarPermissionResult()
     }
+    private val importConversation = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(model::importConversation)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        volumeControlStream = AudioManager.STREAM_MUSIC
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
@@ -55,14 +60,20 @@ class MainActivity : ComponentActivity() {
                 JarvisScreen(
                     state = state,
                     onToggle = {
-                        if (state.enabled) model.stop()
+                        if (state.enabled || state.thinking || state.speaking) model.stop()
                         else if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) model.start()
                         else requestMicrophone.launch(Manifest.permission.RECORD_AUDIO)
                     },
                     onSettings = {
                         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                             Uri.parse("package:$packageName")))
-                    }
+                    },
+                    onVoiceTest = model::testVoice,
+                    onVoiceSettings = model::voiceSettings,
+                    onDownloadModel = model::downloadConversation,
+                    onImportModel = { importConversation.launch(arrayOf("*/*")) },
+                    onSendMessage = model::sendMessage,
+                    onCancelModel = model::cancelModelPreparation
                 )
             }
         }

@@ -4,13 +4,15 @@ package br.com.jarvis.mobile.domain
 class CommandParser {
     fun parse(text: String): ParsedUtterance {
         val normalized = voiceText(text)
-        val wake = Regex("\\bjarvis\\b").containsMatchIn(normalized)
-        val content = normalized.replace(Regex("\\bjarvis\\b"), "").trim()
+        val wakeWords = Regex("\\b(jarvis|jarves|javis|javes)\\b")
+        val wake = wakeWords.containsMatchIn(normalized)
+        val content = normalized.replace(wakeWords, "").trim()
         val opening = Regex("^(?:(?:eu )?quero\\s+)?(?:abrir|abra|abre|iniciar|inicie|entrar)\\b\\s*(.*)$").find(content)
         val command = when {
             content.isBlank() && wake -> Command.Wake
             Regex("^(pare|parar|desativar|silencio|cancelar)\\b").containsMatchIn(content) -> Command.Stop
             Regex("^(ajuda|comandos)\\b").containsMatchIn(content) -> Command.Help
+            Regex("^(preparar|prepare|baixar|baixe)\\s+(?:o\\s+|a\\s+)?(?:modelo|conversa)(?:\\s+offline)?$").matches(content) -> Command.PrepareConversation
             opening != null -> {
                 val name = opening.groupValues[1].replace(Regex("^(?:\\s*(?:no|na|o|a|aplicativo|app)\\b)+\\s*"), "").trim()
                     .replace(Regex("\\s+por favor$"), "")

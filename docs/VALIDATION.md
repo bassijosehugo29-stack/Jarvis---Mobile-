@@ -1,3 +1,7 @@
+# Validação da 0.5 ainda em andamento
+
+Não há confirmação de compilação/áudio/conversa da revisão 0.5 neste momento. A seção abaixo é histórica, da 0.4.
+
 # Validação do JARVIS Mobile 0.4.0
 
 ## Resultado real
