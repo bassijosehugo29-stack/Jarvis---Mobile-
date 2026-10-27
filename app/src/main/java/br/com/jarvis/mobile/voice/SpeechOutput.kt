@@ -58,7 +58,7 @@ class SpeechOutput(context: Context, private val onStatus: (String) -> Unit) {
         if (!ready) { done(); return }
         completion = done
         currentId = "jarvis-${++generation}"
-        main.postDelayed(deadline, 15_000L)
+        main.postDelayed(deadline, (text.length * 90L + 5_000L).coerceIn(15_000L, 60_000L))
         if (engine?.speak(text, TextToSpeech.QUEUE_FLUSH, null, currentId) == TextToSpeech.ERROR) finish()
     }
     private fun finish() {

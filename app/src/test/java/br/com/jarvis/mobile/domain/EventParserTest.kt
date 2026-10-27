@@ -93,6 +93,19 @@ class EventParserTest {
             assertNotNull(parser.parse("Agende treino amanhã às 15 horas $duration").error)
         }
     }
+    @Test fun conflictingDatesOrTimesAreNotGuessed() {
+        for (text in listOf("Agende dentista hoje amanhã às 15 horas", "Agende dentista amanhã às 15 ou às 17 horas")) {
+            assertNotNull(parser.parse(text).error)
+        }
+    }
+    @Test fun dateCorrectionDuringTimeQuestionKeepsTitleAndAsksForTime() {
+        val draft = parser.parse("Agende dentista hoje").draft
+        val corrected = parser.parse("amanhã", draft)
+        assertNull(corrected.error)
+        assertEquals("dentista", corrected.draft.title)
+        assertEquals(LocalDate.of(2026, 10, 28), corrected.draft.date)
+        assertNull(corrected.draft.time)
+    }
     @Test fun nonexistentOrAmbiguousDstTimeIsRejected() {
         val dstParser = EventParser(Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneId.of("Europe/Paris")))
         for (draft in listOf(EventDraft("Teste", LocalDate.of(2026, 3, 29), LocalTime.of(2, 30)),

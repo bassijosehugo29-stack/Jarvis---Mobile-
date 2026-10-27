@@ -10,7 +10,9 @@ internal data class ClockReading(val time: LocalTime?, val range: IntRange?, val
 internal fun readClock(text: String, standalone: Boolean = false): ClockReading {
     val marker = Regex("\\b(?:as|pelas)\\s+").find(text)
     val explicit = Regex("(?<![0-9/])(?:[0-9]{1,3}\\s*[:h]|$SPOKEN_NUMBER\\s+horas?\\b)").find(text)
-    val start = marker?.range?.last?.plus(1) ?: explicit?.range?.first ?: if (standalone) 0 else return ClockReading(null, null)
+    val start = marker?.range?.last?.plus(1) ?: explicit?.range?.first
+        ?: if (standalone) text.indexOfFirst { !it.isWhitespace() }.takeIf { it >= 0 } ?: return ClockReading(null, null)
+        else return ClockReading(null, null)
     val number = "(?:meio\\s+dia|meia\\s+noite|$SPOKEN_NUMBER)"
     val minute = "(?:meia|um\\s+quarto|$SPOKEN_NUMBER)"
     val pattern = Regex("^($number)(?:\\s*[:h]\\s*([0-9]{1,3})|\\s*(?:horas?\\b|h\\b)(?:\\s*(?:e\\s+)?($minute)(?:\\s+minutos?)?)?|\\s+e\\s+($minute)(?:\\s+minutos?)?)?(?:\\s+(da\\s+manha|da\\s+tarde|da\\s+noite))?(?![a-z0-9])")
