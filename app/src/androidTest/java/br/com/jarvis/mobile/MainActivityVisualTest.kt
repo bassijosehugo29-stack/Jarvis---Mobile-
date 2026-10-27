@@ -23,6 +23,15 @@ class MainActivityVisualTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun launcherStartsWithVisibleHeaderAndMicrophoneOff() {
+        // The Google emulator launcher can leave its own boot-time ANR dialog over test windows.
+        // Stop only that unrelated emulator process; never suppress errors from the app under test.
+        if (Build.HARDWARE == "ranchu" || Build.HARDWARE == "goldfish") {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            android.os.ParcelFileDescriptor.AutoCloseInputStream(
+                instrumentation.uiAutomation.executeShellCommand("am force-stop com.google.android.apps.nexuslauncher")
+            ).use { it.readBytes() }
+            instrumentation.waitForIdleSync()
+        }
         compose.onNodeWithTag("jarvis-header").assertIsDisplayed()
         compose.onNodeWithContentDescription("Ativar JARVIS").assertIsDisplayed()
         compose.onNodeWithContentDescription("Configurações").assertIsDisplayed()
