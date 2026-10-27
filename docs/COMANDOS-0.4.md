@@ -22,7 +22,7 @@ O calendário só é solicitado no primeiro comando de agendamento completo. O A
 
 Com uma única agenda elegível, usa essa agenda. Com mais de uma, pergunta até cinco opções numeradas, e aceita uma resposta como “um”, “dois” ou o nome completo não ambíguo. A agenda escolhida fica como preferência local para próximos pedidos. Se deixar de estar disponível, o app pergunta novamente. Sem agenda elegível, informa que é necessário configurar uma; não cria uma conta ou uma agenda silenciosamente.
 
-Datas: hoje, amanhã, depois de amanhã, dias da semana, DD/MM[/AAAA] ou “dia 30 de outubro [de 2026]”. Sem ano, datas de dia/mês usam a próxima ocorrência; dia da semana significa a próxima ocorrência, inclusive na semana seguinte se for o mesmo dia. Horários: 15:30, 15h30, quinze horas, três da tarde, sete e meia. A duração é de 60 minutos quando omitida, ou de 1 a 720 minutos quando explícita. Usa o fuso do celular. Horários passados, ambíguos por mudança de fuso, datas inválidas, recorrência e offsets relativos como “daqui a duas horas” exigem uma nova indicação e não são gravados por suposição.
+Datas: hoje, amanhã, depois de amanhã, dias da semana, DD/MM[/AAAA] ou “dia 30 de outubro [de 2026]”. Sem ano, datas de dia/mês usam a próxima ocorrência; dia da semana significa a próxima ocorrência, inclusive na semana seguinte se for o mesmo dia. Horários: 15:30, 15h30, quinze horas, três da tarde, sete e meia. A duração é de 60 minutos quando omitida, ou de 1 a 720 minutos quando explícita (incluindo “por meia hora” e “por uma hora e meia”). Usa o fuso do celular. Horários passados, ambíguos por mudança de fuso, datas inválidas, recorrência e offsets relativos como “daqui a duas horas” exigem uma nova indicação e não são gravados por suposição.
 
 Só diz “Agendado” após inserção e leitura de confirmação do título/horário pelo provedor Android. Isso confirma o evento no calendário local; eventual sincronização da conta é responsabilidade do sistema e da conexão da conta. Se o salvamento ficar sem confirmação ou for interrompido, confira a agenda antes de repetir para evitar duplicatas.
 
@@ -36,4 +36,4 @@ Ao abrir outro aplicativo, a escuta do JARVIS é desligada. Para novo pedido, vo
 
 ## Validação
 
-A compilação e os testes desta revisão devem ser confirmados pelo GitHub Actions. Confira o resultado atual em VALIDATION.md; evidência da versão 0.3 não valida o novo código da 0.4.
+[Compilação confirmada e 50 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40598031094), incluindo escrita real no Calendar Provider de uma agenda LOCAL de teste. Voz no Galaxy e sincronização de contas exigem validação física. Detalhes em [VALIDATION.md](VALIDATION.md).

@@ -11,7 +11,7 @@ Tela Compose → permissão RECORD_AUDIO → ViewModel → SpeechInput
                                                      ↓ conclusão / timeout
                             próxima sessão de voz OU evento para Activity
                                                      ↓
-                                 AndroidActions → ChatGPT / relógio Android
+                                 AndroidActions → app instalado / relógio Android
 ```
 
 Todos os callbacks de reconhecimento e mudanças de sessão são coordenados na thread principal. A Activity coleta ações somente em estado STARTED. Não há execução deliberada de ações em segundo plano. O gate usa tempo monotônico e exige “Jarvis” antes de aceitar comandos, com janela de 20 segundos renovável. Não é uma autenticação: qualquer pessoa próxima pode falar comandos durante a escuta.
@@ -32,23 +32,37 @@ Para escutar além da tela atual, será preciso implementar e validar:
 - Abertura de aplicativos a partir do background deve respeitar as restrições de início de Activity. Preferir uma ação de notificação que o usuário toque. Não usar overlay, acessibilidade, bypass de bateria ou permissões extras para contornar essas regras.
 - Não iniciar gravação por boot, não pedir exclusão de otimização de bateria como padrão, não prometer funcionamento permanente.
 
-Esta fase requer trabalho adicional e testes no Android/One UI alvo. A v0.3 não inclui serviço, notificação, permissões de background nem gravação oculta.
+Esta fase requer trabalho adicional e testes no Android/One UI alvo. A v0.4 não inclui serviço, notificação, permissões de background nem gravação oculta.
 
 ## Alarmes
 
-O app usa `AlarmClock.ACTION_SET_ALARM`, permissão normal `com.android.alarm.permission.SET_ALARM` e `EXTRA_SKIP_UI=false`. A UI oficial confirma o alarme. Não usa `AlarmManager`, não agenda exact alarms, não precisa `SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, receivers ou serviço próprio. Depois de salvo no relógio, quem executa o alarme é o relógio.
+O app usa `AlarmClock.ACTION_SET_ALARM`, permissão normal `com.android.alarm.permission.SET_ALARM` e `EXTRA_SKIP_UI=true` quando existe um horário válido. O relógio pode exigir interação mesmo assim. Não há retorno que comprove o salvamento, por isso o JARVIS informa a solicitação sem alegar que verificou um alarme. Não usa AlarmManager, exact alarms, receiver ou serviço próprio.
 
-Horários com dígitos usam formato de 24 horas ou qualificadores “da manhã/tarde/noite”. Horários por extenso, relativos, com datas ou ambíguos vão para o relógio sem horário. Não oferece alarme recorrente, data específica ou temporizador nesta versão.
+`PortugueseTime` interpreta números e palavras como “sete e meia”, “quinze e trinta” e “três da tarde”. Ausência de horário ou ambiguidade gera pergunta por voz. Recorrência, data específica e temporizadores não são implementados.
+
+## Aplicativos instalados e conversa
+
+`InstalledApps` consulta somente MAIN + LAUNCHER no perfil atual, com a declaração de queries correspondente. `AppResolver` resolve o nome de exibição normalizado ou aliases conhecidos. Com mais de uma opção, a ViewModel pergunta antes de criar o intent explícito para o componente exportado selecionado. Não existe QUERY_ALL_PACKAGES, busca remota ou tentativa de manipular telas privadas de outro app. ChatGPT mantém pacote oficial exclusivo.
+
+A ViewModel mantém apenas um pedido incompleto: horário de alarme, dados do compromisso, escolha de aplicativo ou de agenda. Novo comando explícito substitui o anterior. Cancelar, pausar, sair da Activity ou expirar a janela invalidam pedidos incompletos. Trabalho de consulta/gravação usa Dispatchers.IO e é cancelado ao parar. Uma escrita que já chegou ao provedor pode concluir; não há repetição automática após resultado incerto.
+
+## Agenda
+
+`EventParser` é Kotlin puro, usa Clock injetável e o fuso do celular. Campos ausentes geram perguntas. Um evento completo tem título, início, fim e fuso; a duração padrão de uma hora é informada na documentação/configurações e na confirmação falada. Só aceita uma data e um horário, rejeita recorrência/offsets relativos, datas inválidas, horários passados e ambiguidades de horário de verão.
+
+A primeira gravação solicita READ_CALENDAR e WRITE_CALENDAR pela Activity, com o microfone parado durante o diálogo do Android. A operação só continua com a Activity visível, permissão concedida e pedido pendente recente. Saída/rotação durante o pedido cancela o contexto e pode exigir repetir o comando. Não retoma a escuta em background.
+
+`CalendarStore` lista agendas visíveis, sincronizáveis e com acesso CONTRIBUTOR ou superior; uma opção única é usada diretamente. Com várias, o usuário escolhe por voz e o ID fica em SharedPreferences. O app revalida a agenda antes de escrever. Os únicos dados lidos são metadados das agendas e o evento recém-criado, sem leitura do histórico do calendário. Depois de inserir, compara título e início/fim numa consulta ao URI retornado, e só então confirma “Agendado”. Não cria convidados ou lembretes e não controla o resultado da sincronização da conta.
 
 ## Dados
 
-Sem analytics, banco de dados, gravação de áudio, HTTP próprio ou credenciais. O pacote ChatGPT é aberto por intent: não há envio automático de prompts nem API OpenAI. Preferência offline não substitui a política do provedor de reconhecimento/TTS instalado pelo usuário.
+Sem analytics, gravação de áudio, HTTP próprio ou credenciais. O único ajuste persistido pelo JARVIS é o ID da agenda preferida; compromissos ficam no provedor de calendário do Android. O pacote ChatGPT é aberto por intent: não há envio automático de prompts nem API OpenAI. Preferência offline não substitui a política do provedor de reconhecimento/TTS instalado pelo usuário.
 
 ## Evolução para sincronização com notebook
 
 A UI consome estado da ViewModel e os comandos são representados por tipos de domínio; não dependem do transporte. Para sincronização futura, adicione uma interface de repositório de sincronização que receba apenas eventos explicitamente permitidos, com implementações separadas por plataforma. Um transporte gratuito em rede local poderá usar pareamento autorizado, autenticação por dispositivo, conexão cifrada, expiração/revogação de sessão e resolução explícita de conflitos. A Activity continua sendo dona das ações que precisam de interação Android.
 
-A v0.3 não implementa sincronização, servidor, acesso ao notebook ou transmissão de áudio. Nenhum endpoint ou credencial foi incluído. A separação atual permite adicionar esse recurso sem acoplar o parser a uma API paga.
+A v0.4 não implementa sincronização, servidor, acesso ao notebook ou transmissão de áudio. Nenhum endpoint ou credencial foi incluído. A separação atual permite adicionar esse recurso sem acoplar o parser a uma API paga.
 
 ## HUD e nível de voz na 0.3
 

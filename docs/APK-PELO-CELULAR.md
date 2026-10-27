@@ -1,37 +1,34 @@
 # Baixar e instalar no Galaxy S25 FE
 
-O projeto já foi enviado ao repositório e o APK debug 0.3.0 foi compilado com sucesso. Você não precisa instalar ferramentas de programação no celular.
+O projeto está no repositório. Você não precisa instalar ferramentas de programação no celular. Use um APK de uma execução concluída com sucesso nos dois jobs; a [versão 0.4.0 está aprovada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40598031094). [Baixar artefato APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40598031094/artifacts/12776313560). Evidência em [VALIDATION.md](VALIDATION.md).
 
-## Instalar o APK gerado
+## Instalar
 
-**Se você instalou a versão anterior, desinstale-a primeiro.** A nova compilação de teste usa outro certificado e não atualiza diretamente a versão anterior. Os modelos de voz do Samsung/Google não pertencem ao app JARVIS e não precisam ser removidos.
+**Desinstale a versão anterior do JARVIS antes de instalar outro APK debug se o certificado mudou.** Isso apaga os dados do aplicativo, incluindo a agenda preferida; não apaga compromissos do calendário nem os modelos de voz do Samsung/Google.
 
-1. Abra [o artefato JARVIS-Mobile-debug](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40586959439/artifacts/12771677174) no navegador. Entre na sua conta GitHub se solicitado.
-2. Baixe o ZIP e use **Meus Arquivos** da Samsung para extraí-lo. O arquivo de instalação é `app-debug.apk`.
-3. Toque no APK e, se o Android solicitar, permita a instalação dessa origem. O **Bloqueador Automático** da Samsung pode impedir a instalação externa. Se você optar por desativá-lo para instalar este APK de teste, reative-o depois.
-4. Abra **JARVIS Mobile**, toque no **microfone central / Ativar JARVIS** e conceda permissão de microfone durante o uso.
-5. Diga **“Jarvis”**, aguarde **“Às suas ordens, senhor”** e fale **“abrir ChatGPT”**. O aplicativo oficial do ChatGPT precisa estar instalado.
-6. Volte ao JARVIS, ative a escuta e diga **“Jarvis, alarme para 7:30”**. Confirme e salve na tela do relógio.
+1. Abra [Actions do repositório](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) no navegador e entre na sua conta GitHub.
+2. Abra a execução aprovada da versão 0.4, baixe **JARVIS-Mobile-debug** em **Artifacts** e extraia o ZIP em **Meus Arquivos** da Samsung.
+3. Toque em `app-debug.apk`. Se você baixou o APK direto da conversa, não precisa extrair um ZIP. Autorize a instalação dessa origem quando o Android solicitar. Se o Bloqueador Automático da Samsung impedir a instalação, a escolha de desativá-lo temporariamente é sua; reative a proteção depois.
+4. Abra **JARVIS Mobile**, toque no núcleo **Ativar JARVIS** e conceda microfone durante o uso. A tela não tem atalhos individuais para ChatGPT/alarme.
+5. Diga **“Jarvis, abrir WhatsApp”** (ou outro aplicativo instalado, pelo nome). O app de destino abre e a escuta do JARVIS é desligada.
+6. Volte, ative o núcleo e diga **“Jarvis, agende dentista amanhã às quinze horas”**. No primeiro pedido, permita **Calendário**. Se houver várias agendas, responda o número da desejada. Sem duração explícita, o compromisso dura uma hora.
+7. Confira o compromisso no calendário. Para testar alarme, volte ao JARVIS e diga **“Jarvis, alarme para sete e trinta”**. Confira o resultado no Samsung Clock, que pode exigir confirmação própria.
 
-Se você baixou o APK direto na conversa, pode começar no passo 3, sem extrair ZIP. Não use os ZIPs da release antiga `Javis`: aquela tag aponta para o commit inicial e não contém este APK.
+Não use os ZIPs da release antiga **Javis**: aquela tag aponta para o commit inicial e não contém o APK atual.
 
 ## Gerar outro APK pelo navegador do celular
 
-1. Abra [Actions do repositório](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions).
+1. Abra [Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions).
 2. Selecione **Android - APK de teste → Run workflow → main → Run workflow**. Use **Site para computador** no navegador se necessário para ver o botão.
-3. Aguarde os jobs **debug-apk** e **Testes instrumentados Android 35**. Confirme os resultados reais; não considere uma execução com erro como validada.
-4. Abra a execução concluída e baixe **JARVIS-Mobile-debug** em **Artifacts**.
+3. Aguarde **debug-apk** e **Testes instrumentados Android 35**; ambos precisam concluir com sucesso.
+4. Baixe **JARVIS-Mobile-debug**, extraia e instale o APK como acima.
 
-Os artefatos ficam disponíveis por 7 dias. APK debug de outra execução pode ter chave de assinatura diferente; um conflito de assinatura exige desinstalar a versão anterior antes de instalar a nova. Isso apaga os dados locais do app.
+Artefatos ficam disponíveis por sete dias. Compilações em runners diferentes podem usar outro certificado debug; em conflito de assinatura, desinstale a versão anterior. O workflow não publica na Play Store nem cria uma release.
 
-## Voz e limitações
+## Voz e limites
 
-O app prefere reconhecimento no dispositivo e solicita pt-BR. Baixe o modelo de reconhecimento e a voz de texto para fala em português brasileiro nas configurações do Samsung. Um provedor convencional pode exigir internet; a preferência offline não é uma garantia.
+Configure reconhecimento e texto para fala pt-BR no Samsung, com modelos locais gratuitos quando disponíveis. Um provedor convencional pode exigir internet; a preferência offline não é garantia.
 
-A escuta para ao sair do app. Ao voltar, ative novamente. Os botões ChatGPT e alarme funcionam sem microfone. Ainda não há sincronização com notebook nem escuta em segundo plano.
+Ao sair do JARVIS, o microfone é desligado; volte e ative o núcleo para outro pedido. O HUD animado não indica captura de áudio: confira o rodapé e o indicador Android de microfone. Ajustes, exemplos e permissões ficam no ícone superior direito.
 
-O repositório é público e usa runners padrão do GitHub. Nenhuma API paga, chave OpenAI, publicação na Play Store ou assinatura adicional foi usada.
-
-Na versão 0.3, toque no ícone de ajustes no canto superior direito para abrir **Voz e permissões**, consultar os exemplos de comandos ou abrir as permissões do Android.
-
-A versão 0.3 tem HUD animado. O movimento ambiente não indica microfone ativo: confira a indicação de microfone no rodapé e o indicador de privacidade do Android. Os eventos de nível de voz dependem do serviço de reconhecimento instalado.
+Abrir um app não permite controlar todas as funções dentro dele. O app precisa aparecer no launcher do perfil atual; Pasta Segura e outros perfis podem não estar disponíveis. A sincronização do calendário depende da conta configurada no Android. Não há controle do notebook, escuta oculta, modelo de conversa livre, serviço pago ou chave de API. Mais formatos e limitações em [COMANDOS-0.4.md](COMANDOS-0.4.md).
