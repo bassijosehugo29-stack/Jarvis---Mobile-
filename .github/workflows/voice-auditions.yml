@@ -1,0 +1,32 @@
+name: JARVIS - Amostras de voz (sem APK)
+on:
+  push:
+    branches: [voice-auditions-20261028]
+    paths: ['voice-lab/**', '.github/workflows/voice-auditions.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render-voices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Preparar sintetizador livre
+        run: |
+          python -m pip install -r voice-lab/requirements.txt
+          command -v ffmpeg || { sudo apt-get update -qq && sudo apt-get install -y ffmpeg; }
+      - name: Baixar modelos e conferir licenças/procedência
+        run: python voice-lab/preview.py download
+      - name: Sintetizar sem rede (namespace isolado)
+        run: sudo unshare --net -- "$(command -v python)" voice-lab/preview.py render
+      - name: Guardar amostras para aprovação
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-vozes-A-B-C
+          path: voice-lab/output/
+          if-no-files-found: error
+          retention-days: 7
