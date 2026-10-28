@@ -118,8 +118,8 @@ class ModelStore(private val context: Context) {
         }
     }
 
-    suspend fun importModel(uri: Uri) {
-        val input = withContext(Dispatchers.IO) { context.contentResolver.openInputStream(uri) }
+    suspend fun importModel(uri: Uri) = withContext(Dispatchers.IO) {
+        val input = context.contentResolver.openInputStream(uri)
             ?: throw IllegalStateException("Não foi possível abrir o arquivo escolhido.")
         input.use { importStream(it) }
     }

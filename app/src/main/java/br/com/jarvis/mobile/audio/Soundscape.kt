@@ -95,8 +95,10 @@ class Soundscape(private val focus: AssistantAudioFocus, private val onError: (S
                 .setAudioFormat(AudioFormat.Builder().setSampleRate(OriginalScore.SAMPLE_RATE)
                     .setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
                 .setTransferMode(AudioTrack.MODE_STATIC).setBufferSizeInBytes(pcm.size * 2).build()
-            check(track.state == AudioTrack.STATE_INITIALIZED)
+            // MODE_STATIC starts as NO_STATIC_DATA. The first write completes initialization.
+            check(track.state != AudioTrack.STATE_UNINITIALIZED)
             check(track.write(pcm, 0, pcm.size, AudioTrack.WRITE_BLOCKING) == pcm.size)
+            check(track.state == AudioTrack.STATE_INITIALIZED)
             if (loop) check(track.setLoopPoints(0, pcm.size, -1) == AudioTrack.SUCCESS)
             track.setVolume(gain.coerceIn(0f, 1f)); track.play()
             return track
