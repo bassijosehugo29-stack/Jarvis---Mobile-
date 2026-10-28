@@ -5,7 +5,7 @@ JARVIS 3.1 — VOZ A APROVADA
 3. Instale JARVIS-Mobile-3.1.0-debug.apk (o assistente).
 4. Abra JARVIS, escolha Assistente e use Testar voz nos ajustes.
 
-O motor Faber pt-BR já contém o modelo. Não precisa baixar voz, criar conta ou mudar a voz global do Android. Nenhuma permissão de internet/microfone é solicitada pelo motor. O microfone do assistente continua sendo autorizado apenas durante o uso.
+O motor requer Android 11 ou superior (o Galaxy S25 FE é compatível). O motor Faber pt-BR já contém o modelo. Não precisa baixar voz, criar conta ou mudar a voz global do Android. Nenhuma permissão de internet/microfone é solicitada pelo motor. O microfone do assistente continua sendo autorizado apenas durante o uso.
 
 Os dois APKs precisam ser da mesma entrega/certificado. A assinatura é de teste; se a instalação informar conflito, exporte notas antes de desinstalar a versão anterior. A desinstalação apaga dados locais. Não apaga calendários/e-mails originais.
 

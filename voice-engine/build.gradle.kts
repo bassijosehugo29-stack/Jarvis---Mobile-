@@ -7,12 +7,15 @@ android {
     compileSdk = 35
     defaultConfig {
         applicationId = "br.com.jarvis.voicea"
-        minSdk = 26
+        minSdk = 30
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        externalNativeBuild { cmake { arguments += listOf("-DANDROID_STL=c++_static", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON") } }
     }
+    ndkVersion = "27.2.12479018"
+    externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt"); version = "3.22.1" } }
     buildTypes {
         val signingFile = System.getenv("JARVIS_KEYSTORE_PATH")
         if (!signingFile.isNullOrBlank()) {

@@ -6,6 +6,8 @@ O usuário aprovou a opção A. Esta integração está em validação; resultad
 
 A entrega contém dois APKs: JARVIS Voz A (motor) e JARVIS Mobile (assistente). Instale o motor primeiro e depois o aplicativo, ambos da mesma execução. Os certificados devem coincidir: o JARVIS confere assinatura, identidade do modelo e ausência de permissões de rede/captura no motor antes de usá-lo.
 
+O motor requer Android 11 ou superior, incluindo o Galaxy S25 FE; no Android mais antigo, a alternativa de voz do aparelho permanece disponível.
+
 O motor já inclui o Faber pt-BR aprovado, sem download no celular, conta, chave ou assinatura. A internet só é necessária para obter os APKs. O processo de síntese não tem INTERNET nem RECORD_AUDIO. Não se altera o mecanismo padrão do Android para outros aplicativos.
 
 No JARVIS, perfil A é padrão. Use Assistente → ajustes → Testar voz. Silencioso bloqueia a fala. Se o motor estiver ausente/incompatível, a resposta fica em texto com orientação; nenhuma voz de outro fabricante é rotulada como A. “Voz do Android” é uma alternativa explicitamente selecionável e continua exigindo voz local para dados pessoais.
@@ -15,6 +17,8 @@ No JARVIS, perfil A é padrão. Use Assistente → ajustes → Testar voz. Silen
 Modelo pt_BR-faber-medium FP32, revisão 5041a7a49ae5b3a0f30e6837769eb03fdbb231bd, SHA-256 original 858555e3a064209c57088fe6bd70c4c3dc54d03eaa00c45d5ecaf43a33f95aa7. O preparador mantém o grafo/pesos originais e adiciona metadados para o carregador. Essa equivalência é checada antes da compilação. O dataset é declarado CC0 no cartão anexado à audição; não há clonagem de uma pessoa da referência.
 
 Length scale 1,08, noise scale 0,55, noise W 0,70 e pausa de 240 ms por sentença. Pitch natural fixo, sem abaixar artificialmente o tom. Filtro passa-altas de 65 Hz, realce discreto em 170 Hz, compressão suave e normalização aproximada a -20 LUFS com limitação de pico. A velocidade na interface é relativa ao perfil. O tratamento reproduz a intenção da amostra; diferenças de runtime/phonemizer e saída do aparelho podem mudar detalhes e precisam de aceite físico.
+
+Uma proteção nativa filtra mensagens das bibliotecas antes de carregar a inferência e suprime stderr, impedindo que caminhos de erro incluam texto falado nos logs. Somente eventos técnicos estáticos de diagnóstico são permitidos no debug.
 
 Textos são sintetizados no próprio motor, inclusive frases novas. Não são uma coleção de gravações. Texto/PCM existem em RAM durante a solicitação; não há histórico, arquivos de fala pessoal ou logs de conteúdo. O motor só guarda dados estáticos do fonemizador. Cancelamento interrompe entrega de PCM e invalida callbacks. Voz, foco, duck e modos continuam coordenados pelo SpeechOutput do JARVIS; não existe serviço de microfone em segundo plano.
 

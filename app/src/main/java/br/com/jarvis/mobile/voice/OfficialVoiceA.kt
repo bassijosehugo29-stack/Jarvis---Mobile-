@@ -19,7 +19,7 @@ object OfficialVoiceA {
         val meta=info.applicationInfo?.metaData
         val sameCertificate=pm.checkSignatures(context.packageName,PACKAGE)==PackageManager.SIGNATURE_MATCH
         val noCaptureOrNetwork=info.requestedPermissions.orEmpty().none{it in setOf("android.permission.INTERNET","android.permission.RECORD_AUDIO")}
-        if(sameCertificate&&noCaptureOrNetwork&&meta?.getString("jarvis.voice.profile")==PROFILE&&meta.getString("jarvis.voice.model.sha256")==MODEL_SHA256)
+        if(sameCertificate&&noCaptureOrNetwork&&meta?.getString("jarvis.voice.profile")==PROFILE&&meta.getString("jarvis.voice.model.sha256")==MODEL_SHA256&&meta.getString("jarvis.voice.log.policy")=="no-text-v1")
             VoiceAInstallation.READY else VoiceAInstallation.INCOMPATIBLE
     }catch(_:PackageManager.NameNotFoundException){VoiceAInstallation.MISSING}catch(_:RuntimeException){VoiceAInstallation.INCOMPATIBLE}
     fun unavailableMessage(context:Context)=when(installation(context)){

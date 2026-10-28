@@ -17,6 +17,11 @@ class VoiceAService:TextToSpeechService(){
     private val serial=AtomicLong()
     private val lock=Any()
     private var model:OfflineTts?=null
+    private var privacyReady=false
+    override fun onCreate(){
+        super.onCreate()
+        privacyReady=try{NativePrivacy.installImpl()}catch(_:LinkageError){false}
+    }
     override fun onIsLanguageAvailable(language:String,country:String,variant:String):Int=
         if(language in setOf("pt","por"))if(country in setOf("BR","BRA",""))TextToSpeech.LANG_COUNTRY_AVAILABLE else TextToSpeech.LANG_AVAILABLE else TextToSpeech.LANG_NOT_SUPPORTED
     override fun onGetLanguage()=arrayOf("por","BRA","")
@@ -28,6 +33,7 @@ class VoiceAService:TextToSpeechService(){
     override fun onStop(){serial.incrementAndGet();diagnostic("stop")}
     override fun onSynthesizeText(request:SynthesisRequest?,callback:SynthesisCallback?){
         if(request==null||callback==null)return
+        if(!privacyReady){callback.error(TextToSpeech.ERROR_SERVICE);callback.done();return}
         val current=serial.incrementAndGet();diagnostic("request-start")
         fun active()=serial.get()==current
         val text=request.charSequenceText?.toString().orEmpty()
@@ -61,8 +67,8 @@ class VoiceAService:TextToSpeechService(){
                 index+=n
             }
             if(active()){callback.done();diagnostic("pcm-done")}
-        }catch(e:Exception){diagnostic("failure-${e.javaClass.simpleName}");if(active())callback.error(TextToSpeech.ERROR_SYNTHESIS)}
-        catch(_:LinkageError){if(active())callback.error(TextToSpeech.ERROR_SERVICE)}
+        }catch(e:Exception){diagnostic("failure-${e.javaClass.simpleName}");if(active()){callback.error(TextToSpeech.ERROR_SYNTHESIS);callback.done()}}
+        catch(_:LinkageError){if(active()){callback.error(TextToSpeech.ERROR_SERVICE);callback.done()}}
     }
     private fun loadModel(active:()->Boolean):OfflineTts{
         diagnostic("model-init-start");val data=File(noBackupFilesDir,"faber-phonemes-v1")

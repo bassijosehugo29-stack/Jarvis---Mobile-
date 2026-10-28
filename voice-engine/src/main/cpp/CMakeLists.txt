@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(jarvis_voice_privacy LANGUAGES CXX)
+add_library(jarvis_voice_privacy SHARED privacy.cpp)
+target_compile_features(jarvis_voice_privacy PRIVATE cxx_std_17)
+target_link_libraries(jarvis_voice_privacy log)
+target_link_options(jarvis_voice_privacy PRIVATE "-Wl,-z,max-page-size=16384")

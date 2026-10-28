@@ -4,6 +4,7 @@
     <application android:label="JARVIS Voz A" android:icon="@drawable/ic_jarvis" android:allowBackup="false"
         android:fullBackupContent="false" android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="false" android:extractNativeLibs="false">
+        <meta-data android:name="jarvis.voice.log.policy" android:value="no-text-v1" />
         <meta-data android:name="jarvis.voice.profile" android:value="executive-a-v1" />
         <meta-data android:name="jarvis.voice.model.sha256" android:value="858555e3a064209c57088fe6bd70c4c3dc54d03eaa00c45d5ecaf43a33f95aa7" />
         <service android:name=".VoiceAService" android:exported="true" android:label="JARVIS · Executivo clássico">
