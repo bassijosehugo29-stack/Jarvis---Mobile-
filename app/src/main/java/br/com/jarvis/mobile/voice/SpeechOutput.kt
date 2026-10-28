@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
-import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
@@ -13,30 +12,39 @@ import android.os.Looper
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import br.com.jarvis.mobile.audio.AssistantAudioFocus
+import br.com.jarvis.mobile.experience.ExperienceSettings
 import java.util.Locale
 
 data class VoiceStatus(val ready: Boolean, val message: String, val engine: String = "", val locale: String = "", val failure: Boolean = false)
+data class VoiceOption(val name: String, val label: String, val locale: String, val network: Boolean)
+data class VoiceEngine(val packageName: String, val label: String)
 sealed interface SpeechResult {
     data class Completed(val audioBytes: Long) : SpeechResult
     data class Failed(val message: String) : SpeechResult
+    data object Suppressed : SpeechResult
 }
 
 /** Explicit media routing, language/engine failover and visible failures, never silent success. */
 class SpeechOutput(
     private val context: Context,
     private val onStatus: (VoiceStatus) -> Unit,
-    private val enginePackages: List<String>? = null
+    private val enginePackages: List<String>? = null,
+    audioSession: AssistantAudioFocus? = null,
+    private val onVoices: (List<VoiceOption>) -> Unit = {},
+    private val onPlayback: (Boolean) -> Unit = {},
+    private val onRange: (Int, Int, Int) -> Unit = { _, _, _ -> }
 ) {
     private val main = Handler(Looper.getMainLooper())
     private val audio = context.getSystemService(AudioManager::class.java)
     private val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
-    private val focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-        .setAudioAttributes(attributes).setOnAudioFocusChangeListener { change ->
-            if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-                main.post { if (currentId != null) fail("A fala foi interrompida por outro áudio. Tente novamente, senhor.") }
-            }
-        }.build()
+    private val ownsFocus = audioSession == null
+    private val focus = audioSession ?: AssistantAudioFocus(context) {
+        if (completion != null) fail("A fala foi interrompida por outro áudio. Tente novamente, senhor.")
+    }
+    private var settings = ExperienceSettings()
+    private var inspecting = false
     private var engine: TextToSpeech? = null
     private var selectedPackage = ""
     private var selectedLabel = ""
@@ -53,9 +61,32 @@ class SpeechOutput(
     private val initTimeout = Runnable { nextEngine("O mecanismo de voz demorou para iniciar.") }
     private val speechTimeout = Runnable { fail("O mecanismo de voz não confirmou a reprodução. Confira a saída de mídia e teste a voz nos ajustes.") }
 
+    fun configure(value: ExperienceSettings) {
+        val next = value.sanitized()
+        val engineChanged = next.enginePackage != settings.enginePackage
+        val changed = next.enginePackage != settings.enginePackage || next.voiceName != settings.voiceName
+        settings = next
+        if (!settings.voiceAllowed) stop()
+        if (changed) {
+            stop(); engine?.shutdown(); engine = null; ready = false
+            if (engineChanged) onVoices(emptyList())
+        }
+    }
+    fun engines(): List<VoiceEngine> = packages().map { name ->
+        val label = runCatching { context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(name, 0)).toString() }.getOrDefault(name)
+        VoiceEngine(name, label)
+    }
+    fun loadVoices() {
+        if (closed || initializing || completion != null) return
+        if (ready) { publishVoices(); return }
+        inspecting = true; tried.clear(); nextEngine()
+    }
+
     fun speak(message: String, done: (SpeechResult) -> Unit) {
         stop()
         if (closed) { done(SpeechResult.Failed("A saída de voz está fechada.")); return }
+        if (!settings.voiceAllowed) { done(SpeechResult.Suppressed); return }
+        if (ownsFocus) focus.allowAfterUserAction()
         text = message
         completion = done
         tried.clear()
@@ -75,7 +106,7 @@ class SpeechOutput(
             else manager.queryIntentServices(intent, 0)
         val available = found.mapNotNull { it.serviceInfo?.packageName }.distinct()
         val preferred = Settings.Secure.getString(context.contentResolver, Settings.Secure.TTS_DEFAULT_SYNTH)
-        return (listOfNotNull(preferred, "com.google.android.tts", "com.samsung.SMT") + available)
+        return (listOfNotNull(settings.enginePackage.takeIf { it.isNotBlank() }, preferred, "com.google.android.tts", "com.samsung.SMT") + available)
             .distinct().filter { it in available }
     }
 
@@ -86,8 +117,9 @@ class SpeechOutput(
         ready = false
         initializing = false
         currentId = null
-        audio.abandonAudioFocusRequest(focus)
-        if (closed || completion == null) return
+        onPlayback(false)
+        focus.release(AssistantAudioFocus.Owner.VOICE)
+        if (closed || (completion == null && !inspecting)) return
         val candidate = try { packages().firstOrNull { it !in tried } } catch (_: RuntimeException) { null }
         if (candidate == null) {
             fail("$reason Abra os ajustes de voz, instale uma voz em português e use Testar voz."); return
@@ -111,9 +143,12 @@ class SpeechOutput(
                     }
                     val current = engine ?: return@post
                     current.setAudioAttributes(attributes)
-                    current.setSpeechRate(0.96f)
+                    current.setSpeechRate(settings.speechRate)
+                    current.setPitch(settings.pitch)
                     current.setOnUtteranceProgressListener(listener)
                     ready = true
+                    inspecting = false
+                    publishVoices()
                     onStatus(VoiceStatus(true, "Voz pronta • $selectedLabel • $selectedLocale", selectedPackage, selectedLocale))
                     if (completion != null) play()
                 }
@@ -126,6 +161,7 @@ class SpeechOutput(
         return try {
             val voices = current.voices.orEmpty().associateBy { it.name }
             val choices = portugueseVoices(voices.values.map { VoiceCandidate(it.name, it.locale, it.isNetworkConnectionRequired, it.quality) })
+                .sortedBy { if (it.name == settings.voiceName) 0 else 1 }
             for (voice in choices) {
                 if (current.setVoice(voices.getValue(voice.name)) == TextToSpeech.SUCCESS) {
                     selectedLocale = voice.locale.toLanguageTag(); return true
@@ -145,15 +181,17 @@ class SpeechOutput(
         if (audio.getStreamVolume(AudioManager.STREAM_MUSIC) == 0) {
             fail("O volume de mídia está zerado. Aumente o volume com o JARVIS aberto."); return
         }
-        if (audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+        if (!focus.acquire(AssistantAudioFocus.Owner.VOICE)) {
             fail("O Android não liberou o áudio agora. Termine chamadas ou outro áudio e teste novamente."); return
         }
         onStatus(VoiceStatus(true, "Voz pronta • $selectedLabel • $selectedLocale", selectedPackage, selectedLocale))
         currentId = "jarvis-${++generation}"
         audioBytes = 0L
+        engine?.setSpeechRate(settings.speechRate)
+        engine?.setPitch(settings.pitch)
         val params = Bundle().apply {
             putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC)
-            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1f)
+            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, settings.voiceVolume)
         }
         main.removeCallbacks(speechTimeout)
         main.postDelayed(speechTimeout, (text.length * 120L + 8_000L).coerceIn(20_000L, 90_000L))
@@ -163,7 +201,12 @@ class SpeechOutput(
     }
 
     private val listener = object : UtteranceProgressListener() {
-        override fun onStart(utteranceId: String?) = Unit
+        override fun onStart(utteranceId: String?) {
+            main.post { if (utteranceId != null && utteranceId == currentId) onPlayback(true) }
+        }
+        override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+            main.post { if (utteranceId != null && utteranceId == currentId) onRange(start, end, text.length) }
+        }
         override fun onAudioAvailable(utteranceId: String?, audio: ByteArray?) {
             val count = audio?.size?.toLong() ?: 0L
             main.post { if (utteranceId != null && utteranceId == currentId) audioBytes += count }
@@ -179,6 +222,7 @@ class SpeechOutput(
     }
 
     private fun fail(message: String) {
+        inspecting = false
         onStatus(VoiceStatus(false, message, selectedPackage, selectedLocale, failure = true))
         finish(SpeechResult.Failed(message))
     }
@@ -186,7 +230,8 @@ class SpeechOutput(
         main.removeCallbacks(speechTimeout)
         main.removeCallbacks(initTimeout)
         engine?.stop()
-        audio.abandonAudioFocusRequest(focus)
+        onPlayback(false)
+        focus.release(AssistantAudioFocus.Owner.VOICE)
         currentId = null
         val callback = completion
         completion = null
@@ -199,8 +244,17 @@ class SpeechOutput(
         completion = null
         generation++
         engine?.stop()
-        audio.abandonAudioFocusRequest(focus)
+        inspecting = false
+        onPlayback(false)
+        focus.release(AssistantAudioFocus.Owner.VOICE)
         if (initializing) { engine?.shutdown(); engine = null; initializing = false; ready = false }
     }
-    fun close() { closed = true; stop(); engine?.shutdown(); engine = null }
+    private fun publishVoices() {
+        val options = runCatching { engine?.voices.orEmpty().filter { it.locale.language == "pt" }
+            .sortedWith(compareBy({ if (it.locale.country == "BR") 0 else 1 }, { it.name }))
+            .map { VoiceOption(it.name, "${it.name} · ${it.locale.toLanguageTag()}" + if (it.isNetworkConnectionRequired) " · rede" else " · local",
+                it.locale.toLanguageTag(), it.isNetworkConnectionRequired) } }.getOrDefault(emptyList())
+        onVoices(options)
+    }
+    fun close() { closed = true; stop(); engine?.shutdown(); engine = null; if (ownsFocus) focus.close() }
 }

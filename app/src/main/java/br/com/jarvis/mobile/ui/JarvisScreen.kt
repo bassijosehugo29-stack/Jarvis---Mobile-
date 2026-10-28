@@ -35,6 +35,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.jarvis.mobile.JarvisState
+import br.com.jarvis.mobile.experience.ExperienceSettings
+import br.com.jarvis.mobile.experience.OperationMode
+import br.com.jarvis.mobile.experience.CorePhase
 import kotlin.math.abs
 import kotlin.math.sin
 
@@ -49,7 +52,9 @@ fun JarvisScreen(
     onDownloadModel: () -> Unit = {},
     onImportModel: () -> Unit = {},
     onSendMessage: (String) -> Unit = {},
-    onCancelModel: () -> Unit = {}
+    onCancelModel: () -> Unit = {},
+    onExperienceChange: (ExperienceSettings) -> Unit = {},
+    onLoadVoices: () -> Unit = {}
 ) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val device = rememberHudDeviceState()
@@ -66,6 +71,7 @@ fun JarvisScreen(
                 .safeDrawingPadding().imePadding().align(Alignment.TopCenter)) {
                 Header(onSettings = { showSettings = true })
                 DeviceStrip(device)
+                ModeSelector(state.experience, onExperienceChange, Modifier.padding(horizontal = 22.dp).padding(bottom = 10.dp))
                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                     val diameter = (maxHeight * 0.60f).coerceIn(184.dp, 320.dp)
                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
@@ -76,15 +82,10 @@ fun JarvisScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.size(4.dp).background(if (state.listening) Cyan else Gold, CircleShape))
-                                HudLabel(when {
-                                    state.thinking -> "PENSANDO"
-                                    state.speaking -> "RESPONDENDO"
-                                    state.listening -> "OUVINDO"
-                                    state.enabled -> "PREPARANDO A VOZ"
-                                    else -> "EM ESPERA"
-                                }, Modifier.padding(start = 7.dp), if (state.listening) Cyan else Gold)
+                                HudLabel(state.corePhase.label, Modifier.padding(start = 7.dp),
+                                    if (state.corePhase == CorePhase.ERROR) Color(0xFFFF997C) else if (state.listening) Cyan else Gold)
                                 Spacer(Modifier.weight(1f))
-                                HudLabel("PT-BR / VOZ", color = Muted)
+                                HudLabel(if (state.experience.mode == OperationMode.SILENT) "PT-BR / TEXTO" else "PT-BR / VOZ", color = Muted)
                             }
                             Spacer(Modifier.height(6.dp))
                             VoiceControl(state, device.visible, diameter, onToggle)
@@ -150,8 +151,10 @@ fun JarvisScreen(
                 Text("Você controla quando o JARVIS pode ouvir.", color = Muted,
                     fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 8.dp))
                 HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
+                ExperienceControls(state, onExperienceChange, onLoadVoices)
+                HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
                 Text("Como falar", fontSize = 15.sp, color = Gold, fontWeight = FontWeight.Medium)
-                Text("Ative o núcleo para iniciar a conversa. O JARVIS responde e volta a ouvir sem você precisar repetir o nome em cada frase. Para parar, toque no núcleo ou diga parar.",
+                Text("Nos modos Assistente e Cinema, ative o núcleo para conversar. O JARVIS responde e volta a ouvir sem você precisar repetir o nome em cada frase. No modo Silencioso, cada toque autoriza uma escuta. Para parar, toque no núcleo ou diga parar.",
                     color = Muted, fontSize = 14.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
                 Text("“Jarvis, abrir WhatsApp”\n“Jarvis, agende dentista amanhã às 15 horas”\n“Jarvis, alarme para sete e trinta”", color = Cyan,
                     fontSize = 14.sp, lineHeight = 25.sp, modifier = Modifier.padding(top = 12.dp))
@@ -200,7 +203,7 @@ fun JarvisScreen(
                     Spacer(Modifier.width(10.dp))
                     Text("Abrir permissões do aplicativo")
                 }
-                Text("JARVIS Mobile · 0.5.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
+                Text("JARVIS Mobile · 0.6.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 18.dp))
             }
         }
@@ -264,9 +267,10 @@ private fun VoiceControl(state: JarvisState, visible: Boolean, diameter: Dp, onT
     }
     Column(Modifier.width(diameter).semantics(mergeDescendants = true) {
         contentDescription = label
-        stateDescription = if (state.enabled) "Escuta ativada" else "Escuta desativada"
+        stateDescription = state.corePhase.label + if (state.enabled) " · Escuta ativada" else " · Escuta desativada"
     }.clickable(role = Role.Button, onClick = onToggle), horizontalAlignment = Alignment.CenterHorizontally) {
-        HolographicCore(visible, state.listening, state.speaking, state.audioLevel, Modifier.size(diameter))
+        HolographicCore(visible, state.corePhase, state.experience.mode, state.audioLevel,
+            state.speechProgress, state.speechPulse, Modifier.size(diameter).testTag("jarvis-core"))
         HudPanel(Modifier.widthIn(min = 170.dp)) {
             Row(Modifier.padding(horizontal = 18.dp, vertical = 11.dp),
                 horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {

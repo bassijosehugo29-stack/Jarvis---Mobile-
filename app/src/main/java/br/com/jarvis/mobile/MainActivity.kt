@@ -73,7 +73,9 @@ class MainActivity : ComponentActivity() {
                     onDownloadModel = model::downloadConversation,
                     onImportModel = { importConversation.launch(arrayOf("*/*")) },
                     onSendMessage = model::sendMessage,
-                    onCancelModel = model::cancelModelPreparation
+                    onCancelModel = model::cancelModelPreparation,
+                    onExperienceChange = { value -> model.updateExperience { value } },
+                    onLoadVoices = model::loadVoices
                 )
             }
         }

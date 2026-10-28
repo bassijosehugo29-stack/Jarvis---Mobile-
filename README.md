@@ -1,73 +1,75 @@
-# JARVIS Mobile 0.5 — voz e conversa em validação
+# JARVIS Mobile 0.6 — Missão 1
 
-Revisão em desenvolvimento para corrigir a saída de voz e adicionar conversa local. Ainda não considere o APK 0.5 aprovado; a evidência abaixo é da versão 0.4. Veja [CONVERSA-0.5.md](docs/CONVERSA-0.5.md).
+Revisão cinematográfica em validação. **O APK 0.6 só deve ser instalado depois de ambos os jobs de Actions aprovados.** A validação 0.5 abaixo é da base preservada, não desta revisão.
+
+A 0.6 acrescenta modos Silencioso, Assistente e Cinematográfico com DataStore; núcleo com seis estados; ajustes de voz/velocidade/tom; trilha original sintetizada localmente, efeitos independentes e redução da música durante TTS. Não inicia módulos novos de agenda, e-mail, notícias ou memória avançada. [Escopo, controles e limitações](docs/MISSAO-1.md).
 
 # Jarvis---Mobile-
 
-JARVIS Mobile **0.4.0** — assistente Android nativo em Kotlin e Jetpack Compose, com HUD holográfico preto, azul e dourado. Destinado inicialmente ao Samsung Galaxy S25 FE. Android 8+ (minSdk 26), compileSdk/targetSdk 35 e Java 17.
+JARVIS Mobile **0.5.0** — assistente Android em Kotlin/Jetpack Compose, com HUD preto, azul e dourado, conversa local e comandos de aplicativos, agenda e alarme. Destinado inicialmente ao Galaxy S25 FE. Android 8+ em aparelhos ARM64; x86_64 incluído para testes. compileSdk/targetSdk 35.
 
-## APK e resultado confirmado
+## APK e validação
 
-- [Baixar APK de teste 0.4.0](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40598031094/artifacts/12776313560): extraia o ZIP e instale app-debug.apk.
-- [Compilação e 50 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40598031094): 39 testes de unidade e 11 instrumentados no Android 35, sem falhas. Android Lint: 0 erros e 10 avisos não impeditivos.
-- [Capturas e vídeo silencioso no emulador](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40598031094/artifacts/12777163969).
-- Commit de código validado: `8a3b9e0ed1752d4460d880d9be6758caafb57770`. A atualização posterior de documentação não altera esse código.
-- APK universal de 10434378 bytes, com ARM64-v8a, ARMv7, x86 e x86_64. SHA-256: `1d0aab0754edc2b6c9414d2aea998f120f4653c3d908fa60de43256a2c51b5c0`.
+- [Baixar o APK 0.5](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666/artifacts/12780696806): extraia o ZIP e instale app-debug.apk.
+- [Compilação e 62 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666): 47 de unidade e 15 instrumentados Android 35, sem falhas; Lint com 0 erros e 19 avisos não impeditivos.
+- [Capturas, vídeo e transcrição real da conversa de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666/artifacts/12779839416).
+- Código validado: `e0d7e8c411e398d6e18ea9cdc5a41681bde0d92c`. Documentação posterior não altera esse código.
+- APK: 17496508 bytes. SHA-256: `8ac0a1688bd700813161f365149ff11a711d7500e94d7faf8a24c5a1273a2a4f`.
 
-**Desinstale a versão anterior do JARVIS antes de instalar este debug:** o certificado é diferente. Isso remove a preferência local de agenda; compromissos já salvos no calendário e modelos de voz do Samsung/Google permanecem. [Guia pelo celular](docs/APK-PELO-CELULAR.md).
+A assinatura debug mudou: desinstale o JARVIS anterior antes de instalar. Faça isso antes de preparar o modelo para evitar baixá-lo novamente. [Instalação pelo celular](docs/APK-PELO-CELULAR.md).
 
-## Pedidos por voz
+## Primeiro uso: som e conversa
 
-A tela principal mantém o núcleo para ativar/pausar e as configurações. Os botões individuais de ChatGPT e alarme foram removidos.
+1. Nos ajustes, toque em **Testar voz**, aumente o volume de mídia e confira a saída em alto-falante/fones/Bluetooth. Use **Ajustar voz do Android** para escolher/instalar uma voz em português quando necessário.
+2. Escolha **Baixar conversa offline • 491 MB**, usando Wi-Fi não medido. Aguarde **Conversa offline pronta**. Pode importar o modelo oficial já baixado como alternativa. Tamanho e SHA-256 são verificados; arquivos diferentes não são carregados.
+3. Ative o núcleo e permita microfone durante o uso. A saudação **“Às suas ordens, senhor”** é falada imediatamente; depois, converse sem repetir Jarvis a cada frase.
 
-Ative o núcleo e diga **Jarvis** para ouvir **“Às suas ordens, senhor”**. Depois fale em até 20 segundos, ou diga a ativação e o comando numa frase:
+Há campo de mensagem para conversa por texto, sem exigir microfone. Perguntas livres usam inferência real no celular; o contexto curto mantém até três turnos anteriores em memória. Ao sair, bloquear ou abrir outro app, a escuta e a fala param. Para continuar, volte e ative o núcleo. O núcleo também interrompe uma resposta em andamento.
 
-- “Jarvis, abrir WhatsApp” / “entrar no Instagram”: abre o aplicativo instalado pelo nome. Nomes ambíguos geram uma pergunta por voz.
-- “Jarvis, abrir ChatGPT”: abre apenas o app oficial com.openai.chatgpt, se instalado.
-- “Jarvis, agende dentista para amanhã às quinze horas”: solicita permissão de calendário no primeiro uso e salva um compromisso. A duração padrão é uma hora; também aceita “por meia hora”, “por uma hora e meia” e minutos explícitos.
-- “Jarvis, agende dentista”: pergunta a data e depois o horário. Com várias agendas, pergunta qual usar e lembra a escolha localmente.
-- “Jarvis, alarme para sete e trinta”: solicita 07:30 ao relógio oficial com dispensa de UI quando suportada. O relógio pode exigir confirmação; JARVIS não recebe resultado de salvamento do alarme.
-- “Jarvis, ajuda” explica os pedidos; “Jarvis, parar” ou “cancelar” desliga a escuta e descarta pedidos incompletos.
+A 0.4 só aceitava comandos fixos e podia ficar sem som quando a voz pt-BR faltava ou o texto não passava pela ativação. A 0.5 aceita conversa durante a sessão ativada, tenta vozes/mecanismos em português, usa volume de mídia e exibe falhas sem escondê-las. O teste do emulador verifica PCM e callbacks com um serviço auxiliar; ouvir a voz real do Samsung exige [teste físico](docs/VOZ-0.5.md).
 
-O compromisso só é confirmado como “Agendado” após inserção e consulta de confirmação pelo provedor de calendário Android. Não cria convidados ou lembretes. A sincronização com a conta é feita pelo sistema. Sem data/horário suficientes, ou com entradas inválidas/conflitantes, não grava por suposição. [Formatos e limites dos comandos](docs/COMANDOS-0.4.md).
+## Modelo gratuito e limites
 
-## Limites e privacidade
+Usa [Qwen2.5 0.5B Instruct Q4_K_M](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF), Apache-2.0, com [llama.cpp](https://github.com/ggml-org/llama.cpp/tree/74d4f5b041ad837153b0e90fc864b8290e01d8d5), MIT, por JNI/CPU. Não usa uma API de inferência, chave, login ou assinatura. O modelo tem **491400032 bytes**, baixados separadamente do APK uma vez. Desinstalar o app remove o arquivo local. O DownloadManager pode continuar o download solicitado com o app fechado, usando notificação do sistema; isso não mantém microfone ligado.
 
-O app abre atividades públicas do launcher no perfil atual, sem QUERY_ALL_PACKAGES. Pasta Segura, perfis de trabalho e apps sem ícone público podem não estar disponíveis. Abrir um aplicativo não permite controlar todas as suas funções internas; integrações dependem do que cada app oferece oficialmente. Não há acessibilidade, envio automático de mensagens ou compras.
+É um modelo leve, com contexto curto e resposta de até 192 tokens: pode errar, ser simples ou levar alguns segundos. Não tem os mesmos recursos dos modelos do ChatGPT e não busca informações atualizadas na internet. O texto gerado jamais é enviado ao dispatcher de ações do celular. [Arquitetura e formatos](docs/CONVERSA-0.5.md).
 
-O microfone só começa após ativação e permissão. É pausado durante TTS e desligado ao sair, bloquear a tela ou abrir outro app. Para um novo pedido, volte e ative o núcleo. Não há escuta oculta, serviço persistente, boot automático, gravação de áudio, histórico permanente, telemetria ou integração com notebook. Pedidos incompletos não continuam em background. A única preferência persistida é o ID da agenda escolhida; eventos ficam no provedor Android.
+## Comandos preservados
 
-READ_CALENDAR/WRITE_CALENDAR só são solicitadas para gravar um compromisso pedido por voz. O app consulta metadados das agendas e o evento recém-inserido; não lê compromissos anteriores. A permissão pode ser revogada nas configurações Android. Uma escrita já entregue ao provedor pode concluir se for interrompida; diante de resultado incerto, confira a agenda antes de repetir.
+- “Jarvis, abrir WhatsApp” / “entrar no Instagram”: abre o app instalado pelo nome de exibição. Pergunta em caso de ambiguidade.
+- “Jarvis, abrir ChatGPT”: apenas o pacote oficial com.openai.chatgpt.
+- “Jarvis, agende dentista amanhã às quinze horas”: salva um compromisso após permissão de calendário no primeiro uso. Pergunta os dados ausentes e qual agenda usar se houver várias. Duração padrão: uma hora; aceita meia hora e durações explícitas.
+- “Jarvis, alarme para sete e trinta”: solicita 07:30 ao relógio oficial, que pode exigir confirmação e não retorna comprovação do salvamento.
+- “Parar” desliga a escuta. Durante uma sessão visível ativada, o nome Jarvis é opcional nos pedidos.
 
-O HUD usa relógio/bateria reais e animações Canvas enquanto visível; quando o serviço emite RMS, a entrada reage à voz. A animação de resposta TTS é decorativa. [Referência do visual](docs/VISUAL-0.3.md).
+A agenda só confirma após inserção e leitura do evento pelo Calendar Provider; não cria convidados ou lembretes. Perguntar sobre um alarme não cria um alarme. Apps precisam ter atividade pública no launcher do perfil atual. Controle de funções internas depende do que cada aplicativo oferece oficialmente. [Formatos dos comandos](docs/COMANDOS-0.4.md), atualizados quanto à sessão na 0.5.
 
-## Voz em português brasileiro
+## Privacidade
 
-Usa SpeechRecognizer e TextToSpeech do Android em pt-BR, sem API de IA. No Android 12+ prefere reconhecimento no dispositivo, se disponível. Baixe os modelos gratuitos de voz/reconhecimento pt-BR nas configurações Samsung/Google. O modelo instalado e o provedor determinam a disponibilidade real.
+Sem histórico permanente, gravação de áudio, telemetria, servidor próprio, acessibilidade, inicialização por boot ou escuta em segundo plano. O único tráfego próprio é o download solicitado do modelo pelo Android; as mensagens do modelo não saem do aparelho. Preferências locais guardam o calendário escolhido e o estado do modelo. Eventos ficam no Calendar Provider e a sincronização da conta é responsabilidade do sistema.
 
-EXTRA_PREFER_OFFLINE é uma preferência: o provedor convencional pode usar internet e processar áudio fora do aparelho. O JARVIS não declara INTERNET nem usa uma API paga, mas isso não garante funcionamento offline do serviço Android. As sessões têm pequenos intervalos e podem emitir bipes do provedor. Voz, RMS, permissões e Samsung Clock ainda exigem [aceite físico no Galaxy S25 FE](docs/TESTES.md); o emulador não comprova o comportamento do microfone no aparelho.
+SpeechRecognizer e TextToSpeech usam pt-BR quando disponível, com pt-PT como alternativa de fala. A preferência offline do reconhecedor depende do serviço/modelos instalados; esses provedores Android podem processar áudio por rede. Portanto o modelo de conversa é local, mas não há garantia universal de reconhecimento/TTS offline. Não houve teste físico no Galaxy nesta sessão.
 
-## Gerar APK pelo celular
+## Gerar pelo celular ou compilar
 
-Abra [Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Use “Site para computador” se necessário. Aguarde os dois jobs verdes, baixe **JARVIS-Mobile-debug**, extraia e instale app-debug.apk. Os artefatos duram sete dias. O fluxo gera APK de teste, relatórios, capturas e vídeo; não publica na Play Store nem cria releases. [Passo a passo](docs/APK-PELO-CELULAR.md).
+No navegador: [Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Aguarde ambos os jobs aprovados, baixe **JARVIS-Mobile-debug**, extraia e instale. Artefatos duram sete dias. Use “Site para computador” se o menu não aparecer. [Guia](docs/APK-PELO-CELULAR.md).
 
-## Compilar no computador
-
-Requisitos: JDK 17, Android Studio compatível com AGP 8.9.2, SDK Platform 35 e Build Tools 35.0.0. Gradle 8.11.1 e Kotlin/Compose 2.1.20; dependências AndroidX gratuitas. Configure ANDROID_HOME ou local.properties com sdk.dir. Não versione local.properties.
+No computador: JDK 17, SDK Platform 35, Build Tools 35.0.0, NDK **27.2.12479018**, CMake **3.22.1**, Gradle 8.11.1, AGP 8.9.2, Kotlin/Compose 2.1.20. Todas as ferramentas são gratuitas. Configure ANDROID_HOME ou local.properties com sdk.dir.
 
 ```sh
 chmod +x gradlew scripts/bootstrap-wrapper.sh
 ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
-# Com emulador/dispositivo conectado:
-./gradlew connectedDebugAndroidTest
+# Para o teste real de conversa com emulador/dispositivo conectado:
+python3 scripts/fetch_test_model.py /tmp/jarvis-conversation-model.gguf
+adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
+adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf
+sh scripts/test_on_emulator.sh
 ```
 
-No PowerShell, use `.\gradlew.bat` com as mesmas tarefas. O launcher obtém o JAR oficial do wrapper e verifica o SHA-256 antes de executá-lo; também é possível gerar com Gradle 8.11.1 instalado (`gradle wrapper --gradle-version 8.11.1 --distribution-type bin`). Saída: app/build/outputs/apk/debug/app-debug.apk.
+No PowerShell, use .\gradlew.bat para tarefas Gradle. O launcher busca e valida o wrapper oficial; também pode gerar com Gradle 8.11.1 instalado. O CMake busca o runtime por commit fixo apenas na compilação; não há código nativo baixado em runtime. As operações de inferência são otimizadas mesmo no APK debug e a biblioteca JNI tem segmentos ELF alinhados a 16 KB. Os pesos não são versionados ou incluídos no APK.
 
-## Projeto e custos
+## Projeto, testes e custos
 
-O projeto original de 37 arquivos foi preservado; as revisões continuam seu código e histórico, sem force push. [Arquitetura](docs/ARQUITETURA.md), [testes](docs/TESTES.md) e [evidência de validação](docs/VALIDATION.md).
+[Resultados e limites](docs/VALIDATION.md), [testes](docs/TESTES.md), [arquitetura](docs/ARQUITETURA.md), [preparar voz](docs/VOZ-0.5.md). O projeto original e o histórico foram preservados, sem force push. Nenhum serviço pago, cobrança de API, assinatura extra, Play Store ou release pública foi utilizado. O repositório público usa runners padrão gratuitos do GitHub; forks privados precisam respeitar sua franquia ou compilar localmente. Não habilite cobrança para este projeto.
 
-Nenhuma chave de API, assinatura extra ou integração paga. Este repositório público usa runners padrão gratuitos do GitHub; o workflow não habilita cobrança. Em forks privados, respeite a franquia gratuita ou compile localmente. Não há IA de conversa livre ou controle do notebook nesta versão.
-
-Projeto pessoal independente; as marcas JARVIS, Samsung e ChatGPT pertencem a seus titulares.
+Projeto pessoal independente; marcas JARVIS, Samsung e ChatGPT pertencem aos respectivos titulares.

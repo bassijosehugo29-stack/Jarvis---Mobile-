@@ -7,6 +7,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import br.com.jarvis.mobile.voice.SpeechOutput
 import br.com.jarvis.mobile.voice.SpeechResult
 import br.com.jarvis.mobile.voice.VoiceStatus
+import br.com.jarvis.mobile.experience.ExperienceSettings
+import br.com.jarvis.mobile.experience.OperationMode
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -18,6 +20,23 @@ import java.util.concurrent.atomic.AtomicReference
 @RunWith(AndroidJUnit4::class)
 class SpeechOutputTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test fun silentAndVoiceDisabledNeverInitializeOrSynthesize() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        var statuses = 0
+        instrumentation.runOnMainSync {
+            val output = SpeechOutput(compose.activity, { statuses++ }, listOf("intentionally.invalid.engine"))
+            for (settings in listOf(ExperienceSettings(mode = OperationMode.SILENT),
+                ExperienceSettings(voiceEnabled = false), ExperienceSettings(voiceVolume = 0f))) {
+                output.configure(settings)
+                var result: SpeechResult? = null
+                output.speak("Isto deve permanecer em silêncio.") { result = it }
+                assertEquals(SpeechResult.Suppressed, result)
+            }
+            assertEquals(0, statuses)
+            output.close()
+        }
+    }
 
     @Test fun producesAudioWithPortugueseFallbackAndMediaVolumeRouting() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()

@@ -1,5 +1,7 @@
 package br.com.jarvis.mobile.ui
 
+import android.animation.ValueAnimator
+import android.os.SystemClock
 import android.content.Context
 import android.os.BatteryManager
 import android.os.Handler
@@ -28,6 +30,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import br.com.jarvis.mobile.experience.CorePhase
+import br.com.jarvis.mobile.experience.OperationMode
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlin.math.*
 
 private val Brazilian = Locale.forLanguageTag("pt-BR")
@@ -143,23 +149,58 @@ private val MeshFaces = buildList {
 /** Native vector HUD: rotating arcs, a projected wire polyhedron and a voice envelope. */
 @Composable
 internal fun HolographicCore(
-    visible: Boolean, listening: Boolean, speaking: Boolean, audioLevel: Float,
-    modifier: Modifier = Modifier
+    visible: Boolean, phase: CorePhase, mode: OperationMode, audioLevel: Float,
+    speechProgress: Float, speechPulse: Int, modifier: Modifier = Modifier
 ) {
-    val phase = if (visible) {
-        val transition = rememberInfiniteTransition(label = "Núcleo holográfico")
-        transition.animateFloat(0f, 360f,
-            infiniteRepeatable(tween(24_000, easing = LinearEasing), RepeatMode.Restart), label = "Rotação")
-    } else remember { mutableFloatStateOf(0f) }
+    val rotation = remember { mutableFloatStateOf(0f) }
+    val formation = remember { Animatable(0f) }
+    val wordEnvelope = remember { Animatable(0.15f) }
+    LaunchedEffect(visible, phase) {
+        if (visible && phase == CorePhase.INITIALIZING) {
+            formation.snapTo(0.05f); formation.animateTo(1f, tween(1_100))
+        } else formation.snapTo(1f)
+    }
+    LaunchedEffect(speechPulse, phase) {
+        if (phase == CorePhase.RESPONDING) {
+            wordEnvelope.snapTo(0.95f); wordEnvelope.animateTo(0.15f, tween(260))
+        } else wordEnvelope.snapTo(0f)
+    }
+    // Bounded redraw rate. Idle silent is static; Android's animation setting is respected.
+    LaunchedEffect(visible, phase, mode) {
+        if (!visible || !ValueAnimator.areAnimatorsEnabled() || (mode == OperationMode.SILENT && phase == CorePhase.IDLE)) return@LaunchedEffect
+        val interval = when {
+            mode == OperationMode.SILENT -> 250L
+            phase == CorePhase.IDLE && mode == OperationMode.ASSISTANT -> 200L
+            phase == CorePhase.IDLE -> 66L
+            mode == OperationMode.CINEMATIC -> 33L
+            else -> 66L
+        }
+        val speed = when (phase) { CorePhase.PROCESSING -> 32f; CorePhase.INITIALIZING -> 25f
+            CorePhase.RESPONDING -> 18f; CorePhase.LISTENING -> 10f; else -> 5f }
+        var previous = SystemClock.uptimeMillis()
+        while (isActive) {
+            delay(interval)
+            val now = SystemClock.uptimeMillis()
+            rotation.floatValue = (rotation.floatValue + (now - previous).coerceAtMost(300) * speed / 1000f) % 360f
+            previous = now
+        }
+    }
     Canvas(modifier) {
+        val accent = if (phase == CorePhase.ERROR) Color(0xFFFF997C) else Cyan
         val d = size.minDimension
-        val turn = phase.value
-        val level = if (listening && audioLevel.isFinite()) audioLevel.coerceIn(0f, 1f) else 0f
-        val pulse = if (speaking) 0.5f + 0.2f * sin(turn * PI.toFloat() / 12f) else level
+        val turn = rotation.floatValue
+        val level = if (phase == CorePhase.LISTENING && audioLevel.isFinite()) audioLevel.coerceIn(0f, 1f) else 0f
+        val pulse = when (phase) {
+            CorePhase.RESPONDING -> max(wordEnvelope.value, 0.20f + 0.12f * abs(sin(turn * PI.toFloat() / 10f)))
+            CorePhase.PROCESSING -> 0.45f + 0.18f * sin(turn * PI.toFloat() / 12f)
+            CorePhase.IDLE -> 0.08f + 0.04f * sin(turn * PI.toFloat() / 15f)
+            else -> level
+        }
+        val formed = formation.value
         val outer = d * 0.46f
-        drawCircle(Brush.radialGradient(listOf(Cyan.copy(alpha = 0.13f + pulse * 0.08f), Color.Transparent),
+        drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = 0.13f + pulse * 0.08f), Color.Transparent),
             center = center, radius = d * 0.5f), radius = d * 0.5f)
-        drawCircle(Cyan.copy(alpha = 0.12f), radius = outer, style = Stroke(0.6.dp.toPx()))
+        drawCircle(accent.copy(alpha = 0.12f), radius = outer, style = Stroke(0.6.dp.toPx()))
         rotate(turn * 0.28f) {
             repeat(96) { index ->
                 val radians = index * (2f * PI.toFloat() / 96f)
@@ -167,47 +208,59 @@ internal fun HolographicCore(
                 val length = if (major) 7.dp.toPx() else 3.dp.toPx()
                 val inner = outer - length
                 val vector = Offset(cos(radians), sin(radians))
-                drawLine(Cyan.copy(alpha = if (major) 0.7f else 0.25f), center + vector * inner,
+                drawLine(accent.copy(alpha = if (major) 0.7f else 0.25f), center + vector * inner,
                     center + vector * outer, if (major) 1.2.dp.toPx() else 0.7.dp.toPx())
             }
         }
         rotate(-turn * 0.65f) {
-            for (index in 0..3) glowArc(d * 0.405f, index * 90f + 5f, 64f, Cyan, 1.7.dp.toPx())
+            for (index in 0..3) glowArc(d * 0.405f, index * 90f + 5f, 64f * formed, accent, 1.7.dp.toPx())
         }
         rotate(turn * 0.85f) {
-            glowArc(d * 0.365f, 18f, 205f, Color(0xFF2FAEFF), 2.dp.toPx())
-            glowArc(d * 0.365f, 246f, 48f, Gold, 1.1.dp.toPx())
+            glowArc(d * 0.365f, 18f, 205f * formed, Color(0xFF2FAEFF), 2.dp.toPx())
+            glowArc(d * 0.365f, 246f, 48f * formed, Gold, 1.1.dp.toPx())
         }
-        drawCircle(Cyan.copy(alpha = 0.25f), radius = d * 0.335f, style = Stroke(0.6.dp.toPx()))
+        drawCircle(accent.copy(alpha = 0.25f), radius = d * 0.335f, style = Stroke(0.6.dp.toPx()))
         val globe = Path().apply { addOval(Rect(center - Offset(d * 0.30f, d * 0.30f), Size(d * 0.60f, d * 0.60f))) }
         clipPath(globe) {
             rotate(-18f) {
                 for (fraction in listOf(0.3f, 0.65f, 1f)) {
-                    drawOval(Cyan.copy(alpha = 0.07f), topLeft = Offset(center.x - d * 0.3f * fraction, center.y - d * 0.3f),
+                    drawOval(accent.copy(alpha = 0.07f), topLeft = Offset(center.x - d * 0.3f * fraction, center.y - d * 0.3f),
                         size = Size(d * 0.6f * fraction, d * 0.6f), style = Stroke(0.7.dp.toPx()))
                 }
                 for (offset in listOf(-0.17f, 0f, 0.17f)) {
-                    drawOval(Cyan.copy(alpha = 0.08f), topLeft = Offset(center.x - d * 0.3f, center.y - d * 0.065f + d * offset),
+                    drawOval(accent.copy(alpha = 0.08f), topLeft = Offset(center.x - d * 0.3f, center.y - d * 0.065f + d * offset),
                         size = Size(d * 0.6f, d * 0.13f), style = Stroke(0.6.dp.toPx()))
                 }
             }
         }
-        drawCircle(Brush.radialGradient(listOf(Cyan.copy(alpha = 0.12f), Color.Transparent)), radius = d * 0.29f)
-        drawMesh(turn, d)
+        drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = 0.12f), Color.Transparent)), radius = d * 0.29f)
+        drawMesh(turn, d * (0.65f + 0.35f * formed), accent)
         rotate(-turn * 0.4f) {
             repeat(60) { index ->
                 val radians = index * (2f * PI.toFloat() / 60f)
                 val extension = pulse * (3f + 8f * abs(sin(index * 0.72f))) * density
                 val vector = Offset(cos(radians), sin(radians))
-                drawLine(Cyan.copy(alpha = 0.2f + pulse * 0.7f), center + vector * (d * 0.315f),
+                drawLine(accent.copy(alpha = 0.2f + pulse * 0.7f), center + vector * (d * 0.315f),
                     center + vector * (d * 0.315f + extension), 1.1.dp.toPx())
             }
         }
+        if (mode == OperationMode.CINEMATIC && visible) {
+            repeat(18) { index ->
+                val a = (turn * (0.3f + index % 3 * 0.1f) + index * 137.5f) * PI.toFloat() / 180f
+                val distance = d * (0.22f + (index % 7) * 0.035f)
+                val position = center + Offset(cos(a), sin(a)) * distance
+                drawCircle(accent.copy(alpha = 0.15f + 0.35f * abs(sin(a * 2))),
+                    radius = if (index % 4 == 0) 1.2.dp.toPx() else 0.65.dp.toPx(), center = position)
+            }
+        }
+        if (phase == CorePhase.RESPONDING && speechProgress.isFinite()) {
+            glowArc(d * 0.285f, -90f, 360f * speechProgress.coerceIn(0f, 1f), Gold, 0.8.dp.toPx())
+        }
         val strut = d * 0.15f
         for (side in listOf(-1f, 1f)) {
-            drawLine(Cyan.copy(alpha = 0.6f), Offset(center.x + side * d * 0.43f, center.y - strut),
+            drawLine(accent.copy(alpha = 0.6f), Offset(center.x + side * d * 0.43f, center.y - strut),
                 Offset(center.x + side * d * 0.49f, center.y - strut), 1.dp.toPx())
-            drawLine(Cyan.copy(alpha = 0.4f), Offset(center.x + side * d * 0.43f, center.y + strut),
+            drawLine(accent.copy(alpha = 0.4f), Offset(center.x + side * d * 0.43f, center.y + strut),
                 Offset(center.x + side * d * 0.49f, center.y + strut), 1.dp.toPx())
         }
     }
@@ -221,7 +274,7 @@ private fun DrawScope.glowArc(radius: Float, start: Float, sweep: Float, color: 
     }
 }
 
-private fun DrawScope.drawMesh(turn: Float, diameter: Float) {
+private fun DrawScope.drawMesh(turn: Float, diameter: Float, accent: Color) {
     val yaw = (turn + 20f) * PI.toFloat() / 180f
     val tilt = (turn * 0.42f + 28f) * PI.toFloat() / 180f
     val vertices = MeshVertices.map { vertex ->
@@ -238,12 +291,12 @@ private fun DrawScope.drawMesh(turn: Float, diameter: Float) {
             lineTo(vertices[b].position.x, vertices[b].position.y)
             lineTo(vertices[c].position.x, vertices[c].position.y); close()
         }
-        drawPath(path, Cyan.copy(alpha = 0.025f))
+        drawPath(path, accent.copy(alpha = 0.025f))
     }
     for ((a, b) in MeshEdges) {
         val alpha = ((vertices[a].depth + vertices[b].depth) / 8f + 0.55f).coerceIn(0.2f, 0.95f)
-        drawLine(Cyan.copy(alpha = alpha * 0.16f), vertices[a].position, vertices[b].position, 4.dp.toPx())
-        drawLine(Cyan.copy(alpha = alpha), vertices[a].position, vertices[b].position, 0.9.dp.toPx())
+        drawLine(accent.copy(alpha = alpha * 0.16f), vertices[a].position, vertices[b].position, 4.dp.toPx())
+        drawLine(accent.copy(alpha = alpha), vertices[a].position, vertices[b].position, 0.9.dp.toPx())
     }
     vertices.forEachIndexed { index, vertex ->
         drawCircle(if (index % 4 == 0) Gold.copy(alpha = 0.9f) else Color(0xFFD8FAFF),
