@@ -65,7 +65,12 @@ class V4IntegrationTest {
         val intent=Intent(Intent.ACTION_ASSIST).setPackage(compose.activity.packageName).addCategory(Intent.CATEGORY_DEFAULT)
         @Suppress("DEPRECATION") val resolved=compose.activity.packageManager.queryIntentActivities(intent,PackageManager.MATCH_DEFAULT_ONLY)
         assertTrue(resolved.any{it.activityInfo.name==MainActivity::class.java.name})
-        compose.runOnUiThread{compose.activity.startActivity(intent)}
+        val scenarioIntent=compose.activity.intent
+        compose.runOnUiThread{
+            InstrumentationRegistry.getInstrumentation().callActivityOnNewIntent(compose.activity,intent)
+            // ActivityScenario tracks its launch token in Intent extras; restore the runner token.
+            compose.activity.intent=scenarioIntent
+        }
         compose.waitForIdle()
         val model=androidx.lifecycle.ViewModelProvider(compose.activity)[JarvisViewModel::class.java]
         assertFalse(model.state.value.enabled);assertFalse(model.state.value.listening)

@@ -38,7 +38,7 @@ Novos testes cobrem o contrato de animação/níveis PCM, comando WhatsApp, reje
 
 CoreShowcaseActivity só existe no debug de CI e é excluída da prévia entregue. Suas capturas e vídeo de estados são rotulados como demonstração com sinal simulado. A captura da tela inicial e o vídeo curto da MainActivity são do app real no emulador.
 
-FrameMetrics/CPU/PSS são coletados em estados visuais sintéticos aquecidos; startup/idle são comparados com a 3.1 em instalações novas no mesmo emulador. Amostras são curtas, incluem o ambiente de teste e não são benchmark do Samsung. Arquivos brutos acompanham a entrega. Batterystats virtual não mede mAh, autonomia ou temperatura reais. A medição comparativa recusa execução fora do CI e em dispositivo que não seja emulador, pois recria exclusivamente os fixtures do runner.
+Frames reais do compositor (gfxinfo), CPU e PSS são coletados em estados visuais sintéticos fora do relógio virtual do Compose; startup/idle são comparados com a 3.1 em instalações novas no mesmo emulador. Amostras são curtas, incluem o ambiente de teste e não são benchmark do Samsung. Arquivos brutos acompanham a entrega. Batterystats virtual não mede mAh, autonomia ou temperatura reais. A medição comparativa recusa execução fora do CI e em dispositivo que não seja emulador, pois recria exclusivamente os fixtures do runner.
 
 ## Compilar esta fase
 

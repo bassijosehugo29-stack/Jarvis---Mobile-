@@ -21,6 +21,7 @@ class CoreShowcaseActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         phase = CorePhase.entries.firstOrNull { it.name == intent.getStringExtra("phase") } ?: CorePhase.IDLE
+        mode = OperationMode.entries.firstOrNull { it.name == intent.getStringExtra("mode") } ?: OperationMode.CINEMATIC
         setContent {
             JarvisTheme {
                 var level by remember { mutableFloatStateOf(0f) }
