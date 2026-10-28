@@ -2,7 +2,7 @@
 
 ## Estado da entrega
 
-Implementação em validação. Compilação e testes desta revisão ainda não confirmados; consulte a execução final em VALIDATION.md quando concluída. Base preservada: 0.5, commit e0d7e8c411e398d6e18ea9cdc5a41681bde0d92c, execução 40604934666, 47 testes de unidade e 15 instrumentados aprovados.
+[Compilação e 77 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231): 55 de unidade e 22 instrumentados; Lint com 0 erros e 19 avisos. [APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231/artifacts/12787512824). Fonte validada `dc00bef9bf5595aed7dac1e41dac2c0ea71e9ae3`. Sem teste físico no Galaxy; roteiro de aceite ao final.
 
 ## Três modos
 
@@ -47,3 +47,5 @@ Após instalar o APK validado: confira mídia/Bluetooth, Testar voz, seleção d
 - [Marcadores de palavras durante reprodução TTS](https://developer.android.com/reference/android/speech/tts/UtteranceProgressListener).
 - [Vozes disponíveis e seus metadados](https://developer.android.com/reference/android/speech/tts/Voice).
 - [Preferences DataStore](https://developer.android.com/topic/libraries/architecture/datastore).
+
+Capturas de modos no emulador podem vir incompletas, até na barra do Android; a tela inicial e o vídeo estão disponíveis como evidências visuais completas. Os arquivos brutos foram preservados. Não se comprovou a renderização física durante troca de modos no Galaxy; confira no roteiro de aceite.

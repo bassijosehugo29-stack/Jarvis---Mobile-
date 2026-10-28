@@ -20,7 +20,7 @@ O reconhecedor usa sessões oficiais com pequenos intervalos, preferindo o mecan
 
 CommandParser interpreta somente pedidos explícitos de abrir apps, agenda e alarme, preparação do modelo, ajuda e parada. Perguntas sobre esses assuntos seguem como conversa, sem executar ações por mera presença de uma palavra. Nomes e números são normalizados em Kotlin puro. A origem das ações é apenas texto/fala do usuário; respostas do modelo nunca retornam ao dispatcher.
 
-O campo de mensagem usa o mesmo roteamento, sem precisar de RECORD_AUDIO. Dados são exibidos em StateFlow na tela Compose. Enquanto pensa ou fala, uma nova mensagem não se sobrepõe à anterior; o núcleo permite interromper a resposta. A execução e os callbacks são condicionados à Activity visível.
+O campo de mensagem usa o mesmo roteamento, sem precisar de RECORD_AUDIO. Dados são exibidos em StateFlow na tela Compose. Enquanto pensa, fala ou finaliza trabalho assíncrono, uma nova mensagem não se sobrepõe à anterior; o núcleo permite interromper a resposta. A execução e os callbacks são condicionados à Activity visível.
 
 ## Saída de voz
 

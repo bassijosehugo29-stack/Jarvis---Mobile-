@@ -1,30 +1,42 @@
-# Validação do JARVIS Mobile 0.5.0
+# Validação da Missão 1 — JARVIS Mobile 0.6.0
 
 ## Resultado confirmado
 
-- [Execução](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666): ambos os jobs com success; código `e0d7e8c411e398d6e18ea9cdc5a41681bde0d92c`.
-- 47 testes de unidade e 15 instrumentados Android 35 aprovados, total 62, sem falhas.
+- [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231): debug-apk e Testes instrumentados Android 35 com success.
+- Fonte `dc00bef9bf5595aed7dac1e41dac2c0ea71e9ae3`; documentação posterior não altera o código validado.
+- **55 testes de unidade + 22 instrumentados = 77, sem falhas**.
 - testDebugUnitTest, lintDebug, assembleDebug, assembleDebugAndroidTest e connectedDebugAndroidTest concluídos.
-- Lint: 0 erros e 19 avisos não impeditivos; não foi usado baseline para esconder erros.
-- [APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666/artifacts/12780696806); [relatórios, capturas, vídeo e transcrição da conversa](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666/artifacts/12779839416), retidos sete dias.
+- **Lint: 0 erros, 19 avisos não impeditivos**. Não se usou baseline para esconder erros.
+- [APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231/artifacts/12787512824); [evidências Android](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231/artifacts/12787209902). Artefatos retidos sete dias.
 
-LocalConversationTest importou os pesos oficiais com SHA-256 conferido e enviou duas mensagens pela Activity real, verificando as respostas do modelo e o contexto do nome Rafael. Não é resposta estática: há inferência JNI/CPU com o modelo Qwen. A transcrição exportada usa apenas dados fictícios do teste, não histórico do usuário. O teste não usa a API do ChatGPT ou serviço de inferência remoto.
+## O que foi comprovado
 
-SpeechOutputTest usou um serviço exclusivo do APK de testes, em processo separado, para produzir PCM não nulo e completar os callbacks TTS, incluindo fallback quando pt-BR falta e falha explícita de síntese. O fixture produz um tom, não uma voz humana: o teste não comprova alto-falante, voz Samsung, Bluetooth, DND ou volume físico do Galaxy. A voz real precisa do aceite no aparelho. Os testes de UI incluem mensagem sem microfone, diagnósticos de voz, ausência de atalhos de apps, pausa, cabeçalho fixo e fonte ampliada. Agenda, launcher e alarmes seguem cobertos.
+ExperiencePolicyTest cobre modo padrão, silêncio em todos os estados, volumes independentes, duck, captura/background e limites numéricos. OriginalScoreTest verifica PCM não nulo, sem saturação, bordas zeradas e sinais distintos. ExperienceStoreTest grava/reabre DataStore em arquivo real, conferindo modo, volumes e perfil vocal. ExperienceModesTest percorre os três modos na Activity, verifica resposta em texto sem escuta automática e cancela inicialização real de TTS ao sair.
 
-## APK conferido
+SoundscapeTest usa AudioTrack Android de verdade: avanço do playback head, redução de ganho, parada em Silencioso/captura/background e interrupção por requisição concorrente de foco, sem retomada automática. Não comprova alto-falante físico. SpeechOutputTest verifica gate sem inicializar engine no Silencioso/voz desligada/volume zero, PCM, falha explícita, fallback português, tom/velocidade e callbacks de início/range via serviço Java exclusivo do APK de testes. Esse serviço produz um tom, não uma voz humana; não é teste da voz Samsung.
 
-- Tamanho: 17496508 bytes; ARM64-v8a e x86_64.
-- SHA-256: `8ac0a1688bd700813161f365149ff11a711d7500e94d7faf8a24c5a1273a2a4f`.
-- Certificado debug SHA-256: `40efc94ebaf048d62020f59ff43c34ea86c52b058fac32e035d60f11ab1c77a2`.
-- Assinatura diferente da 0.4: desinstale a versão anterior antes de instalar.
+Os testes anteriores de parser, contexto de conversa, launcher exportado, pacote ChatGPT, intents de alarme, Calendar Provider, Activity/Compose, campo de texto, cabeçalho fixo e fonte ampliada foram preservados e executados. A conversa real importa pesos oficiais com SHA-256 conferido e envia duas mensagens pela Activity, verificando o nome Rafael no contexto. A transcrição exportada contém dados fictícios e texto efetivamente gerado, sem API remota. O modelo pode formular a resposta de maneira simples ou inadequada; o teste não atesta qualidade geral.
 
-ZIP/APK passaram pelo CRC. Manifesto, DEX, recursos, modelo JSON e bloco de assinatura presentes. O APK não inclui os pesos GGUF; são obtidos separadamente. As bibliotecas JNI ARM64/x86_64 foram conferidas quanto a segmentos ELF alinhados a 16 KB. Não foi feita verificação criptográfica independente além das instalações no fluxo Android do CI.
+Capturas cinema/silencioso são da Activity real sem microfone iniciado. A prévia de vídeo é captura do emulador, sem áudio gravado; não representa teste perceptivo da música. Fonte ampliada usa fixture de Compose. Consulte os arquivos brutos do artefato para evidências originais.
+
+## Integridade do APK
+
+- 18333609 bytes; ARM64-v8a/x86_64; SHA-256 `175247796161809bc1632c7c7c96346f62931c36390d74241a2c67a2b15b1c28`.
+- Certificado debug SHA-256 `fa4a6ce51e3a0adb7e6fe7c44e6da5f06436310832fdc61593ffe59a0c8b4937`.
+- Certificado diferente da 0.5: true; conflito de assinatura exige desinstalar a versão anterior.
+- ZIP e APK com CRC válido, manifesto/DEX/recursos/bloco de assinatura presentes, modelo JSON conferido e sem pesos GGUF embutidos.
+- Alinhamento ELF de todas as bibliotecas nativas de 64 bits e alinhamento ZIP dos segmentos não comprimidos conferidos em 16 KB.
+
+A leitura local do certificado não substitui verificação criptográfica independente. As instalações e testes Android foram feitos pelo CI. A máquina local não possui SDK Android: a verificação Python de estrutura é distinta da compilação/testes do GitHub.
 
 ## Correções e limites
 
-Na primeira execução da 0.5, a inferência direta com contexto passou; o serviço TTS auxiliar, escrito em Kotlin, não tinha a biblioteca Kotlin no processo separado do APK de testes e falhou. Foi substituído por Java/Android puro. Os cálculos nativos foram otimizados mesmo no APK debug; a versão inicial sem otimização demorou 3m55s no teste de duas respostas. O fluxo passou a coletar evidências mesmo após falha, preservando o resultado real do Gradle. A execução acima valida a revisão corrigida e o caminho pela Activity.
+Uma revisão preliminar parou por link para guia de voz ainda não enviado. Outra apontou inferência recursiva de tipos Kotlin no coordenador de foco/áudio; as declarações foram explicitadas. Dois testes reais de áudio apontaram a verificação prematura do estado do AudioTrack estático; a carga de PCM passou a ocorrer antes de conferir STATE_INITIALIZED. A importação de arquivo passou a abrir e fechar o stream no mesmo contexto IO, eliminando o aviso Recycle. Capturas de modos com captureToImage vieram incompletas; o teste final captura a janela via UiAutomation, preservando as evidências anteriores. A entrada passou a aguardar o encerramento completo do trabalho, além de pensar/falar; o teste usa a ação Enviar do teclado para não depender de um alvo de toque durante transições do IME. O código final acima foi recompilado/testado após as correções. Os sinais de confirmação/escuta foram ordenados; uma indicação visual de erro não pode desativar o gate de silêncio durante captura.
 
-Compilação/testes Android ocorreram no GitHub Actions. A máquina local não tem Android SDK; XML, shell, fontes e links foram verificados localmente, sem confundir isso com compilação. Ainda é necessário ouvir a voz e testar pt-BR/RMS, saída de mídia, permissões, download por Wi-Fi, importação, Samsung Calendar/Clock e interrupção ao sair no Galaxy S25 FE físico. Modelo leve pode ser lento ou impreciso; sincronização de contas e dados atuais não foram comprovados.
+Ainda requer aceite físico no Samsung Galaxy S25 FE: ouvir pt-BR, selecionar voz disponível, volume/roteamento Bluetooth/DND, testar reconhecimento/RMS, sons do provedor Android, permissões, pausa ao bloquear/sair, aparência/fluidez, música/efeitos e bateria/temperatura. Não se mediram FPS/autonomia nem se garante timbre masculino/qualidade de estúdio. [Roteiro](MISSAO-1.md).
 
-Sem cobrança de API, assinatura, chave, publicação na Play Store ou integração paga.
+Sem bloqueio de compilação na revisão validada. Sem API paga, credenciais embutidas, mensalidade, publicação ou módulos adicionais desta missão.
+
+## Limite das capturas de modos
+
+As capturas brutas após alternar modos continuam parcialmente incompletas no emulador, mesmo usando UiAutomation e espera de composição: faltam elementos estáticos, inclusive partes da barra do próprio Android. A captura inicial da Activity e a prévia gravada após a reinstalação mostram o HUD completo. Isso não permite concluir, só pelas capturas, como a troca será desenhada no Galaxy; o aceite visual no aparelho continua necessário. As imagens originais foram preservadas sem redesenho ou preenchimento artificial. Os testes de seleção/persistência e áudio dos três modos passaram; não são teste de perfeição dos pixels.

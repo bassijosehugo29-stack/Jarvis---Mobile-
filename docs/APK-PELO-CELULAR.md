@@ -1,18 +1,16 @@
-# Instalar e preparar o JARVIS pelo celular
+# Instalar pelo celular — versão 0.6
 
-A versão 0.5 tem [compilação e 62 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666). [Baixar artefato APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666/artifacts/12780696806).
+[Baixar APK de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231/artifacts/12787512824) · [Compilação e 77 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231).
 
-1. Desinstale o JARVIS anterior se houver conflito de assinatura. Este debug usa outro certificado. Isso apaga preferências/modelo local; não remove eventos já salvos no calendário nem vozes do Samsung.
-2. Baixe o ZIP do artefato no navegador, logado no GitHub, e extraia em Meus Arquivos. Instale app-debug.apk. Se baixou o APK direto da conversa, instale sem extrair ZIP. Autorize a origem quando o Android solicitar. O Bloqueador Automático Samsung pode impedir APK externo; se você optar por desativá-lo temporariamente para instalar, reative depois.
-3. Nos ajustes do JARVIS, use **Testar voz** e aumente o volume de mídia. Confira fones/Bluetooth e **Ajustar voz do Android** se necessário. [Guia de voz](VOZ-0.5.md).
-4. Escolha **Baixar conversa offline • 491 MB** usando Wi-Fi não medido. Aguarde **Conversa offline pronta**. O download é separado do APK, gratuito e validado por SHA-256. Pode importar o arquivo oficial já baixado como alternativa. Desinstalar o JARVIS remove esse arquivo local.
-5. Ative o núcleo, permita microfone e ouça “Às suas ordens, senhor”. Depois converse naturalmente. Não precisa repetir Jarvis em cada frase. O campo de texto funciona sem microfone.
-6. Para testar ações, diga abrir WhatsApp, agende dentista amanhã às quinze horas ou alarme para sete e trinta. No primeiro agendamento, permita Calendário e escolha por voz se houver várias agendas. Confira compromissos/alarmes no app oficial.
+1. Baixe o ZIP em Artifacts, logado no GitHub, e extraia em Meus Arquivos. O APK direto fornecido na conversa já pode ser instalado sem extrair.
+2. Instale app-debug.apk e permita essa origem quando o Android solicitar. Se houver conflito de assinatura, desinstale o JARVIS anterior antes. Isso limpa preferências/modelo local, sem apagar eventos já salvos no calendário.
+3. Escolha **Assistente**. Nos ajustes, use **Listar vozes instaladas**, escolha uma opção portuguesa e **Testar voz**. Aumente o volume de mídia e confira saída Bluetooth/fones. Ajuste tom/velocidade. Se faltarem dados de voz, use **Ajustar voz do Android**.
+4. Experimente **Cinema**, com música/efeitos e seus volumes nos ajustes. A trilha reduz durante respostas e para durante captura. **Silêncio** desliga todo áudio do JARVIS; toque para uma única escuta ou escreva sem microfone. O reconhecedor pode ter avisos próprios do Android.
+5. Para conversar livremente, peça **Baixar conversa offline • 491 MB**, por Wi-Fi, e aguarde **Conversa offline pronta**. Download separado gratuito; modelo leve, com limitações. Comandos de abrir apps/alarmes continuam sem ele.
+6. Ative o núcleo e permita microfone durante o uso. Em Assistente/Cinema, ouça “Às suas ordens, senhor” e fale. Para parar, toque no núcleo/diga parar. Sair ou bloquear interrompe áudio e captura.
 
-Ao sair, bloquear ou abrir outro app, a escuta para. Volte e ative para continuar. A conversa usa um modelo local leve e pode ser simples/lenta/imprecisa; o TTS e reconhecimento dependem dos mecanismos Android instalados. Não há mensalidade ou API paga implementada.
+Voz humana e comportamento físico Samsung ainda precisam de teste. Não há promessa de timbre específico; depende das vozes instaladas. [Roteiro e limites](MISSAO-1.md).
 
-## Gerar uma nova compilação
+## Gerar outra versão pelo celular
 
-Abra [Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → Android - APK de teste → Run workflow → main. Use Site para computador se necessário. Espere debug-apk e Testes instrumentados Android 35 terminarem com sucesso. Baixe JARVIS-Mobile-debug, extraia e instale. Artefatos duram sete dias; runners diferentes podem usar outra assinatura debug. Não use a release antiga Javis, que contém o código inicial.
-
-O fluxo não publica na Play Store nem cria release. Resultados e limitações em [VALIDATION.md](VALIDATION.md).
+[Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Use **Site para computador** se o menu não aparecer. Aguarde debug-apk e Testes instrumentados Android 35 aprovados. Em Artifacts, baixe JARVIS-Mobile-debug, extraia e instale. Artefatos duram sete dias. Não use a release antiga Javis, que não contém esta versão. O fluxo não publica Play Store nem cria release ou serviços pagos.
