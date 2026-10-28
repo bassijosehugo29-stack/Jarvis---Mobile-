@@ -35,8 +35,11 @@ class ExperienceStore(context: Context, private val store: DataStore<Preferences
             voiceEnabled = p[voice] ?: defaults.voiceEnabled, effectsEnabled = p[effects] ?: defaults.effectsEnabled,
             assistantMusic = p[assistantMusic] ?: defaults.assistantMusic, cinematicMusic = p[cinemaMusic] ?: defaults.cinematicMusic,
             voiceVolume = p[voiceVolume] ?: defaults.voiceVolume, musicVolume = p[musicVolume] ?: defaults.musicVolume,
-            effectsVolume = p[effectsVolume] ?: defaults.effectsVolume, speechRate = p[rate] ?: defaults.speechRate,
-            pitch = p[pitch] ?: defaults.pitch, enginePackage = p[engine].orEmpty(), voiceName = p[voiceName].orEmpty()
+            effectsVolume = p[effectsVolume] ?: defaults.effectsVolume,
+            speechRate = if(migrated)1f else p[rate] ?: defaults.speechRate,
+            pitch = if(migrated)1f else p[pitch] ?: defaults.pitch,
+            enginePackage = if(migrated)"" else p[engine].orEmpty(),
+            voiceName = if(migrated)"" else p[voiceName].orEmpty(), voiceProfile=selected
         ).sanitized()
     }
     private companion object {

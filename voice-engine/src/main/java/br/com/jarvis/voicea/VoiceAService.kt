@@ -2,6 +2,8 @@
 package br.com.jarvis.voicea
 
 import android.media.AudioFormat
+import android.content.pm.ApplicationInfo
+import android.util.Log
 import android.speech.tts.*
 import com.k2fsa.sherpa.onnx.*
 import java.io.File
@@ -23,10 +25,10 @@ class VoiceAService:TextToSpeechService(){
     override fun onIsValidVoiceName(voiceName:String)=if(voiceName==VOICE)TextToSpeech.SUCCESS else TextToSpeech.ERROR
     override fun onLoadVoice(voiceName:String)=onIsValidVoiceName(voiceName)
     override fun onGetDefaultVoiceNameFor(language:String,country:String,variant:String)=VOICE
-    override fun onStop(){serial.incrementAndGet()}
+    override fun onStop(){serial.incrementAndGet();diagnostic("stop")}
     override fun onSynthesizeText(request:SynthesisRequest?,callback:SynthesisCallback?){
         if(request==null||callback==null)return
-        val current=serial.incrementAndGet()
+        val current=serial.incrementAndGet();diagnostic("request-start")
         fun active()=serial.get()==current
         val text=request.charSequenceText?.toString().orEmpty()
         if(text.isBlank()){callback.start(22050,AudioFormat.ENCODING_PCM_16BIT,1);callback.done();return}
@@ -36,13 +38,14 @@ class VoiceAService:TextToSpeechService(){
             synchronized(lock){
                 if(!active())return
                 val engine=model?:loadModel(::active).also{model=it}
+                diagnostic("generate-start")
                 val rate=(request.speechRate/100f).coerceIn(0.70f,1.15f)
                 engine.generateWithCallback(text=text,sid=0,speed=rate){samples->
                     if(!active())0 else {if(samples.isNotEmpty()){parts+=samples.copyOf();parts+=FloatArray((22050*0.24).toInt())};1}
                 }
             }
             if(!active())return
-            val count=parts.sumOf{it.size};if(count==0){callback.error(TextToSpeech.ERROR_SYNTHESIS);return}
+            diagnostic("generate-end");val count=parts.sumOf{it.size};if(count==0){callback.error(TextToSpeech.ERROR_SYNTHESIS);return}
             require(count<=22050*180)
             val combined=FloatArray(count);var at=0
             parts.forEach{it.copyInto(combined,at);at+=it.size}
@@ -57,12 +60,12 @@ class VoiceAService:TextToSpeechService(){
                 if(callback.audioAvailable(buffer,0,n*2)!=TextToSpeech.SUCCESS)return
                 index+=n
             }
-            if(active())callback.done()
-        }catch(_:Exception){if(active())callback.error(TextToSpeech.ERROR_SYNTHESIS)}
+            if(active()){callback.done();diagnostic("pcm-done")}
+        }catch(e:Exception){diagnostic("failure-${e.javaClass.simpleName}");if(active())callback.error(TextToSpeech.ERROR_SYNTHESIS)}
         catch(_:LinkageError){if(active())callback.error(TextToSpeech.ERROR_SERVICE)}
     }
     private fun loadModel(active:()->Boolean):OfflineTts{
-        val data=File(noBackupFilesDir,"faber-phonemes-v1")
+        diagnostic("model-init-start");val data=File(noBackupFilesDir,"faber-phonemes-v1")
         val ready=File(data,".ready")
         if(!ready.exists()){
             fun copy(asset:String,target:File){
@@ -75,8 +78,11 @@ class VoiceAService:TextToSpeechService(){
         check(active())
         val config=OfflineTtsConfig(model=OfflineTtsModelConfig(
             vits=OfflineTtsVitsModelConfig(model="voice-a/model.onnx",tokens="voice-a/tokens.txt",dataDir=data.absolutePath,
-                noiseScale=0.55f,noiseScaleW=0.70f,lengthScale=1.08f),numThreads=2,debug=false,provider="cpu"),maxNumSentences=1,silenceScale=0.0f)
-        return OfflineTts(assets,config)
+                noiseScale=0.55f,noiseScaleW=0.70f,lengthScale=1.08f),numThreads=2,debug=false,provider="cpu"),maxNumSentences=1,silenceScale=1.0f)
+        return OfflineTts(assets,config).also{diagnostic("model-init-ready")}
+    }
+    private fun diagnostic(event:String){
+        if(applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE!=0)Log.d("JarvisVoiceA",event)
     }
     override fun onDestroy(){
         serial.incrementAndGet()

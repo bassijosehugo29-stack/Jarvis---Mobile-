@@ -23,7 +23,7 @@ class ExperienceStoreTest {
         val job=SupervisorJob();val scope=CoroutineScope(job+Dispatchers.IO)
         try{
             val disk=PreferenceDataStoreFactory.create(scope=scope,produceFile={file})
-            disk.edit{it[stringPreferencesKey("mode")]=OperationMode.SILENT.name;it[floatPreferencesKey("pitch")]=0.78f;it[floatPreferencesKey("rate")]=0.81f;it[stringPreferencesKey("engine") ]="legacy.voice"}
+            disk.edit{it[stringPreferencesKey("mode")]=OperationMode.SILENT.name;it[floatPreferencesKey("pitch")]=0.78f;it[floatPreferencesKey("speech_rate")]=0.81f;it[stringPreferencesKey("engine") ]="legacy.voice"}
             val store=ExperienceStore(context,disk);val migrated=store.settings.first()
             assertEquals(OperationMode.SILENT,migrated.mode);assertEquals(VoiceProfile.OFFICIAL_A,migrated.voiceProfile)
             assertEquals(1f,migrated.pitch,0f);assertEquals(1f,migrated.speechRate,0f);assertEquals("",migrated.enginePackage)
