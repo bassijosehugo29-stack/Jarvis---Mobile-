@@ -10,6 +10,8 @@ adb pull /sdcard/Pictures/JARVIS/. app/build/reports/screenshots/ || true
 adb pull /sdcard/Download/JARVIS-testes/. app/build/reports/conversation/ || true
 adb logcat -d -s AndroidRuntime:E > app/build/reports/conversation/runtime-errors.txt || true
 adb logcat -d -s JarvisVoiceA:D sherpa-onnx:V libc:F TextToSpeechService:W TextToSpeech:W > app/build/reports/conversation/voice-engine-diagnostic.txt || true
+# CI contains only public fixture phrases. Capture native backtraces as well as Java failures.
+adb logcat -b crash -d > app/build/reports/conversation/native-crashes.txt || true
 if [ "$jarvis_test_status" -ne 0 ]; then
     exit "$jarvis_test_status"
 fi

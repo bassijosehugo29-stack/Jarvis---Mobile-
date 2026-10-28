@@ -46,9 +46,9 @@ class VoiceAService:TextToSpeechService(){
                 val engine=model?:loadModel(::active).also{model=it}
                 diagnostic("generate-start")
                 val rate=(request.speechRate/100f).coerceIn(0.70f,1.15f)
-                engine.generateWithCallback(text=text,sid=0,speed=rate){samples->
+                engine.generateWithCallback(text=text,sid=0,speed=rate,callback=NativePcmCallback{samples->
                     if(!active())0 else {if(samples.isNotEmpty()){parts+=samples.copyOf();parts+=FloatArray((22050*0.24).toInt())};1}
-                }
+                })
             }
             if(!active())return
             diagnostic("generate-end");val count=parts.sumOf{it.size};if(count==0){callback.error(TextToSpeech.ERROR_SYNTHESIS);return}
