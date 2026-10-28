@@ -1,3 +1,11 @@
+# Integração 3.1 — voz A
+
+O perfil aprovado **A · Executivo clássico** usa um motor independente (`br.com.jarvis.voicea`) via IPC Android TextToSpeech. `OfficialVoiceA` confere mesmo certificado, metadata do modelo/perfil/política de logs e ausência de INTERNET/RECORD_AUDIO. Não há substituição silenciosa por voz de outro fabricante. A opção ANDROID permanece explicitamente selecionável.
+
+DataStore persiste a escolha. Preferências antigas sem perfil migram para A com velocidade relativa 1,0 e pitch natural, preservando modo e volumes. Trocar de perfil encerra a sessão, invalida callbacks e recria a ligação TTS. O foco, duck, silêncio e lifecycle continuam no `SpeechOutput`/`Soundscape` existente.
+
+O motor GPL-3.0-or-later contém Faber FP32, sherpa-onnx e eSpeak NG, sem permissões ou rede. Carrega sob demanda fora da thread principal, guarda apenas dados estáticos do fonemizador e sintetiza frases inéditas em RAM. Um adaptador Java fixa a assinatura JNI do callback PCM e propaga cancelamento, inclusive com Kotlin 2. Normalização/filtros/compressão não mudam o pitch ou a taxa de amostragem. O guard nativo Android 11+ suprime logs de conteúdo e stderr antes da inferência. [Detalhes e fontes](VOZ-A.md).
+
 # Arquitetura 3.0 — centrais pessoais
 
 MainActivity (FragmentActivity para autenticação nativa) integra três ViewModels e um AppData singleton. JarvisViewModel mantém voz, modos, áudio, comandos Android e conversa local; HubViewModel coordena fontes e digest; BrainViewModel mantém editor/rascunhos/backup. Comunicação por StateFlow e eventos tipados, com cancelamento/geração e lifecycle visível. Nenhum módulo cria uma segunda saída de voz.

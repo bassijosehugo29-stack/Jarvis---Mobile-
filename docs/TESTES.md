@@ -1,8 +1,12 @@
-# Testes — JARVIS 3.0
+# Testes — JARVIS 3.1
 
 Resultados efetivamente executados ficam em [VALIDATION.md](VALIDATION.md); testes adicionados não devem ser contados como aprovados antes do CI concluir.
 
-## Cobertura nova
+## Voz A
+
+Unidade: DSP finito/limitado, normalização, silêncio, preservação de frequência/tempo e assinatura JNI boxed/cancelamento do adaptador PCM. Android: motor instalado com identidade/certificado/ausência de rede e microfone; síntese real das quatro frases aprovadas e de uma inédita; WAV/PCM não vazio e seleção pelo SpeechOutput. Migração de preferências preserva o modo e adota A sem pitch/engine antigos; ANDROID continua persistindo seu pitch explícito. As quatro WAV públicas são coletadas como evidência, sem gravação de texto pessoal.
+
+## Cobertura preservada da 3.0
 
 | Área | Verificação automatizada |
 | --- | --- |
@@ -24,7 +28,9 @@ Testes anteriores de modos/áudio/foco/duck/persistência/voz/parser/apps/alarme
 JDK 17 e SDK/NDK/CMake conforme README. Para unidade/lint/compilar:
 
 ```sh
-./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+python3 -m pip install onnx==1.18.0
+python3 scripts/prepare_voice_a.py
+./gradlew :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :voice-engine:lintDebug :app:assembleDebug :voice-engine:assembleDebug :app:assembleDebugAndroidTest
 python3 scripts/verify_apk.py
 ```
 
@@ -37,13 +43,13 @@ adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf
 sh scripts/test_on_emulator.sh
 ```
 
-O script preserva o código real dos testes, coleta relatórios/capturas/transcrição fictícia e erros AndroidRuntime. Não transforma falha em sucesso. Telas pessoais não são desprotegidas no debug para gerar screenshots; FLAG_SECURE pode produzir imagens pretas, como esperado. Algumas capturas históricas de troca de modos são parciais no emulador; isso está registrado na validação da base.
+O script preserva o código real dos testes, coleta relatórios/capturas/transcrição fictícia, eventos estáticos do motor e buffers de crash do emulador. Não transforma falha em sucesso. Telas pessoais não são desprotegidas no debug para gerar screenshots; FLAG_SECURE pode produzir imagens pretas, como esperado. Algumas capturas históricas de troca de modos são parciais no emulador; isso está registrado na validação da base.
 
 `python3 scripts/probe_public_sources.py` consulta somente feeds públicos e previsão de uma localização de CI, sem contas. Retorna relatório de disponibilidade em build/verification/public-sources.json; indisponibilidade externa não é substituída por notícias falsas. `verify_apk.py` verifica assinatura com apksigner, CRC, versão, permissões, ABIs e alinhamento de 16 KB. Ambos os relatórios são artefatos, sem chaves privadas/tokens.
 
 ## Aceite manual no Galaxy S25 FE
 
-1. Instalar, conferir os três modos e volumes, selecionar dados de voz pt-BR locais, ouvir “Às suas ordens, senhor”. Testar mídia zerada, alto-falante, fones/Bluetooth/DND e voz ausente: erro visível, sem fingir fala.
+1. Instalar primeiro JARVIS Voz A e depois JARVIS Mobile da mesma entrega, conferir os três modos e volumes, selecionar A nos ajustes, ouvir “Às suas ordens, senhor”. Testar mídia zerada, alto-falante, fones/Bluetooth/DND e voz ausente: erro visível, sem fingir fala.
 2. Autorizar/recusar microfone; comandos pt-BR, parada, sair/bloquear/trocar app/chamada. Nenhuma retomada ou escuta de fundo. Silencioso só deve ativar uma captura por toque; use texto para evitar sons do reconhecedor Android.
 3. Desbloquear Second Brain com biometria e PIN real, cancelar, fechar/reabrir e verificar bloqueio. Criar/editar/apagar, tags/vínculos, pesquisa/categorias. Ditado de notas só com reconhecedor local; sem ele, editor e aviso.
 4. Exportar com senha longa, importar com prévia/confirmar; tentar senha errada/arquivo alterado. Confirmar que notas não autorizadas não aparecem no digest. Guardar backup/senha fora do app.

@@ -1,48 +1,45 @@
-# Validação — JARVIS Mobile 3.0.0
+# Validação — JARVIS Mobile 3.1 / Voz A · Executivo clássico
 
-## Resultado confirmado
+## Resultado confirmado em 28/10/2026
 
-- [Execução 40678656106](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106), em 28/10/2026: **debug-apk** e **Testes instrumentados Android 35** concluídos com success.
-- Fonte validada: `5b4a37e193fce7411017b8aa37e490ffc95ce425`. Atualizações posteriores apenas de Markdown não alteram esse APK; o workflow ignora pushes só de documentação.
-- **80 testes de unidade + 40 instrumentados = 120, zero falhas e zero ignorados/pulados**. Unidade: 2.354s; suite Android: 1m50.45s no emulador API 35/x86_64. Essas durações não medem desempenho do Galaxy.
-- testDebugUnitTest, lintDebug, assembleDebug, assembleDebugAndroidTest e connectedDebugAndroidTest aprovados. Regressões da Missão 1 foram preservadas.
-- **Lint: zero erros, 29 avisos** sobre atualizações de versões/target e sugestões KTX. Não foi criado baseline para esconder erros.
-- [APK de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12812505712) · [relatórios de unidade, Lint, assinatura e fontes](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12812350825) · [relatórios Android e evidências](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12811757747). Artefatos retidos por sete dias.
+[Execução 40711202098](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098): **debug-apk** e **Testes instrumentados Android 35** concluídos com success. Fonte testada: `9806fec2cbebf1f54cd2456d5a54484bf2421164`. Alterações posteriores somente em Markdown documentam o resultado sem mudar os APKs. [Validação histórica da 3.0](VALIDATION-3.0.md).
 
-## O que os testes comprovaram
+- **82 testes de unidade do assistente + 5 do motor + 44 Android = 131 aprovados**, zero falhas e zero ignorados/pulados. Duração de unidade: 2,606 s no assistente e 0,166 s no motor; suíte Android: 2 min 29,68 s. Esses tempos não medem o Galaxy.
+- testDebugUnitTest, lintDebug e assembleDebug nos dois módulos; assembleDebugAndroidTest e connectedDebugAndroidTest no assistente aprovados. Emulador API 35 / x86_64, modelo real incluído.
+- **Lint: zero erros, 30 avisos no assistente e 9 no motor**, sem baseline. Avisos de atualização/target/KTX e, no motor, textos programáticos, regras de backup e serviço exportado necessário à interoperabilidade TTS.
+- [APKs](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12827071247) · [unidade, Lint, assinatura e integridade](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12826343518) · [Android, WAVs, capturas e vídeo](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12827123187) · [fontes correspondentes do motor](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12826791121). Artefatos retidos por sete dias; a geração manual continua disponível.
 
-Notas: categorias/consentimento, pesquisa, ordenação, vínculos, merge por data, Room real, armazenamento criptografado, reabertura, CRUD e bloqueio do repositório. Backup: criptografia autenticada, senha incorreta/adulteração rejeitadas, prévia sem salvar e importação sem alteração parcial. Desconectar/apagar invalida atualizações atrasadas de cache e OAuth; reautorizar a mesma conta mantém correções locais. Exclusão remove registros/chaves locais, sem alterar mensagens/calendários originais.
+## O que foi efetivamente comprovado
 
-Grafo/editor: Compose nativo, salvar/excluir/buscar, memória bloqueada sem exibir conteúdo, lote sintético de 1.000 notas com paginação/limite visual. Lifecycle da Activity fecha sessão e descarta rascunho ao sair; FLAG_SECURE presente. O teste autentica o estado de fixture diretamente para verificar UI/lifecycle: **não valida impressão digital ou PIN físico**.
+O Faber pt-BR é carregado pelo motor real `br.com.jarvis.voicea` via TextToSpeechService. As quatro frases aprovadas e a frase inédita “Reunião de revisão às nove e quarenta, com duração de vinte minutos.” foram sintetizadas em WAV/PCM não vazio, 22.050 Hz, mono/16 bits, com durações distintas. O SpeechOutput do aplicativo selecionou o motor aprovado, recebeu PCM real e concluiu a reprodução. As quatro WAVs públicas ficam no artefato Android. São evidências de síntese em emulador; não equivalem a ouvir o alto-falante físico do Samsung.
 
-Agenda: consultas de calendário LOCAL isolado somente leitura, expansão de três recorrências, dia inteiro UTC/fim exclusivo, exclusão de cancelados e contagem do provider inalterada. Testes antigos de criação verificada de evento também passaram. Não se testou uma conta Google Agenda real, apenas o provider oficial que expõe agendas já sincronizadas.
+O teste Android conferiu certificado/metadata e ausência de permissões de rede/microfone. O motor **não solicita nenhuma permissão Android**; a síntese com modelo incluído não depende de rede, conta, API ou voz instalada pelo Google/Samsung. Reconhecimento da fala é separado e continua dependendo do serviço pt-BR do Android. Ditado pessoal mantém a política de reconhecimento local.
 
-Notícias: RSS/Atom, datas desconhecidas/futuras, links seguros, DTD recusada, cache/TTL/ETag/304, deduplicação, filtros e fallback offline. Clima: opt-in, dados fornecidos, probabilidade de chuva desconhecida permanece nula, cache e desativação. Transporte fixture usa Room real; disponibilidade externa é verificada separadamente.
+Todos os 401 inicializadores ONNX são idênticos aos do Faber da audição aprovada. O grafo original é mantido, adicionando somente metadata para o carregador. O hash original é `858555e3a064209c57088fe6bd70c4c3dc54d03eaa00c45d5ecaf43a33f95aa7`; o contêiner incluído é `956b4f1733903891c4ba0973d0603b2a3d8c09c8432fb3bb5203a90a7431daca`. Modelos e binários de build têm hashes fixados.
 
-Digest e e-mail: datas/fatos/limites de texto, ausência de fonte distinta de agenda vazia, somente notas autorizadas, identificação de cache, parsing e classificação local com dados sintéticos. Comando de e-mail pela Activity usa o mesmo roteador e permanece sem som/microfone no Silencioso, sem simular conta conectada. **OAuth, mensagens e sincronização de conta Gmail real não foram validados**: configuração e consentimento permanecem necessários.
+O DSP passou em preservação de frequência/duração, sinal finito/limitado, silêncio e normalização aproximada a -20 LUFS. Não há pitch shift. A velocidade relativa é ajustável; pitch da voz A permanece natural. Um adaptador Java fornece a assinatura boxed exigida pelo JNI, testada por reflexão e cancelamento. Isso corrige a incompatibilidade de callback das lambdas Kotlin 2 observada na primeira integração.
 
-Voz: SpeechOutput com API TTS real e mecanismo Java de teste gera PCM, callbacks de início/palavra/conclusão e parâmetros de velocidade/tom. Voz declarada on-line, mesmo após engine aquecida, é recusada para resposta pessoal e resulta em texto. Voz local de fixture produz áudio. O mecanismo é exclusivamente do APK de androidTest, não está no APK entregue e produz um tom, não voz humana. Modos, silêncio, DataStore, AudioTrack, duck e perda de foco passaram nos testes preservados.
+A migração DataStore adota A sem carregar engine/pitch antigos e preserva modo/volumes. Seleção explícita ANDROID mantém seus próprios ajustes. Testes anteriores de modos, silêncio, foco, duck, lifecycle, comandos, memória, backup, calendário, RSS, digest e conversa JNI passaram novamente. Nenhum desses módulos ganhou integração funcional nesta etapa. A voz fixture de tom continua somente no APK de androidTest e não substitui o Faber nos novos testes.
 
-Conversa livre: importação do modelo oficial com SHA-256 conferido, inferência JNI real e contexto com nome fictício Rafael em duas mensagens. O modelo respondeu literalmente “Meu nome é Rafael” em ambos os turnos: isso valida geração/contexto, **não qualidade linguística ou compreensão geral**. O modelo pequeno pode errar pronomes e conteúdo. Não recebe notas/e-mails e não executa ações pelo texto gerado.
+Os arquivos AndroidRuntime e buffer de crashes nativos coletados ao fim estão vazios. Diagnósticos do motor registram oito entregas PCM concluídas, sem eventos de falha e sem conteúdo pessoal. A proteção nativa suprime logs das bibliotecas/stderr; somente eventos técnicos estáticos são permitidos no debug. CI usa exclusivamente textos públicos/fixtures.
 
-O arquivo AndroidRuntime de erros coletado ao fim dos testes está vazio. Captura inicial da Activity foi inspecionada: HUD e seletor preservados, centrais em ⋮, sem atalhos de apps. Capturas/vídeo são do emulador. Algumas capturas históricas após troca de modo podem omitir camadas estáticas; [limite já documentado](VALIDATION-0.6.md). Telas pessoais bloqueiam captura por projeto e não são desprotegidas no debug. Não se promete perfeição visual no hardware físico a partir de um print.
+## Integridade dos arquivos entregues
 
-## Integridade do APK entregue
+| Arquivo | Pacote / versão | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| JARVIS-Mobile-3.1.0-debug.apk | br.com.jarvis.mobile / 3.1.0 (8) | 21044192 | `c811e8d1ea90968508ae6fbbd7485e8438ab766f5539c2c8a724d9bdefb8b8b3` |
+| JARVIS-Voz-A-1.0.0-debug.apk | br.com.jarvis.voicea / 1.0.0 (1) | 143608608 | `b44f9a88d86a20501393474392fba947253f998c4cac0e348b2606bd8606aa4b` |
 
-- Pacote `br.com.jarvis.mobile`, versionName 3.0.0, versionCode 7, minSdk 26, compile/target SDK 35; arm64-v8a e x86_64.
-- **21044164 bytes**; SHA-256 `d82c0b6b2f65bae54ae2d44ecaf0a0c3e5fe2614e3968f62f827d721699772c4`.
-- Certificado SHA-1 `49a2836a3c5676f625747bd16a1ffb410144e897`; SHA-256 `9d62385b20aff3bec86a2aa061a9ae8e3d566247d86046845abea340e746f820`.
-- **Assinatura debug temporária** nesta execução: não há Secrets de assinatura fixa configurados. Atualização com outro certificado exige exportar notas/desinstalar/reinstalar. [Guia e OAuth](GMAIL-OAUTH.md).
-- apksigner verificou assinatura criptográfica; zipalign verificou ZIP/16 KB. CRC, hash e alinhamento ELF de todas as bibliotecas de 64 bits também foram conferidos localmente após download, com correspondência ao relatório do CI.
-- Modelo GGUF não embutido; classes FixtureTtsService/FixtureTtsControl ausentes do APK entregue. Nenhuma chave privada/token é artefato.
-- Os testes instrumentados recompilam a mesma revisão em outro job; sem assinatura fixa, seu certificado debug é diferente do APK distribuído. As regras/código são os mesmos; não houve teste físico desse arquivo no Galaxy.
+Compile/target SDK 35; ABIs arm64-v8a e x86_64. Assistente minSdk 26; motor minSdk 30 (Android 11+), compatível com o S25 FE. As seis bibliotecas do assistente e dez do motor passaram em alinhamento ELF/ZIP de 16 KB. apksigner verificou ambas as assinaturas no CI. Os downloads foram reconstruídos sem modificar os APKs; hashes, tamanhos, CRC, alinhamento e hash do modelo foram reconferidos localmente e correspondem ao CI.
 
-## Disponibilidade e bloqueios
+Certificado comum SHA-1 `33469f56e8acbca2fd5cb341159c58711a6f775b`; SHA-256 `256a7b974d9a4d5c257acef5ebea5a728d20cda80e115b98a096ce63bad70f98`. **Assinatura debug temporária** nesta execução. Instale os dois APKs do mesmo par. Se a versão anterior tiver outro certificado, exporte as notas antes de desinstalar; desinstalação apaga dados locais. Nenhuma chave privada vai no repositório/artefato.
 
-Checagem em `2026-10-28T11:17:21.010568+00:00`: os três feeds oficiais da EBC responderam HTTP 200 com dez itens cada. Open-Meteo respondeu HTTP 200 para a localização pública de teste São Paulo, com previsão realmente fornecida. Isso comprova disponibilidade nesse instante; não garante serviço contínuo e não configura clima pessoal no app.
+Os instrumentados recompilam a mesma revisão em outro job. Seu certificado temporário difere do par distribuído, mas também coincide entre assistente e motor desse job; regras/código/modelos são os mesmos. Não houve teste físico dos arquivos distribuídos no Galaxy. Os fontes GPL correspondentes do motor, incluindo o adaptador novo e fontes exatas das dependências, acompanham a entrega. [Licenças](../voice-engine/THIRD-PARTY.md).
 
-**Gmail real:** registrar cliente OAuth Android com pacote e SHA-1 do APK instalado, ativar Gmail API, configurar consentimento/usuário de teste e autorizar a própria conta. Recomenda-se assinatura fixa por Secrets antes disso para não trocar a identidade em cada build. [Menor caminho para conectar](GMAIL-OAUTH.md). O escopo gmail.readonly é restrito; publicação ampla pode exigir verificação Google. Não foi solicitado serviço pago, senha principal ou infraestrutura comercial.
+## Limites e próximo teste
 
-**Samsung Galaxy S25 FE:** ainda validar ASR/TTS pt-BR instalado, voz física, biometria/PIN, alto-falante/Bluetooth/DND, permissões, pausa ao bloquear, aparência/fluidez/bateria e a conta real. Sem medições de FPS, autonomia ou temperatura. [Roteiro de aceite](TESTES.md). Operação geral de reconhecimento depende do serviço Android; ditado de notas recusa fallback para rede.
+A compilação está desbloqueada. O executor local não tem Android SDK; compilação, Lint e testes Android foram executados no GitHub Actions. O verificador Python local só inspeciona estrutura e não foi usado como substituto.
 
-Sem bloqueio de compilação nesta revisão. Não há SDK Android no executor local: o CI executou a compilação/testes; o script Python de estrutura não foi apresentado como substituto. Nenhum aplicativo foi publicado em loja ou release, nenhum serviço pago/chave de API foi adicionado. [Validação histórica da 0.6](VALIDATION-0.6.md).
+No Galaxy S25 FE ainda é necessário validar timbre/dicção percebidos, latência, alto-falante/fones/Bluetooth/DND, reconhecimento pt-BR, permissões e interrupção ao sair/bloquear. Não há medição física de FPS, temperatura ou bateria. Runtime/fonemizador/DSP e saída física podem causar diferenças sutis em relação ao MP3 da audição; a identidade/pesos escolhidos permanecem os mesmos. [Roteiro de aceite](TESTES.md) · [Instalação pelo celular](APK-PELO-CELULAR.md).
+
+Gmail real e autenticação continuam dependentes do registro OAuth/consentimento já documentado na 3.0; não foram conectados ou alterados nesta missão. Não houve clonagem de uma pessoa do vídeo, serviço pago, nova credencial embutida, publicação em loja ou release.

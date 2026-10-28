@@ -1,4 +1,4 @@
-# Privacidade e permissões — JARVIS 3.0
+# Privacidade e permissões — JARVIS 3.1
 
 Sem telemetria, anúncios, gravação contínua, servidor de IA ou credenciais embutidas. Use dados de teste até concluir as verificações no aparelho.
 
@@ -22,6 +22,12 @@ Room interno guarda payloads AES-256-GCM; chaves separadas de memória/cache no 
 Notas só são salvas após confirmação; saúde/finanças/relações são opcionais. Rascunhos e previews não são persistidos automaticamente. Somente notas com autorização individual fornecem títulos ao digest, e apenas após desbloqueio. Conversa local não recebe notas/e-mails nem memoriza automaticamente. FLAG_SECURE protege telas de notas/e-mail/digest e respostas pessoais; impede capturas/gravação dessas telas conforme o Android. Não coloque conteúdo real nos relatórios de bug.
 
 Tokens de acesso Gmail ficam em RAM; cache gerenciado pelo SDK Google, não em SharedPreferences próprio. Conta/metadados/snippets e cidade/cache têm payload criptografado. Logs não registram tokens, notas, assuntos, corpo de e-mail ou comandos privados. CI usa exclusivamente fixtures de teste. Backup externo só inclui notas/vínculos/flags, criptografado por senha que não guardamos; os arquivos exportados ficam sob controle do usuário.
+
+## Motor independente da voz A
+
+JARVIS Voz A é instalado como segundo aplicativo, sem nenhuma permissão Android solicitada, inclusive sem INTERNET ou RECORD_AUDIO. O modelo vem no APK. O JARVIS só o utiliza se certificado e identidade esperados coincidirem. Texto e PCM de síntese ficam em RAM; o motor não guarda histórico/gravações e não cria worker de captura. Arquivos persistidos são apenas recursos estáticos do fonemizador. Logs das bibliotecas são filtrados no próprio processo, com stderr suprimido; debug só permite eventos técnicos estáticos. O CI usa frases públicas e disponibiliza suas amostras deliberadamente.
+
+A alternativa “Voz do Android” é uma escolha explícita e continua sujeita à política de vozes locais para dados pessoais. Reconhecimento de fala é separado da síntese: instalar este motor não instala um reconhecedor offline. [Identidade/licenças e limitações](VOZ-A.md).
 
 ## Voz, rede e exclusão
 

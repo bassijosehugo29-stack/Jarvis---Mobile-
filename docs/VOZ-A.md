@@ -1,6 +1,6 @@
 # Voz A aprovada — Executivo clássico
 
-O usuário aprovou a opção A. Esta integração está em validação; resultados anteriores da 3.0 não comprovam o motor novo. Nada foi alterado nos módulos de Gmail, agenda, notícias ou memória nesta etapa.
+O usuário aprovou a opção A. Esta integração foi compilada e validada no CI: 87 testes de unidade e 44 Android, sem falhas, incluindo síntese real do Faber e reprodução pelo SpeechOutput. O teste físico no Galaxy continua pendente. Nada foi alterado nos módulos de Gmail, agenda, notícias ou memória nesta etapa.
 
 ## Instalar no celular
 
@@ -26,10 +26,12 @@ Textos são sintetizados no próprio motor, inclusive frases novas. Não são um
 
 O motor é um aplicativo separado, comunicando pelo protocolo Android TextToSpeech. Seu código é GPL-3.0-or-later, com sherpa-onnx v1.13.8/Apache-2.0 e fonemizador eSpeak NG/GPL. Isso não muda a licença do APK separado JARVIS Mobile. Fontes correspondentes e receitas de compilação são fornecidas junto aos artefatos. [Avisos do motor](../voice-engine/THIRD-PARTY.md).
 
-O Gradle compila os bindings Kotlin a partir da versão exata da biblioteca nativa. Arquivos binários/modelos são obtidos somente no build por scripts/prepare_voice_a.py, com SHA-256 fixado e validação de ELF 16 KB. Não são baixados como código executável no celular. Para compilar, instale Python/onnx e execute o preparador antes do Gradle.
+O Gradle compila os bindings Kotlin a partir da versão exata da biblioteca nativa. Um adaptador Java fornece a assinatura boxed explícita que o JNI exige; isso evita incompatibilidade com lambdas invokedynamic do Kotlin 2 e mantém o retorno de cancelamento. Arquivos binários/modelos são obtidos somente no build por scripts/prepare_voice_a.py, com SHA-256 fixado e validação de ELF 16 KB. Não são baixados como código executável no celular. Para compilar, instale Python/onnx e execute o preparador antes do Gradle.
 
-## Verificação prevista
+## Verificação automatizada
 
 Testes do DSP verificam sinal finito/limitado, silêncio, normalização e preservação da frequência fundamental. Testes Android verificam assinatura/metadata/permissões, as quatro frases aprovadas e uma frase inédita, PCM real, seleção pelo SpeechOutput e migração das preferências preservando o modo. As quatro frases sintetizadas no Android ficam no artefato de testes, com conteúdo público de comparação. Nenhum texto pessoal real entra no CI.
 
 Não afirmar aprovação física no Galaxy a partir do emulador. Não há serviço pago obrigatório nem publicação em loja nesta entrega. Consulte o resultado confirmado em [VALIDATION.md](VALIDATION.md).
+
+[APK do assistente e motor](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12827071247) · [fontes correspondentes GPL do motor](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12826791121) · [WAVs geradas no Android e testes](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12827123187). Fonte validada `9806fec2cbebf1f54cd2456d5a54484bf2421164`. Os quatro arquivos públicos `voz-a-android-frase-*.wav` são gerados pelo motor real em API 35/x86_64, não pela fixture de tom.

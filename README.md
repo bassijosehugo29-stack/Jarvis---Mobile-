@@ -1,14 +1,10 @@
-# Voz A aprovada — integração 3.1 em validação
-
-O usuário escolheu **A · Executivo clássico**. O projeto agora prepara dois APKs: JARVIS Mobile 3.1 e o motor local JARVIS Voz A, com o modelo Faber pt-BR aprovado, sem permissão de internet/microfone no motor. A compilação e os testes desta integração ainda não foram confirmados. Resultados 3.0 abaixo são históricos e não validam o motor novo. [Instalar e entender a voz A](docs/VOZ-A.md).
-
-# JARVIS Mobile 3.0
+# JARVIS Mobile 3.1 — Voz A · Executivo clássico
 
 Assistente Android nativo em Kotlin/Jetpack Compose para uso pessoal, inicialmente no Samsung Galaxy S25 FE. Evolui o projeto existente: HUD preto/azul/ciano/dourado, núcleo holográfico, voz, trilha original e três modos permanecem integrados às novas centrais.
 
-**APK 3.0 compilado e validado no CI:** [baixar APK de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12812505712) · [execução aprovada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106). **80 testes de unidade + 40 Android = 120 aprovados**, Lint com zero erros e 29 avisos não impeditivos. Fonte `5b4a37e193fce7411017b8aa37e490ffc95ce425`. Alterações posteriores apenas na documentação não mudam o APK.
+A voz A aprovada é agora o perfil padrão. A entrega contém **dois APKs da mesma execução**: o assistente e **JARVIS Voz A**, motor local com Faber pt-BR. O motor já traz o modelo, não solicita internet/microfone e usa a API TextToSpeech do Android. [Voz, instalação e licenças](docs/VOZ-A.md).
 
-Arquivo de 21044164 bytes (cerca de 21 MB), SHA-256 `d82c0b6b2f65bae54ae2d44ecaf0a0c3e5fe2614e3968f62f827d721699772c4`. [Relatórios](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12812350825) · [testes Android, capturas e vídeo](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12811757747), disponíveis por sete dias. O APK usa assinatura debug temporária; veja a seção de assinatura antes de atualizar. Voz/biometria físicas no Galaxy e OAuth Gmail real ainda precisam de validação no aparelho.
+**Compilação e validação confirmadas:** [dois APKs de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12827071247) · [execução aprovada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098). **87 testes de unidade + 44 Android = 131 aprovados**, sem falhas ou testes ignorados. Lint: zero erros; 30 avisos no assistente e 9 no motor. Fonte `9806fec2cbebf1f54cd2456d5a54484bf2421164`. [Hashes, evidências e limites](docs/VALIDATION.md) · [fontes correspondentes do motor](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098/artifacts/12826791121). Artefatos do GitHub duram sete dias.
 
 ## O que está no código
 
@@ -23,14 +19,14 @@ Arquivo de 21044164 bytes (cerca de 21 MB), SHA-256 `d82c0b6b2f65bae54ae2d44ecaf
 
 ## Primeiro uso
 
-1. Instale o APK validado seguindo o [guia pelo celular](docs/APK-PELO-CELULAR.md). Use PIN, padrão ou senha do Android para poder abrir a memória.
-2. Nos ajustes do JARVIS, liste as vozes e teste uma voz portuguesa **local instalada**. Instale pt-BR nos ajustes de texto para fala do Android. Ajuste o volume de mídia; confira alto-falante/fones/Bluetooth.
+1. Instale primeiro o APK **JARVIS Voz A** e depois **JARVIS Mobile**, da mesma entrega, seguindo o [guia pelo celular](docs/APK-PELO-CELULAR.md). Use PIN, padrão ou senha do Android para poder abrir a memória.
+2. Escolha **Assistente → ajustes → A · Executivo clássico → Testar voz**. O modelo já está no APK do motor. Ajuste o volume de mídia; confira alto-falante/fones/Bluetooth. “Voz do Android” continua sendo uma alternativa explícita nos ajustes.
 3. Toque no núcleo e permita microfone durante o uso. A primeira ativação diária pode apresentar o digest. Para comandos, diga “Jarvis, minha agenda” ou “Jarvis, abrir ChatGPT”. A opção “Primeira ativação do dia” fica no DIGEST.
 4. Abra **⋮ → SECOND BRAIN**, autentique no Android e crie uma nota. Revise antes de salvar. Para ouvir dados pessoais é obrigatória uma voz local; sem ela, o texto permanece visível com orientação.
 5. Em **AGENDA**, permita leitura quando quiser consultar seus calendários. Em **RADAR**, escolha assuntos e atualize. Configure clima apenas se desejar enviar a cidade ao Open-Meteo.
 6. Gmail é opcional; leia o [guia OAuth](docs/GMAIL-OAUTH.md). O restante funciona sem Gmail.
 
-O TTS nativo pode ter vozes diferentes por dispositivo. O perfil inicial é calmo (velocidade 0,90×, tom 0,88×), ambos ajustáveis; gênero/qualidade de estúdio não são garantidos. Não há clonagem de voz.
+O perfil A mantém o pitch natural do modelo aprovado, sem redução artificial, e permite ajustar a velocidade relativa ao ritmo base. Runtime, fonemizador e alto-falantes podem mudar detalhes em relação à audição. A opção “Voz do Android” usa os dados instalados do provedor; gênero/qualidade dependem dele. Não há clonagem de uma pessoa do vídeo.
 
 ## Três modos com escolha salva
 
@@ -62,13 +58,16 @@ Nenhuma loja, release pública ou serviço pago foi ativado. Actions usa runners
 
 ## Compilar e verificar
 
-Pelo celular: [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Aguarde **os dois jobs verdes**, abra o run, baixe **JARVIS-Mobile-debug**, extraia e instale `app-debug.apk`. Artefatos duram sete dias. [Passos completos](docs/APK-PELO-CELULAR.md).
+Pelo celular: [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Aguarde **os dois jobs verdes**, abra o run, baixe **JARVIS-Mobile-debug**, extraia e instale primeiro `JARVIS-Voz-A-1.0.0-debug.apk` e depois `JARVIS-Mobile-3.1.0-debug.apk`. Artefatos duram sete dias. [Passos completos](docs/APK-PELO-CELULAR.md).
 
-No computador: JDK 17, Platform/target/compile SDK 35, Build Tools 35.0.0, NDK 27.2.12479018, CMake 3.22.1; Gradle 8.11.1, AGP 8.9.2, Kotlin/Compose 2.1.20, KSP 2.1.20-2.0.1, Room 2.7.2. Android mínimo 26; ABIs arm64-v8a e x86_64. Configure ANDROID_HOME ou sdk.dir em local.properties. Não versione esse arquivo.
+No computador: JDK 17, Platform/target/compile SDK 35, Build Tools 35.0.0, NDK 27.2.12479018, CMake 3.22.1; Gradle 8.11.1, AGP 8.9.2, Kotlin/Compose 2.1.20, KSP 2.1.20-2.0.1, Room 2.7.2. Android mínimo 26 no assistente e 30 no motor da voz A; ABIs arm64-v8a e x86_64. Configure ANDROID_HOME ou sdk.dir em local.properties. Não versione esse arquivo.
 
 ```sh
-./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+python3 -m pip install onnx==1.18.0
+python3 scripts/prepare_voice_a.py
+./gradlew :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :voice-engine:lintDebug :app:assembleDebug :voice-engine:assembleDebug :app:assembleDebugAndroidTest
 python3 scripts/verify_apk.py
+python3 scripts/bundle_voice_a_source.py
 # Testes Android exigem emulador/dispositivo; o teste de conversa usa o modelo real:
 python3 scripts/fetch_test_model.py /tmp/jarvis-conversation-model.gguf
 adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
@@ -78,6 +77,6 @@ sh scripts/test_on_emulator.sh
 
 Windows: `.\gradlew.bat`. CMake obtém llama.cpp em commit fixado durante compilação; nenhum binário executável é baixado pelo app. [Arquitetura](docs/ARQUITETURA.md), [testes](docs/TESTES.md) e [validação real](docs/VALIDATION.md).
 
-**Assinatura:** sem os quatro Secrets opcionais de assinatura, o CI usa chave debug temporária. Uma atualização com chave diferente exige desinstalar a anterior, apagando dados locais: exporte notas antes. Para Gmail e atualizações estáveis, configure uma chave privada fixa conforme o [guia](docs/GMAIL-OAUTH.md). Nenhuma chave privada é guardada no repositório ou artefato.
+**Assinatura:** sem os quatro Secrets opcionais de assinatura, o CI usa chave debug temporária. Os dois APKs precisam compartilhar o certificado; instale sempre o par da mesma execução. Uma atualização com chave diferente exige desinstalar a anterior, apagando dados locais: exporte notas antes. Para Gmail e atualizações estáveis, configure uma chave privada fixa conforme o [guia](docs/GMAIL-OAUTH.md). Nenhuma chave privada é guardada no repositório ou artefato.
 
 Projeto pessoal independente; marcas pertencem a seus titulares.
