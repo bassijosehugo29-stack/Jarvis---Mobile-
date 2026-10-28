@@ -1,3 +1,7 @@
+# Comandos do celular na versão 0.5
+
+Na 0.5, ative o núcleo para ouvir a saudação imediatamente. Durante a sessão ativa e visível, o nome Jarvis é opcional, e perguntas livres são encaminhadas ao modelo local após o preparo. A janela de 20 segundos passa a limitar respostas de seleção/preenchimento de pedidos, não a conversa inteira. O restante desta página documenta os formatos dos comandos da 0.4, preservados na 0.5.
+
 # Comandos de voz — versão 0.4.0
 
 A tela principal mantém o HUD, o núcleo para ativar/pausar o microfone e as configurações. Os atalhos de ChatGPT/alarme foram removidos. Não é necessário tocar em botões de cada ação.

@@ -21,6 +21,28 @@ import java.util.concurrent.atomic.AtomicReference
 class SpeechOutputTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
+    @Test fun selectedVoiceRatePitchAndPlaybackCallbacksReachRealAndroidTts() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val result = AtomicReference<SpeechResult>()
+        val done = CountDownLatch(1)
+        val started = CountDownLatch(1)
+        val range = CountDownLatch(1)
+        lateinit var output: SpeechOutput
+        instrumentation.runOnMainSync {
+            output = SpeechOutput(compose.activity, {}, listOf(instrumentation.context.packageName),
+                onPlayback = { if (it) started.countDown() }, onRange = { _, _, _ -> range.countDown() })
+            output.configure(ExperienceSettings(speechRate = 0.91f, pitch = 0.83f,
+                voiceName = "jarvis-fixture-pt-PT", voiceVolume = 0.6f))
+            output.speak("Teste de perfil vocal do JARVIS") { result.set(it); done.countDown() }
+        }
+        try {
+            assertTrue(done.await(25, TimeUnit.SECONDS))
+            assertTrue(result.get().toString(), result.get() is SpeechResult.Completed)
+            assertTrue(started.await(1, TimeUnit.SECONDS))
+            assertTrue("Engine's word range must reach UI callback", range.await(1, TimeUnit.SECONDS))
+        } finally { instrumentation.runOnMainSync { output.close() } }
+    }
+
     @Test fun silentAndVoiceDisabledNeverInitializeOrSynthesize() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         var statuses = 0

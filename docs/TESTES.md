@@ -1,61 +1,42 @@
-# Plano de testes — versão 0.4.0
+# Testes da versão 0.5
 
-**Confirmado:** 39 testes de unidade e 11 instrumentados aprovados, total 50, sem falhas. [Execução completa](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40598031094); Lint com 0 erros e 10 avisos. Detalhes em [VALIDATION.md](VALIDATION.md).
+A versão 0.5 passou em 47 testes de unidade e 15 instrumentados (62 total), além de Lint e compilação; execução 40604934666. Resultados confirmados e links serão registrados em [VALIDATION.md](VALIDATION.md). Resultados da 0.4 não validam o novo runtime.
 
-## Automatizados
+## Cobertura
 
-- CommandParserTest: ativação, comandos explícitos de aplicativos, agenda e alarme; um título de compromisso não pode virar comando de abrir app.
-- AppResolverTest: nomes instalados, acentos, aliases, ausência de correspondência, múltiplas opções e respostas numeradas.
-- EventParserTest: conversa com dados incompletos, preservação de título, calendário pt-BR, palavras/números, duração, limites, datas e horários conflitantes, passado e mudanças de fuso.
-- ConversationGateTest: ativação, janela, expiração e reinício.
-- JarvisScreenTest: núcleo e pausa, ausência de atalhos ChatGPT/alarme, configurações, cabeçalho fixo e fonte ampliada.
-- MainActivityVisualTest: Activity real com microfone desligado e captura da tela.
-- InstalledAppsTest: consulta real de atividades de launcher exportadas e construção de intent explícito.
-- CalendarProviderTest: permissão no emulador, criação de calendário LOCAL isolado, gravação/leitura real de evento (título, fuso, início/fim, agenda e ausência de alarme) e remoção dos dados de teste em finally. Nenhuma conta externa é usada.
-- AlarmIntentTest: intent oficial, horário, solicitação de dispensa de UI apenas com horário válido.
-- Android Lint e compilação de APK de app e testes.
+- CommandParserTest: pedidos explícitos, transcrições da palavra Jarvis, preparação do modelo, alarmes/datas e perguntas de conversa que não podem executar ações.
+- AppResolverTest: rótulos, aliases, acentos, ambiguidade e respostas numeradas com/sem Jarvis.
+- EventParserTest/ConversationGateTest: campos ausentes, títulos, fusos, durações, limites, conflitos, expiração e cancelamento.
+- VoiceSelectionTest: prioridade pt-BR, voz instalada, pt-PT como alternativa e rejeição de outros idiomas.
+- ChatHistoryTest: contexto, limites, limpeza e delimitadores de papéis.
+- JarvisScreenTest/MainActivityVisualTest: núcleo, ausência de atalhos, mensagem sem microfone, diagnósticos de voz, ajustes, cabeçalho, fonte ampliada e Activity real.
+- SpeechOutputTest: API TTS real com serviço de fixture no APK de testes, produzindo PCM, completando callback, fallback sem pt-BR e falha de síntese explícita. O fixture usa Java/Android puro porque roda em processo separado sem bibliotecas do APK alvo. Não comprova alto-falante nem voz humana do Galaxy.
+- LocalConversationTest: modelo oficial com hash conferido, importação, duas mensagens pela Activity real, inferência JNI e contexto do nome Rafael. Exporta transcrição fictícia para os relatórios.
+- CalendarProviderTest, InstalledAppsTest e AlarmIntentTest: gravação/leitura em calendário LOCAL isolado e limpo ao terminar, launcher exportado, intents e limites das confirmações oficiais.
+- Lint, compilação Kotlin/Java/C++/Compose e inspeção de integridade/alinhamento do APK.
+
+## Executar
+
+JDK 17, SDK 35, Build Tools 35.0.0, NDK 27.2.12479018, CMake 3.22.1 e dispositivo/emulador ARM64 ou x86_64. Modelo precisa de cerca de 491 MB e acesso inicial à internet, sem chave ou inference API.
 
 ```sh
 ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
-./gradlew connectedDebugAndroidTest
+python3 scripts/fetch_test_model.py /tmp/jarvis-conversation-model.gguf
+adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
+adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf
+sh scripts/test_on_emulator.sh
 ```
 
-A máquina local não tem Android SDK. A evidência de compilação/testes vem do GitHub Actions, com emulador Android 35 no segundo job. Não confundir a verificação Python de estrutura com compilação Kotlin.
+O shell preserva o resultado real dos testes e tenta coletar relatórios, capturas/transcrição e erros de runtime mesmo após falha. Só grava prévia e reinstala a Activity se os testes passarem. O CI não suprime erros do app. O launcher do emulador é parado para impedir sua sobreposição de ANR às capturas. O SDK Android não está instalado no executor local: evidência de compilação vem do GitHub Actions, não da verificação Python de estrutura.
 
-## Aceitação manual no Galaxy S25 FE
+## Aceite no Galaxy S25 FE
 
-Registre APK, Android/One UI, provedor de reconhecimento/TTS e modelos pt-BR.
+1. Testar voz com volume de mídia audível, alto-falante, fones/Bluetooth e uma voz pt-BR instalada. Negar/remover voz deve gerar orientação, sem fingir que falou.
+2. Preparar modelo por Wi-Fi, interromper/retomar, cancelar e importar o arquivo oficial. Modelo errado/incompleto deve ser recusado; sem modelo, comandos ainda funcionam e conversa pede preparação.
+3. Ativar e ouvir a saudação; perguntar sem repetir Jarvis, ouvir uma resposta e fazer uma pergunta que dependa do contexto anterior. Interromper no núcleo e conferir o retorno da escuta após fala.
+4. Testar mensagem por texto sem microfone; keyboard, fonte 150%, TalkBack, rotação e erro de volume visível.
+5. Abrir aplicativo, criar alarme e agendar compromisso; conferir o resultado nos apps oficiais. Perguntar sobre um alarme não pode criar um alarme.
+6. Sair, bloquear, trocar app, atender chamada e voltar: microfone/TTS param; reativação é manual. Nenhuma conversa incompleta pode disparar ação posterior.
+7. Validar modelos pt-BR offline em modo avião; disponibilidade real é do provedor. Medir latência, aquecimento, bateria e português do modelo local. Não concluir desempenho do Galaxy a partir do emulador.
 
-| Caso | Esperado |
-| --- | --- |
-| Abrir pela primeira vez | HUD e núcleo; sem atalhos ChatGPT/alarme; microfone desligado; nenhum pedido de calendário |
-| Negar microfone | Orientação, sem crash e sem áudio capturado |
-| Ativar/permitir e dizer Jarvis | Resposta exata “Às suas ordens, senhor” |
-| Pedir abrir WhatsApp antes de Jarvis | Não abre |
-| Jarvis abrir WhatsApp / entrar no Instagram | Abre app instalado, desliga microfone antes de sair |
-| App ausente / desativado | Mensagem de ausência, sem instalar ou abrir uma busca web |
-| Nome ambíguo | Pergunta e aguarda número/nome completo; não escolhe sozinho |
-| App em Pasta Segura ou outro perfil | Informa ausência se não visível ao launcher do perfil atual |
-| Jarvis abrir ChatGPT | Apenas pacote oficial com.openai.chatgpt |
-| Jarvis agende dentista amanhã às quinze horas | Primeiro pedido completo solicita calendário; após permitir, salva com duração padrão de uma hora |
-| Negar calendário / não perguntar novamente | Não grava; orienta pelas configurações |
-| Várias agendas | Pergunta a agenda; escolha por voz é lembrada |
-| Agenda removida ou tornada somente leitura | Revalida e pergunta novamente / orienta configurar agenda |
-| Agende dentista → amanhã → quinze e trinta | Coleta todos os campos por voz e só então salva |
-| Agende amanhã às 15h → Consulta | Pergunta título e salva após resposta |
-| Dia 30/10 às 14h por 30 minutos | Conferir data, fuso, horário final e título no calendário |
-| Data inválida, horário passado ou duas datas | Não salva por suposição; pergunta/corrige |
-| Agendar todo dia / daqui a duas horas | Explica formato suportado; não cria evento parcial |
-| Cancelar/pausar/esperar mais de 20 segundos | Descarta pedido incompleto; nenhuma gravação posterior |
-| Sair durante seleção/permissão | Microfone desligado, pedido incompleto cancelado |
-| Interromper gravação ou receber resposta incerta | Conferir agenda antes de repetir para evitar duplicata |
-| Alarme para sete e meia | Envia 07:30 ao relógio com skip-UI; conferir resultado real no Samsung Clock |
-| Criar alarme sem horário | Pergunta o horário por voz |
-| 25:90 / hora ambígua | Não solicita alarme com horário inventado |
-| TTS indisponível / falha | Texto permanece disponível; sem sobreposição de escuta à fala |
-| JARVIS falando | Microfone pausado, animação de saída decorativa |
-| Modelo pt-BR ausente / modo avião | Orienta configurar; offline depende do provedor/modelo instalado |
-| Ir para home, bloquear, trocar app e voltar | Microfone liberado; ativação manual ao retornar |
-| Fonte 150%, TalkBack, rotação | Núcleo e configurações alcançáveis, cabeçalho e rodapé protegidos das barras |
-
-As capturas e vídeo do CI usam um emulador, não um Galaxy S25 FE físico. A prévia é silenciosa e mostra o microfone desligado. O launcher do emulador é parado antes das capturas para evitar sua sobreposição de ANR; erros do app não são suprimidos. Após os testes de aceite, remova os compromissos e alarmes de teste.
+Apenas o dono pode confirmar que ouviu a voz física no aparelho. O teste emulador valida componentes e integração, sem substituir esse aceite. Remova compromissos e alarmes de teste ao terminar.

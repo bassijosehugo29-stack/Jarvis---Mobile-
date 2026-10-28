@@ -70,7 +70,7 @@ class Soundscape(private val focus: AssistantAudioFocus, private val onError: (S
                 else -> Unit
             }
         }
-        if (ambientPcm != null) previousPhase = phase
+        if (ambientPcm != null) previousPhase = if (foreground) phase else null
         releaseFocusWhenIdle()
     }
 

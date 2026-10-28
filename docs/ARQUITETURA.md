@@ -1,71 +1,45 @@
-# Arquitetura e evolução da escuta
+# Arquitetura — voz, conversa e ações
 
-## Fluxo atual
+## Sessão visível
 
-```text
-Tela Compose → permissão RECORD_AUDIO → ViewModel → SpeechInput
-                                                     ↓ texto final pt-BR
-                                           CommandParser + ConversationGate
-                                                     ↓ comando autorizado
-                           TextToSpeech (microfone pausado durante a fala)
-                                                     ↓ conclusão / timeout
-                            próxima sessão de voz OU evento para Activity
-                                                     ↓
-                                 AndroidActions → app instalado / relógio Android
-```
+A Activity solicita microfone apenas ao ativar o núcleo. A ViewModel inicia uma sessão, fala a saudação e alterna SpeechRecognizer pt-BR → interpretação → resposta falada → próxima sessão de escuta. A ativação manual autoriza a conversa enquanto o app permanece visível; Jarvis é opcional durante essa sessão. Perguntas de seleção e preenchimento de comandos expiram em 20 segundos. Pausar, sair ou bloquear cancela pedidos incompletos.
 
-Todos os callbacks de reconhecimento e mudanças de sessão são coordenados na thread principal. A Activity coleta ações somente em estado STARTED. Não há execução deliberada de ações em segundo plano. O gate usa tempo monotônico e exige “Jarvis” antes de aceitar comandos, com janela de 20 segundos renovável. Não é uma autenticação: qualquer pessoa próxima pode falar comandos durante a escuta.
+O reconhecedor usa sessões oficiais com pequenos intervalos, preferindo o mecanismo no dispositivo quando disponível. Ele é cancelado durante TTS e geração de texto, e destruído em onStop. Ao retornar, a ativação é manual. Não há serviço de microfone, inicialização por boot, acessibilidade ou escuta oculta. DownloadManager pode continuar um download de modelo explicitamente solicitado com notificação do Android, sem captura de áudio.
 
-O reconhecimento é feito por sessões oficiais do Android, não por um detector dedicado de wake word. Há pausas de aproximadamente 800–1000 ms entre sessões; erros não transitórios levam a até três tentativas. Não promete escuta contínua sem lacunas. O microfone é cancelado durante o TTS e destruído em `onStop`. Ao voltar, a ativação é manual.
+## Entrada e roteamento
 
-`SpeechInput` é a fronteira para outro mecanismo de reconhecimento gratuito ou para um serviço futuro. O parser e o gate não dependem de Activity. O contrato não elimina as exigências do sistema para uma implementação em segundo plano.
+CommandParser interpreta somente pedidos explícitos de abrir apps, agenda e alarme, preparação do modelo, ajuda e parada. Perguntas sobre esses assuntos seguem como conversa, sem executar ações por mera presença de uma palavra. Nomes e números são normalizados em Kotlin puro. A origem das ações é apenas texto/fala do usuário; respostas do modelo nunca retornam ao dispatcher.
 
-## Segunda fase, não implementada nem declarada no Manifest
+O campo de mensagem usa o mesmo roteamento, sem precisar de RECORD_AUDIO. Dados são exibidos em StateFlow na tela Compose. Enquanto pensa ou fala, uma nova mensagem não se sobrepõe à anterior; o núcleo permite interromper a resposta. A execução e os callbacks são condicionados à Activity visível.
 
-Para escutar além da tela atual, será preciso implementar e validar:
+## Saída de voz
 
-- Serviço de primeiro plano com `foregroundServiceType="microphone"`, permissões `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MICROPHONE` (Android 14+) e `RECORD_AUDIO`, iniciando enquanto a Activity está visível e a permissão está válida. Em Android 12+ há limites para iniciar serviços a partir do background; Android 14+ aplica as regras de permissão “durante o uso”.
-- Notificação persistente com ação **Parar**. No Android 13+, tratar `POST_NOTIFICATIONS` para a experiência de notificação, respeitando que a negativa não remove as obrigações de um foreground service.
-- Coordenador de voz pertencente ao Service, sem guardar referência à Activity; microfone liberado na parada. Não transferir diretamente esta ViewModel para o Service.
-- Mecanismo local dedicado de palavra-chave (licença gratuita verificada), análise de bateria, transparência sobre microfone e avaliação de pt-BR no dispositivo. O Android desaconselha usar `SpeechRecognizer` como reconhecimento contínuo de longa duração; o serviço não deve simplesmente repetir sessões indefinidamente.
-- Convivência com chamadas, perda de foco, economia de bateria Samsung, bloqueio de tela, remoção de tarefa, revogação de permissão e morte do processo.
-- Abertura de aplicativos a partir do background deve respeitar as restrições de início de Activity. Preferir uma ação de notificação que o usuário toque. Não usar overlay, acessibilidade, bypass de bateria ou permissões extras para contornar essas regras.
-- Não iniciar gravação por boot, não pedir exclusão de otimização de bateria como padrão, não prometer funcionamento permanente.
+SpeechOutput usa AudioAttributes USAGE_MEDIA + CONTENT_TYPE_SPEECH, STREAM_MUSIC e foco temporário, liberado na parada/conclusão. MainActivity direciona os botões de volume para mídia. Busca a voz pt-BR disponível, prioriza opções locais e tenta outros mecanismos instalados; pt-PT serve de alternativa quando pt-BR falta. A configuração do mecanismo deve oferecer dados de voz utilizáveis.
 
-Esta fase requer trabalho adicional e testes no Android/One UI alvo. A v0.4 não inclui serviço, notificação, permissões de background nem gravação oculta.
+READY, falha, volume zero, perda de foco e timeout têm tratamento explícito; a falha fica visível na tela. Cada síntese tem ID para ignorar callbacks antigos, deadline e conclusão tipada. Só reinicia a escuta depois de encerrar a reprodução/callback. Testar voz e ajustes Android permitem diagnosticar o aparelho; áudio em Bluetooth, mídia zerada, DND e ausência de dados de voz continuam dependendo do Samsung/provedor.
 
-## Alarmes
+## Conversa local
 
-O app usa `AlarmClock.ACTION_SET_ALARM`, permissão normal `com.android.alarm.permission.SET_ALARM` e `EXTRA_SKIP_UI=true` quando existe um horário válido. O relógio pode exigir interação mesmo assim. Não há retorno que comprove o salvamento, por isso o JARVIS informa a solicitação sem alegar que verificou um alarme. Não usa AlarmManager, exact alarms, receiver ou serviço próprio.
+ModelStore baixa apenas o modelo oficial indicado em assets/conversation-model.json por DownloadManager, após pedido explícito, em Wi-Fi não medido. A importação usa o seletor de documentos Android. São conferidos tamanho e SHA-256 antes de permitir inferência; arquivos diferentes são rejeitados. O modelo fica na pasta privada externa do aplicativo e é removido ao desinstalar. Preferências guardam verificação/data de modificação e ID do download. Não há token ou inference API.
 
-`PortugueseTime` interpreta números e palavras como “sete e meia”, “quinze e trinta” e “três da tarde”. Ausência de horário ou ambiguidade gera pergunta por voz. Recorrência, data específica e temporizadores não são implementados.
+LocalConversation usa JNI com llama.cpp por commit fixo, compilado pelo CMake/NDK para ARM64-v8a e x86_64. O arquivo GGUF não vai no APK/Git. O runtime usa CPU, quatro threads no máximo, contexto de 2.048 tokens e saída de até 192 tokens. Tensor math recebe otimização mesmo no APK debug; a biblioteca tem alinhamento de 16 KB. Não requer GPU, Vulkan, NPU ou serviço comercial.
 
-## Aplicativos instalados e conversa
+ChatHistory mantém até três pares de mensagens em memória, com limite de tamanho, template ChatML e remoção de delimitadores de papéis inseridos no texto. Contexto excessivo gera nova tentativa sem os turnos anteriores. A geração roda fora da thread principal. Um ID atômico de requisição e callbacks de abortamento cancelam carregamento/cálculo ao parar. O modelo é liberado em fila após cancelamento, sem travar a Activity. Falhas de memória/carregamento são tratadas. Não grava histórico ou áudio.
 
-`InstalledApps` consulta somente MAIN + LAUNCHER no perfil atual, com a declaração de queries correspondente. `AppResolver` resolve o nome de exibição normalizado ou aliases conhecidos. Com mais de uma opção, a ViewModel pergunta antes de criar o intent explícito para o componente exportado selecionado. Não existe QUERY_ALL_PACKAGES, busca remota ou tentativa de manipular telas privadas de outro app. ChatGPT mantém pacote oficial exclusivo.
+O modelo não tem acesso a APIs do celular nem pesquisa internet. Pode produzir texto simples, lento ou incorreto; instruções de sistema não são comprovação de execução. Resultados reais de agenda/launcher/relógio são tratados pelo código Android separado.
 
-A ViewModel mantém apenas um pedido incompleto: horário de alarme, dados do compromisso, escolha de aplicativo ou de agenda. Novo comando explícito substitui o anterior. Cancelar, pausar, sair da Activity ou expirar a janela invalidam pedidos incompletos. Trabalho de consulta/gravação usa Dispatchers.IO e é cancelado ao parar. Uma escrita que já chegou ao provedor pode concluir; não há repetição automática após resultado incerto.
+## Aplicativos, agenda e alarme
 
-## Agenda
+InstalledApps enumera MAIN + LAUNCHER no perfil atual, sem QUERY_ALL_PACKAGES. AppResolver usa rótulos/aliases e pergunta em caso de ambiguidade. AndroidActions inicia somente o componente exportado selecionado; ChatGPT mantém pacote oficial com.openai.chatgpt. Apps de outro perfil, Pasta Segura ou sem launcher podem estar ausentes. Não automatiza telas internas de terceiros.
 
-`EventParser` é Kotlin puro, usa Clock injetável e o fuso do celular. Campos ausentes geram perguntas. Um evento completo tem título, início, fim e fuso; a duração padrão de uma hora é informada na documentação/configurações e na confirmação falada. Só aceita uma data e um horário, rejeita recorrência/offsets relativos, datas inválidas, horários passados e ambiguidades de horário de verão.
+EventParser é Kotlin puro, usa Clock e fuso do aparelho e coleta campos ausentes. Rejeita datas/horários inválidos, passado, conflitos e recorrência não suportada. CalendarStore solicita READ_CALENDAR/WRITE_CALENDAR só no primeiro agendamento, lista agendas visíveis com escrita, lembra a escolha e revalida antes de inserir. Só confirma após ler o evento inserido e comparar título/início/fim. Não lê histórico, cria convidados ou lembretes. Sincronização da conta pertence ao provedor Android. Se uma escrita já chegou ao provedor quando a tarefa for interrompida, confira a agenda antes de repetir.
 
-A primeira gravação solicita READ_CALENDAR e WRITE_CALENDAR pela Activity, com o microfone parado durante o diálogo do Android. A operação só continua com a Activity visível, permissão concedida e pedido pendente recente. Saída/rotação durante o pedido cancela o contexto e pode exigir repetir o comando. Não retoma a escuta em background.
+AlarmClock.ACTION_SET_ALARM e SET_ALARM são oficiais. Horário válido pede EXTRA_SKIP_UI=true; o relógio pode exigir confirmação. Não há retorno de salvamento, nem AlarmManager, exact-alarm permission ou receiver. O relógio é responsável por executar o alarme.
 
-`CalendarStore` lista agendas visíveis, sincronizáveis e com acesso CONTRIBUTOR ou superior; uma opção única é usada diretamente. Com várias, o usuário escolhe por voz e o ID fica em SharedPreferences. O app revalida a agenda antes de escrever. Os únicos dados lidos são metadados das agendas e o evento recém-criado, sem leitura do histórico do calendário. Depois de inserir, compara título e início/fim numa consulta ao URI retornado, e só então confirma “Agendado”. Não cria convidados ou lembretes e não controla o resultado da sincronização da conta.
+## Dados e evolução
 
-## Dados
+INTERNET é usada para solicitar o download do modelo. O próprio app não envia texto/áudio a um backend de IA. Os provedores Android SpeechRecognizer/TTS possuem suas próprias políticas e podem usar rede; preferência offline não garante reconhecimento/fala offline. Preferências locais contêm apenas calendário e estado do modelo. Sem telemetria, servidor, chaves, assinatura ou serviços pagos.
 
-Sem analytics, gravação de áudio, HTTP próprio ou credenciais. O único ajuste persistido pelo JARVIS é o ID da agenda preferida; compromissos ficam no provedor de calendário do Android. O pacote ChatGPT é aberto por intent: não há envio automático de prompts nem API OpenAI. Preferência offline não substitui a política do provedor de reconhecimento/TTS instalado pelo usuário.
+A UI continua com relógio e bateria reais, animação Canvas enquanto STARTED, RMS fornecido pelo reconhecedor e animação decorativa durante TTS. O ciclo de vida pausa relógio/animação e libera o microfone ao sair.
 
-## Evolução para sincronização com notebook
-
-A UI consome estado da ViewModel e os comandos são representados por tipos de domínio; não dependem do transporte. Para sincronização futura, adicione uma interface de repositório de sincronização que receba apenas eventos explicitamente permitidos, com implementações separadas por plataforma. Um transporte gratuito em rede local poderá usar pareamento autorizado, autenticação por dispositivo, conexão cifrada, expiração/revogação de sessão e resolução explícita de conflitos. A Activity continua sendo dona das ações que precisam de interação Android.
-
-A v0.4 não implementa sincronização, servidor, acesso ao notebook ou transmissão de áudio. Nenhum endpoint ou credencial foi incluído. A separação atual permite adicionar esse recurso sem acoplar o parser a uma API paga.
-
-## HUD e nível de voz na 0.3
-
-O reconhecedor encaminha onRmsChanged somente durante uma sessão aceita. A ViewModel normaliza o valor finito para 0..1, ignora eventos fora do foreground/escuta e zera o nível em parada, erro, resultado e TTS. O HUD usa esse nível como envelope visual, sem gravar áudio e sem adicionar APIs ou permissões.
-
-Um observador do ciclo de vida liga/desliga o relógio e a animação com o estado STARTED. A bateria é lida por BatteryManager; o relógio usa o fuso do aparelho. O poliedro é projetado matematicamente e desenhado em Canvas. Não há leituras fictícias de CPU, rede ou localização.
+Escuta fora da Activity exigiria um serviço de primeiro plano de tipo microphone, permissões/notification e respeito às restrições Android 12–15 e à permissão durante o uso. Não está implementada. Integração com notebook também não está implementada: uma futura rede local precisaria pareamento explícito, autenticação por dispositivo, criptografia, expiração/revogação e tratamento de conflitos. Não há bypass de restrições do sistema.

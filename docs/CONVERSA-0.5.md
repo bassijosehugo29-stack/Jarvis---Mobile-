@@ -1,6 +1,6 @@
 # Conversa e saída de voz — 0.5
 
-Revisão em validação. Compilar não garante áudio audível no Galaxy: a saída e o mecanismo instalado exigem teste físico. O código anterior podia mostrar texto e seguir sem áudio quando a voz pt-BR faltava. Esta revisão usa vozes em português disponíveis, incluindo pt-PT como alternativa, e tenta os mecanismos instalados. A fala usa mídia, com atributos de áudio de fala, volume explícito e foco temporário; os botões de volume controlam mídia com o JARVIS aberto. Volume zero, falha de síntese, voz ausente e timeout são exibidos. Há Testar voz e acesso aos ajustes Android. Fones/Bluetooth, DND e modelos Samsung/Google continuam sendo condições do aparelho.
+[Revisão compilada com 62 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40604934666). Compilar não garante áudio audível no Galaxy: a saída e o mecanismo instalado exigem teste físico. O código anterior podia mostrar texto e seguir sem áudio quando a voz pt-BR faltava. Esta revisão usa vozes em português disponíveis, incluindo pt-PT como alternativa, e tenta os mecanismos instalados. A fala usa mídia, com atributos de áudio de fala, volume explícito e foco temporário; os botões de volume controlam mídia com o JARVIS aberto. Volume zero, falha de síntese, voz ausente e timeout são exibidos. Há Testar voz e acesso aos ajustes Android. Fones/Bluetooth, DND e modelos Samsung/Google continuam sendo condições do aparelho.
 
 ## Preparar uma vez
 

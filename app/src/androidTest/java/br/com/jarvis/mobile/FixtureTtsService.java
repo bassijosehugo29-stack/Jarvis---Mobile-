@@ -28,10 +28,15 @@ public class FixtureTtsService extends TextToSpeechService {
     @Override public String onGetDefaultVoiceNameFor(String language, String country, String variant) { return "jarvis-fixture-pt-PT"; }
     @Override public void onStop() { }
     @Override public void onSynthesizeText(SynthesisRequest request, SynthesisCallback callback) {
+        if (request.getCharSequenceText().toString().contains("perfil vocal") &&
+            (request.getPitch() != 83 || request.getSpeechRate() != 91)) {
+            callback.error(TextToSpeech.ERROR_SYNTHESIS); return;
+        }
         if (request.getCharSequenceText().toString().contains("falha simulada")) {
             callback.error(TextToSpeech.ERROR_SYNTHESIS); return;
         }
         if (callback.start(16000, AudioFormat.ENCODING_PCM_16BIT, 1) != TextToSpeech.SUCCESS) return;
+        callback.rangeStart(1600, 0, request.getCharSequenceText().length());
         byte[] pcm = new byte[9600];
         for (int i = 0; i < pcm.length / 2; i++) {
             int sample = (int) (Math.sin(2 * Math.PI * 660 * i / 16000) * 6000);
