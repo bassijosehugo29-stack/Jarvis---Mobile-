@@ -2,6 +2,10 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+// CI distribution targets Galaxy ARM64; emulator jobs keep both ABIs by default.
+val jarvisAbis = providers.gradleProperty("jarvisAbis").orElse("arm64-v8a,x86_64").get().split(",")
+require(jarvisAbis.all { it in setOf("arm64-v8a", "x86_64") })
+
 android {
     namespace = "br.com.jarvis.voicea"
     compileSdk = 35
@@ -12,7 +16,7 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         manifestPlaceholders["voiceLabel"] = "JARVIS Voz A"
-        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        ndk { abiFilters += jarvisAbis }
         externalNativeBuild { cmake { arguments += listOf("-DANDROID_STL=c++_static", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON") } }
     }
     ndkVersion = "27.2.12479018"

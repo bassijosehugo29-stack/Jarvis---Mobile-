@@ -25,6 +25,7 @@ jobs:
       voice_url: ${{ steps.voice_apk.outputs.artifact-url }}
       sources_url: ${{ steps.voice_sources.outputs.artifact-url }}
     env:
+      ORG_GRADLE_PROJECT_jarvisAbis: arm64-v8a
       JARVIS_KEYSTORE_B64: ${{ secrets.JARVIS_KEYSTORE_B64 }}
       JARVIS_KEYSTORE_PASSWORD: ${{ secrets.JARVIS_KEYSTORE_PASSWORD }}
       JARVIS_KEY_ALIAS: ${{ secrets.JARVIS_KEY_ALIAS }}
