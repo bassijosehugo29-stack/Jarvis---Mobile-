@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -155,7 +156,8 @@ internal fun HolographicCore(
             previous = now
         }
     }
-    Box(modifier.drawWithCache {
+    // Isolate draw invalidation from the static HUD; geometry stays stable for the render cache.
+    Box(modifier.graphicsLayer().drawWithCache {
         val d = size.minDimension
         val c = Offset(size.width / 2f, size.height / 2f)
         val blue = Color(0xFF238CFF)
@@ -165,9 +167,37 @@ internal fun HolographicCore(
         val plasma = Brush.radialGradient(0f to Color.White, 0.22f to Color(0xFFF2FCFF),
             0.43f to Color(0xFFB6EFFF), 0.63f to Color(0xFF208BFF).copy(alpha = 0.75f),
             1f to Color.Transparent, center = c, radius = d * 0.185f)
-        val corona = Path()
         val vectors = Array(96) { i -> val a = i * 2f * PI.toFloat() / 96f; Offset(cos(a), sin(a)) }
         val orbitBounds = Size(d * 0.79f, d * 0.24f)
+        val guideStroke = Stroke(0.6.dp.toPx())
+        val ticks = Array(2) { Path() }
+        vectors.forEachIndexed { i, vector ->
+            val major = i % 8 == 0
+            val outer = d * 0.478f
+            val from = c + vector * (outer - (if (major) 5.dp.toPx() else 2.dp.toPx()))
+            val to = c + vector * outer
+            ticks[if (major) 1 else 0].apply { moveTo(from.x, from.y); lineTo(to.x, to.y) }
+        }
+        val tickStrokes = arrayOf(Stroke(0.55.dp.toPx()), Stroke(1.dp.toPx()))
+        fun arc(radius: Float, start: Float, sweep: Float) = Path().apply {
+            arcTo(Rect(c - Offset(radius, radius), Size(radius * 2f, radius * 2f)), start, sweep, true)
+        }
+        fun strokes(width: Float) = arrayOf(Stroke(width * 6f), Stroke(width * 2.8f), Stroke(width))
+        val rings = Array(6) { ring ->
+            val r = d * (0.215f + ring * 0.046f)
+            CoreRing(r, arc(r, 0f, if (ring % 2 == 0) 112f else 188f), arc(r, 187f, 48f),
+                strokes((if (ring == 2) 1.8f else 1.05f).dp.toPx()), strokes(0.65.dp.toPx()))
+        }
+        // Reuse the two organic contours and transform them; don't rebuild 192 vertices per frame.
+        val coronas = Array(2) { band -> Path().apply {
+            vectors.forEachIndexed { i, vector ->
+                val noise = sin(i * 0.53f + band) * 0.014f + sin(i * 0.91f) * 0.009f
+                val point = c + vector * (d * (0.13f + band * 0.028f + noise * 0.8f))
+                if (i == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+            }
+            close()
+        } }
+        val coronaStrokes = arrayOf(Stroke(1.2.dp.toPx()), Stroke(0.8.dp.toPx()))
         onDrawBehind {
             val v = params.value
             val t = time.floatValue
@@ -188,35 +218,30 @@ internal fun HolographicCore(
                 drawOval(accent.copy(alpha = 0.12f), c - Offset(orbitBounds.width/2, orbitBounds.height/2), orbitBounds,
                     style = Stroke(1.dp.toPx()))
             }
-            for (ring in 0..5) {
-                val r = d * (0.215f + ring * 0.046f) * (0.85f + formed * 0.15f)
-                drawCircle(accent.copy(alpha = 0.10f + ring * 0.018f), r, c, style = Stroke(0.6.dp.toPx()))
+            for (ring in rings.indices) {
+                val geometry = rings[ring]
                 val direction = if (ring % 2 == 0) 1f else -1f
                 val angle = direction * t * (11f + ring * 2.6f) + ring * 41f
-                val sweep = (if (ring % 2 == 0) 112f else 188f) * formed
-                drawGlowRing(r, angle, sweep, accent, (if (ring == 2) 1.8f else 1.05f).dp.toPx())
-                drawGlowRing(r, angle + 187f, (48f + signal * 17f) * formed, ice, 0.65.dp.toPx())
+                scale(0.85f + formed * 0.15f, pivot = c) {
+                    drawCircle(accent.copy(alpha = (0.10f + ring * 0.018f) * formed), geometry.radius, c, style = guideStroke)
+                    rotate(angle, pivot = c) {
+                        drawCachedArc(geometry.primary, accent, geometry.primaryStrokes, formed, v.mode == OperationMode.CINEMATIC)
+                        drawCachedArc(geometry.secondary, ice, geometry.secondaryStrokes, formed * (0.82f + signal * 0.18f), v.mode == OperationMode.CINEMATIC)
+                    }
+                }
             }
-            // Bounded, precomputed tick vectors; no per-frame mesh sorting or allocations.
-            vectors.forEachIndexed { i, vector ->
-                val major = i % 8 == 0
-                val outer = d * 0.478f
-                drawLine(accent.copy(alpha = if (major) 0.62f else 0.17f), c + vector * (outer - (if (major) 5.dp.toPx() else 2.dp.toPx())),
-                    c + vector * outer, (if (major) 1f else 0.55f).dp.toPx())
-            }
+            // Two stable paths replace 96 independent line commands on every frame.
+            drawPath(ticks[0], accent.copy(alpha = 0.17f), style = tickStrokes[0])
+            drawPath(ticks[1], accent.copy(alpha = 0.62f), style = tickStrokes[1])
             val energy = (breath + signal * 0.12f) * formed.coerceAtLeast(0.1f)
             // White luminous centre with blue falloff. Scale is geometry, not expensive layer blur.
             drawCircle(plasma, d * 0.185f * energy, c)
             for (band in 0..1) {
-                corona.reset()
-                vectors.forEachIndexed { i, vector ->
-                    val noise = sin(i * 0.53f + t * (2f + band)) * 0.014f + sin(i * 0.91f - t * 2.5f) * 0.009f
-                    val r = d * (0.13f + band * 0.028f + noise * (0.5f + signal)) * energy
-                    val point = c + vector * r
-                    if (i == 0) corona.moveTo(point.x, point.y) else corona.lineTo(point.x, point.y)
+                scale(energy * (1f + 0.018f * sin(t * (2f + band))), pivot = c) {
+                    rotate(t * (if (band == 0) 8f else -5f), pivot = c) {
+                        drawPath(coronas[band], (if (error) accent else ice).copy(alpha = 0.23f + signal * 0.25f), style = coronaStrokes[band])
+                    }
                 }
-                corona.close()
-                drawPath(corona, (if (error) accent else ice).copy(alpha = 0.23f + signal * 0.25f), style = Stroke((1.2f - band * 0.4f).dp.toPx()))
             }
             drawCircle(if (error) Color(0xFFFFDFD9) else Color(0xFFF6FDFF), d * 0.056f * energy, c)
             drawCircle(Color.White, d * 0.032f * energy, c)
@@ -240,6 +265,13 @@ internal fun HolographicCore(
     })
 }
 private data class CoreVisual(val phase: CorePhase, val mode: OperationMode, val input: Float, val output: Float?, val progress: Float)
+private data class CoreRing(val radius: Float, val primary: Path, val secondary: Path,
+    val primaryStrokes: Array<Stroke>, val secondaryStrokes: Array<Stroke>)
+private fun DrawScope.drawCachedArc(path: Path, color: Color, strokes: Array<Stroke>, opacity: Float, cinematic: Boolean) {
+    if (cinematic) drawPath(path, color.copy(alpha = color.alpha * 0.055f * opacity), style = strokes[0])
+    drawPath(path, color.copy(alpha = color.alpha * 0.18f * opacity), style = strokes[1])
+    drawPath(path, color.copy(alpha = color.alpha * 0.90f * opacity), style = strokes[2])
+}
 private fun DrawScope.drawGlowRing(radius: Float, start: Float, sweep: Float, color: Color, width: Float) {
     val origin = center - Offset(radius, radius)
     val bounds = Size(radius * 2f, radius * 2f)

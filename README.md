@@ -1,14 +1,12 @@
-# JARVIS Mobile 3.1 — Voz A · Executivo clássico
+# JARVIS Mobile 4.0 — Fase 1 · Prévia cinematográfica
 
-Assistente Android nativo em Kotlin/Jetpack Compose para uso pessoal, inicialmente no Samsung Galaxy S25 FE. Evolui o projeto existente: HUD preto/azul/ciano/dourado, núcleo holográfico, voz, trilha original e três modos permanecem integrados às novas centrais.
+Continuação do mesmo aplicativo Android em Kotlin/Jetpack Compose, na branch `jarvis-4-fase1`. A main e a instalação 3.1 permanecem preservadas. Núcleo azul elétrico com centro branco, anéis independentes, seis estados e resposta à amplitude de áudio disponível. A voz A aprovada, os três modos, Second Brain, notas, agenda, backups e demais centrais continuam no projeto. Nenhuma trilha definitiva nova foi integrada.
 
-A voz A aprovada é agora o perfil padrão. A entrega contém **dois APKs da mesma execução**: o assistente e **JARVIS Voz A**, motor local com Faber pt-BR. O motor já traz o modelo, não solicita internet/microfone e usa a API TextToSpeech do Android. [Voz, instalação e licenças](docs/VOZ-A.md).
+Sessões em primeiro plano retomam a escuta depois da resposta, sem toque a cada turno; sair/bloquear encerra a captura. O núcleo permite interromper por toque. Interrupção por voz é opcional e experimental, restrita a Android 13+, reconhecimento local pt-BR e fone com fio/USB. ACTION_ASSIST e seleção oficial de assistente estão integrados quando suportados pelo sistema. “Jarvis, abre o WhatsApp” usa os aplicativos instalados; ausência e ambiguidade são tratadas. Não há ativação “Ok Jarvis” com o app fechado.
 
-**Baixar no celular:** [JARVIS Voz A — APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024/artifacts/12830015162) · [JARVIS Mobile 3.1 — APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024/artifacts/12829740920). **Exige login no GitHub pelo Chrome.** Cada link baixa um ZIP com um APK; extraia em Meus Arquivos e instale primeiro a voz A. Disponíveis até **26/01/2027, 15:32:53 UTC**.
+**Prévia instalada ao lado da 3.1:** os pacotes têm sufixo `.v4preview`, porque a chave privada da entrega anterior não está disponível. **Não desinstale a 3.1 nem seu motor.** Os dados privados antigos continuam nela; a prévia tem armazenamento separado e não os importa automaticamente. Use apenas os dois APKs da mesma execução. A distribuição de teste é ARM64, adequada à arquitetura do Galaxy S25 FE.
 
-**Compilação e entrega confirmadas:** [execução aprovada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024), com três jobs verdes e **131 testes aprovados** (87 de unidade + 44 Android), sem falhas/ignorados. Lint com zero erros e 39 avisos. A etapa final baixou os dois artifacts publicados e conferiu seus APKs contra os arquivos assinados; a API também entregou ambos após o workflow terminar. Nenhuma mudança de voz, interface ou funcionalidades.
-
-[Links, tamanhos, hashes e instalação](docs/DOWNLOADS-APK.md) · [comprovante dos downloads](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024/artifacts/12828584225) · [fontes correspondentes do motor](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024/artifacts/12829950268). A [validação da primeira integração da voz](docs/VALIDATION.md) permanece como histórico; esta nova compilação usa outro certificado de teste. Use sempre os dois APKs desta mesma execução.
+[Escopo, validação, medições, downloads e limitações desta fase](docs/JARVIS-4-FASE-1.md). Os resultados históricos da 3.1 estão em [DOWNLOADS-APK.md](docs/DOWNLOADS-APK.md) e [VALIDATION.md](docs/VALIDATION.md); não são testes da 4.0. O teste físico no Samsung permanece pendente.
 
 ## O que está no código
 
@@ -62,7 +60,7 @@ Nenhuma loja, release pública ou serviço pago foi ativado. Actions usa runners
 
 ## Compilar e verificar
 
-Pelo celular: [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Aguarde **os dois jobs verdes**, abra o run, baixe os artifacts separados **JARVIS-Voz-A-APK** e **JARVIS-Mobile-3.1-APK**, extraia os dois ZIPs e instale primeiro `JARVIS-Voz-A-1.0.0-debug.apk` e depois `JARVIS-Mobile-3.1.0-debug.apk`. Nas novas execuções, a retenção solicitada é de 90 dias, sujeita ao limite do repositório. É necessário login no GitHub. [Passos completos](docs/APK-PELO-CELULAR.md).
+Pelo celular: [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → jarvis-4-fase1**. Aguarde os **três jobs verdes**, abra a execução e baixe os artifacts **JARVIS-Voz-A-4-Preview-APK** e **JARVIS-4-Fase1-APK**. Login no GitHub é necessário. Extraia cada ZIP em Meus Arquivos e instale primeiro `JARVIS-Voz-A-4-preview.apk`, depois `JARVIS-Mobile-4.0.0-fase1-preview.apk`. Não desinstale a 3.1. Retenção solicitada de 90 dias, sujeita ao limite do repositório. [Detalhes da fase 1](docs/JARVIS-4-FASE-1.md).
 
 No computador: JDK 17, Platform/target/compile SDK 35, Build Tools 35.0.0, NDK 27.2.12479018, CMake 3.22.1; Gradle 8.11.1, AGP 8.9.2, Kotlin/Compose 2.1.20, KSP 2.1.20-2.0.1, Room 2.7.2. Android mínimo 26 no assistente e 30 no motor da voz A; ABIs arm64-v8a e x86_64. Configure ANDROID_HOME ou sdk.dir em local.properties. Não versione esse arquivo.
 
@@ -81,6 +79,6 @@ sh scripts/test_on_emulator.sh
 
 Windows: `.\gradlew.bat`. CMake obtém llama.cpp em commit fixado durante compilação; nenhum binário executável é baixado pelo app. [Arquitetura](docs/ARQUITETURA.md), [testes](docs/TESTES.md) e [validação real](docs/VALIDATION.md).
 
-**Assinatura:** sem os quatro Secrets opcionais de assinatura, o CI usa chave debug temporária. Os dois APKs precisam compartilhar o certificado; instale sempre o par da mesma execução. Uma atualização com chave diferente exige desinstalar a anterior, apagando dados locais: exporte notas antes. Para Gmail e atualizações estáveis, configure uma chave privada fixa conforme o [guia](docs/GMAIL-OAUTH.md). Nenhuma chave privada é guardada no repositório ou artefato.
+**Assinatura:** sem os quatro Secrets opcionais de assinatura, o CI usa chave debug temporária. Instale o par da mesma execução. A prévia 4 tem pacote separado para preservar a 3.1; não remova a instalação antiga para contornar conflito de certificado. Atualizações futuras sobre o mesmo pacote exigem a mesma chave privada. Para Gmail e atualizações estáveis, configure uma chave fixa conforme o [guia](docs/GMAIL-OAUTH.md). Nenhuma chave privada é guardada no repositório ou artefato.
 
 Projeto pessoal independente; marcas pertencem a seus titulares.
