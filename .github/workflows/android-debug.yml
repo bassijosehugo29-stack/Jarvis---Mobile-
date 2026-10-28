@@ -19,6 +19,10 @@ jobs:
     # GitHub-hosted runners are free for public repos; see README for private quotas.
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      mobile_url: ${{ steps.mobile_apk.outputs.artifact-url }}
+      voice_url: ${{ steps.voice_apk.outputs.artifact-url }}
+      sources_url: ${{ steps.voice_sources.outputs.artifact-url }}
     env:
       JARVIS_KEYSTORE_B64: ${{ secrets.JARVIS_KEYSTORE_B64 }}
       JARVIS_KEYSTORE_PASSWORD: ${{ secrets.JARVIS_KEYSTORE_PASSWORD }}
@@ -71,18 +75,30 @@ jobs:
           cp docs/INSTALAR-VOZ-A.txt build/apk/LEIA-ME.txt
       - name: Fontes correspondentes do motor de voz
         run: python3 scripts/bundle_voice_a_source.py
-      - uses: actions/upload-artifact@v4
+      - name: Guardar fontes correspondentes da voz A
+        id: voice_sources
+        uses: actions/upload-artifact@v4
         with:
           name: JARVIS-Voz-A-fontes
           path: build/voice-source/JARVIS-Voz-A-fontes.zip
-          retention-days: 7
-      - name: Guardar APK de teste
+          retention-days: 90
+          if-no-files-found: error
+      - name: Publicar APK JARVIS Voz A para download
+        id: voice_apk
         uses: actions/upload-artifact@v4
         with:
-          name: JARVIS-Mobile-debug
-          path: build/apk/
+          name: JARVIS-Voz-A-APK
+          path: build/apk/JARVIS-Voz-A-1.0.0-debug.apk
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 90
+      - name: Publicar APK JARVIS Mobile 3.1 para download
+        id: mobile_apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-Mobile-3.1-APK
+          path: build/apk/JARVIS-Mobile-3.1.0-debug.apk
+          if-no-files-found: error
+          retention-days: 90
       - name: Guardar relatórios
         if: always()
         uses: actions/upload-artifact@v4
@@ -93,7 +109,7 @@ jobs:
             voice-engine/build/reports/
             build/verification/
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 90
 
   android-tests:
     name: Testes instrumentados Android 35
@@ -167,4 +183,40 @@ jobs:
             app/build/reports/
             voice-engine/build/reports/conversation/
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 90
+
+  verify-downloads:
+    name: Verificar downloads publicados
+    needs: [debug-apk, android-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar o artifact publicado da voz A
+        uses: actions/download-artifact@v4
+        with:
+          name: JARVIS-Voz-A-APK
+          path: downloaded/voice
+      - name: Baixar o artifact publicado do assistente
+        uses: actions/download-artifact@v4
+        with:
+          name: JARVIS-Mobile-3.1-APK
+          path: downloaded/mobile
+      - name: Baixar os comprovantes da compilação
+        uses: actions/download-artifact@v4
+        with:
+          name: JARVIS-relatorios
+          path: downloaded/reports
+      - name: Conferir APKs realmente baixados e gerar links
+        env:
+          JARVIS_MOBILE_ARTIFACT_URL: ${{ needs['debug-apk'].outputs.mobile_url }}
+          JARVIS_VOICE_ARTIFACT_URL: ${{ needs['debug-apk'].outputs.voice_url }}
+          JARVIS_VOICE_SOURCES_URL: ${{ needs['debug-apk'].outputs.sources_url }}
+        run: python3 scripts/verify_apk_downloads.py
+      - name: Guardar comprovante e instruções de download
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-comprovante-downloads
+          path: build/download-verification/
+          if-no-files-found: error
+          retention-days: 90
