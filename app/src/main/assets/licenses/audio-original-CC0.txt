@@ -1,0 +1,11 @@
+JARVIS Mobile — original soundscape
+
+The musical composition and sound effects synthesized by OriginalScore.kt were
+created specifically for this project, without samples or recordings from the
+reference video or third-party music. These new compositions and their rendered
+audio are dedicated to the public domain under CC0 1.0 Universal, to the extent
+permitted by law. This dedication does not change the licenses of the app's
+other code, models, libraries or trademarks.
+
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+Legal code: https://creativecommons.org/publicdomain/zero/1.0/legalcode.en

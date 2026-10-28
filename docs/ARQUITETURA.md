@@ -1,4 +1,14 @@
-# Arquitetura — voz, conversa e ações
+# Arquitetura — experiência, voz, conversa e ações
+
+## Experiência cinematográfica (0.6)
+
+ExperienceSettings/CorePhase são dados e políticas em Kotlin puro. ExperienceStore usa Preferences DataStore 1.1.7, um singleton por arquivo, para persistir modo, chaves/volumes e perfil vocal. A ViewModel aplica a troca imediatamente e bloqueia emissões antigas durante escritas, evitando reativar som ao selecionar Silencioso. Erro visual dura 3,5 s; o texto explicativo permanece acessível.
+
+AssistantAudioFocus coordena uma única requisição entre SpeechOutput e Soundscape. Perda/transiente/duck interrompe a sessão e bloqueia retomada até ação do usuário. Soundscape gera o PCM original em Dispatchers.Default e usa AudioTrack estático: uma trilha em loop, um efeito curto e um loop de processamento somente no Cinema. Não mantém thread de renderização de áudio por amostra. Pausa total durante captura, redução a 12% durante fala e rampas curtas evitam competição com TTS. Silent é uma política central, não apenas volumes visuais zerados.
+
+HolographicCore desenha vetores em Canvas, sem vídeo ou textura pesada, com cadências limitadas por modo/estado, sem timer de animação em repouso silencioso ou com Activity oculta. RMS vem do reconhecedor; onStart/onDone controlam a fase de fala e onRangeStart pulsa palavras quando disponível. O sistema pode não oferecer marcadores de palavra; nesse caso há pulso decorativo apenas durante a fala. O seletor não solicita microfone.
+
+No Silencioso, cada toque autoriza uma única sessão e não há reinício depois da resposta/timeout. Um pedido incompleto pode ser continuado com outro toque dentro da janela. Os sons próprios do serviço de reconhecimento Android não são controláveis pelo app; usar texto evita chamar esse serviço. Nos outros modos a sessão explícita permanece até parar/sair. [Especificação e aceite](MISSAO-1.md).
 
 ## Sessão visível
 
@@ -38,8 +48,8 @@ AlarmClock.ACTION_SET_ALARM e SET_ALARM são oficiais. Horário válido pede EXT
 
 ## Dados e evolução
 
-INTERNET é usada para solicitar o download do modelo. O próprio app não envia texto/áudio a um backend de IA. Os provedores Android SpeechRecognizer/TTS possuem suas próprias políticas e podem usar rede; preferência offline não garante reconhecimento/fala offline. Preferências locais contêm apenas calendário e estado do modelo. Sem telemetria, servidor, chaves, assinatura ou serviços pagos.
+INTERNET é usada para solicitar o download do modelo. O próprio app não envia texto/áudio a um backend de IA. Os provedores Android SpeechRecognizer/TTS possuem suas próprias políticas e podem usar rede; preferência offline não garante reconhecimento/fala offline. Preferências locais contêm calendário, estado do modelo e experiência/voz; não contêm gravações ou histórico permanente. Sem telemetria, servidor, chaves, assinatura ou serviços pagos.
 
-A UI continua com relógio e bateria reais, animação Canvas enquanto STARTED, RMS fornecido pelo reconhecedor e animação decorativa durante TTS. O ciclo de vida pausa relógio/animação e libera o microfone ao sair.
+A UI continua com relógio e bateria reais, animação Canvas enquanto STARTED, RMS fornecido pelo reconhecedor e animação ligada aos callbacks de reprodução e marcadores de palavra do TTS. O ciclo de vida pausa relógio/animação e libera o microfone ao sair.
 
 Escuta fora da Activity exigiria um serviço de primeiro plano de tipo microphone, permissões/notification e respeito às restrições Android 12–15 e à permissão durante o uso. Não está implementada. Integração com notebook também não está implementada: uma futura rede local precisaria pareamento explícito, autenticação por dispositivo, criptografia, expiração/revogação e tratamento de conflitos. Não há bypass de restrições do sistema.

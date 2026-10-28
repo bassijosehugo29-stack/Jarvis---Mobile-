@@ -1,3 +1,7 @@
+# Testes da versão 0.6
+
+A revisão cinematográfica está em validação. Novos testes cobrem política dos três modos, sanidade do PCM original, persistência em DataStore reaberto, seleção imediata de modos, silêncio sem iniciar TTS, parâmetros/markers de voz e AudioTrack real com duck/interrupção de foco. Contagens/resultados finais serão registrados em VALIDATION.md.
+
 # Testes da versão 0.5
 
 A versão 0.5 passou em 47 testes de unidade e 15 instrumentados (62 total), além de Lint e compilação; execução 40604934666. Resultados confirmados e links serão registrados em [VALIDATION.md](VALIDATION.md). Resultados da 0.4 não validam o novo runtime.

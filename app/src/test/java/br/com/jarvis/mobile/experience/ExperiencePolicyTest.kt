@@ -52,5 +52,8 @@ class ExperiencePolicyTest {
         assertEquals(CorePhase.PROCESSING, base.copy(speaking = true).corePhase)
         assertEquals(CorePhase.RESPONDING, base.copy(speaking = true, voicePlaying = true).corePhase)
         assertEquals(CorePhase.ERROR, base.copy(visualError = true, voicePlaying = true).corePhase)
+        assertEquals(CorePhase.LISTENING, base.copy(visualError = true, listening = true).soundPhase)
+        assertEquals(SoundMix(), soundMix(ExperienceSettings(mode = OperationMode.CINEMATIC),
+            base.copy(visualError = true, listening = true).soundPhase, true))
     }
 }

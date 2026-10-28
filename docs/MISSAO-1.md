@@ -28,7 +28,7 @@ Usa Android TextToSpeech, prioridade pt-BR e fallback pt-PT quando necessário. 
 
 ## Música e efeitos originais
 
-OriginalScore.kt contém síntese original PCM mono 22.050 Hz, com loop de 16 s, harmônicos, pulsos e cinco sinais: inicialização, escuta, processamento, confirmação e atenção. Não contém samples/licenças de terceiros. Gerado uma vez em thread de trabalho e reproduzido via AudioTrack estático; sem stream, internet, arquivo musical externo ou mensalidade. Fades de borda evitam cliques; as frequências e o desenho estão versionados e podem ser alterados como o restante do projeto.
+OriginalScore.kt contém síntese original PCM mono 22.050 Hz, com loop de 16 s, harmônicos, pulsos e cinco sinais: inicialização, escuta, processamento, confirmação e atenção. Sem samples de terceiros. As novas composições/efeitos e o áudio renderizado estão sob CC0 1.0, conforme assets/licenses/audio-original-CC0.txt; isso não muda as licenças do restante do aplicativo. Gerado uma vez em thread de trabalho e reproduzido via AudioTrack estático; sem stream, internet, arquivo musical externo ou mensalidade. Fades de borda evitam cliques; as frequências e o desenho estão versionados e podem ser alterados como o restante do projeto.
 
 Voz/música/efeitos têm volumes e chaves independentes. Música reduz para 12% do volume configurado antes/durante a fala, com rampa curta; para completamente durante captura, evitando autoescuta. Efeitos param na captura e na fala. O sinal de escuta termina antes de começar o reconhecedor. Um único foco de áudio coordena TTS e trilha; perda/interrupção de foco para o áudio e exige ação do usuário para retomar. Chamadas, DND, Bluetooth e decisões do Android continuam soberanos.
 

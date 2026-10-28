@@ -14,7 +14,7 @@ class AssistantAudioFocus(context: Context, private val onInterruption: () -> Un
     private val owners = mutableSetOf<Owner>()
     private var blocked = false
     private var granted = false
-    private val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+    private val request: AudioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
         .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
         .setWillPauseWhenDucked(true)
@@ -27,7 +27,7 @@ class AssistantAudioFocus(context: Context, private val onInterruption: () -> Un
             }
         }, Handler(Looper.getMainLooper())).build()
 
-    private fun requestValue() = request
+    private fun requestValue(): AudioFocusRequest = request
     fun allowAfterUserAction() { blocked = false }
     fun acquire(owner: Owner): Boolean {
         if (blocked) return false

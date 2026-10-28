@@ -82,6 +82,12 @@ data class JarvisState(
         thinking || speaking -> CorePhase.PROCESSING
         else -> CorePhase.IDLE
     }
+    val soundPhase get() = when {
+        listening -> CorePhase.LISTENING
+        speaking -> CorePhase.RESPONDING
+        thinking -> CorePhase.PROCESSING
+        else -> corePhase
+    }
 }
 
 private sealed interface PendingVoice {
@@ -118,15 +124,15 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private var session = 0L
     private val preferences = ExperienceStore(application)
     private var pendingPreferenceWrites = 0
-    private val audioFocus = AssistantAudioFocus(application) {
+    private val audioFocus: AssistantAudioFocus = AssistantAudioFocus(application) {
         stop("Áudio pausado pelo Android")
         soundscape.stop()
         report("Outro áudio interrompeu o JARVIS. Toque no núcleo para retomar quando desejar.")
     }
-    private val soundscape = Soundscape(audioFocus, onError = ::report)
+    private val soundscape: Soundscape = Soundscape(audioFocus, onError = ::report)
     private val clearVisualError = Runnable { _state.update { it.copy(visualError = false) } }
     private val finishInitialization = Runnable { _state.update { it.copy(initializing = false) } }
-    private val output = SpeechOutput(application, onStatus = { status ->
+    private val output: SpeechOutput = SpeechOutput(application, onStatus = { status ->
         _state.update { it.copy(speechInfo = status.message, voiceIssue = if (status.failure) status.message else "") }
         if (status.failure) signalError()
     }, audioSession = audioFocus,
@@ -145,7 +151,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
         viewModelScope.launch {
-            state.map { Triple(it.experience, if (it.speaking) CorePhase.RESPONDING else it.corePhase, it.preferencesReady) }.distinctUntilChanged().collect { (settings, phase, ready) ->
+            state.map { Triple(it.experience, it.soundPhase, it.preferencesReady) }.distinctUntilChanged().collect { (settings, phase, ready) ->
                 soundscape.update(settings, phase, foreground && ready)
             }
         }
@@ -168,6 +174,13 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             input?.start()
         }
     }
+    private val prepareListening = Runnable {
+        if (foreground && _state.value.enabled && !_state.value.speaking && !_state.value.thinking &&
+            _state.value.experience.mode != OperationMode.SILENT) {
+            soundscape.cue(SoundCue.LISTEN)
+            handler.postDelayed(restart, 240L)
+        }
+    }
 
     fun onForeground() {
         foreground = true
@@ -185,8 +198,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     }
     fun onBackground() { foreground = false; modelMonitor?.cancel(); stop(); soundscape.stop() }
 
-    private fun syncSoundscape() = _state.value.let { soundscape.update(it.experience,
-        if (it.speaking) CorePhase.RESPONDING else it.corePhase, foreground && it.preferencesReady) }
+    private fun syncSoundscape() = _state.value.let { soundscape.update(it.experience, it.soundPhase, foreground && it.preferencesReady) }
     private fun signalError() {
         handler.removeCallbacks(clearVisualError)
         _state.update { it.copy(visualError = true) }
@@ -294,6 +306,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         pending = null
         permissionEvent = null
         handler.removeCallbacks(restart)
+        handler.removeCallbacks(prepareListening)
         input?.close(); input = null
         output.stop()
         gate.reset()
@@ -487,6 +500,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun runWork(status: String, block: suspend () -> Unit) {
         handler.removeCallbacks(restart)
+        handler.removeCallbacks(prepareListening)
         input?.stop()
         _state.update { it.copy(listening = false, audioLevel = 0f, status = status, reply = "$status…") }
         val current = session
@@ -500,6 +514,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun respond(text: String, action: AppAction? = null) {
         handler.removeCallbacks(restart)
+        handler.removeCallbacks(prepareListening)
         input?.stop()
         _state.update { it.copy(reply = text, listening = false, speaking = true, thinking = false, audioLevel = 0f,
             speechProgress = 0f, status = "JARVIS respondendo") }
@@ -526,10 +541,10 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun scheduleListening(delayMillis: Long = 800L) {
         handler.removeCallbacks(restart)
+        handler.removeCallbacks(prepareListening)
         if (foreground && _state.value.enabled && _state.value.experience.mode != OperationMode.SILENT) {
             syncSoundscape()
-            soundscape.cue(SoundCue.LISTEN)
-            handler.postDelayed(restart, delayMillis.coerceAtLeast(300L))
+            handler.postDelayed(prepareListening, delayMillis.coerceAtLeast(300L) - 240L)
         }
     }
 
