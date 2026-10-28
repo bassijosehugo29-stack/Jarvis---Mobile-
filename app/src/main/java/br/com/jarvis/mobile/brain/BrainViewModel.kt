@@ -30,8 +30,8 @@ class BrainViewModel(application:Application):AndroidViewModel(application){
     fun export(password:CharArray)=run{
         try{val bytes=store.export(password);if(foreground)_exports.emit(bytes)}finally{password.fill('\u0000')}
     }
-    fun selectImport(uri:Uri){_state.update{it.copy(importUri=uri,importPreview=null)}}
-    fun cancelImport(){_state.update{it.copy(importUri=null,importPreview=null)}}
+    fun selectImport(uri:Uri){_state.update{it.copy(importUri=uri,importPreview=null,error="")}}
+    fun cancelImport(){epoch++;job?.cancel();job=null;_state.update{it.copy(importUri=null,importPreview=null,busy=false,error="")}}
     fun preview(password:CharArray)=run{
         try{
             val uri=_state.value.importUri?:return@run

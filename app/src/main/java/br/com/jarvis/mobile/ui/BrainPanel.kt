@@ -75,7 +75,7 @@ fun BrainPanel(state:BrainState,mode:OperationMode,onUnlock:()->Unit,onEdit:(Not
     }
     if(export)PasswordDialog("Exportar backup","A senha protege o arquivo fora do celular. Não a guardamos; sem ela, o backup não poderá ser recuperado.",
         {export=false},{value->export=false;onExport(value)})
-    if(state.importUri!=null&&state.importPreview==null)PasswordDialog("Abrir backup","Digite a senha do arquivo. Nada será alterado antes da revisão.",onCancelImport,onPreview)
+    if(state.importUri!=null&&state.importPreview==null)PasswordDialog("Abrir backup","Digite a senha do arquivo. Nada será alterado antes da revisão.",onCancelImport,onPreview,error=state.error,busy=state.busy)
     state.importPreview?.let{notes->AlertDialog(onDismissRequest=onCancelImport,title={Text("Revisar importação")},
         text={Text("${notes.size} notas serão mescladas. Versões locais iguais ou mais recentes serão mantidas. Autorizações de digest do backup também serão restauradas.")},
         confirmButton={TextButton(onClick=onConfirmImport,enabled=!state.busy){Text("Confirmar importação")}},
@@ -112,10 +112,13 @@ private fun NoteEditor(note:Note,notes:List<Note>,busy:Boolean,error:String,onSa
 }
 
 @Composable
-internal fun PasswordDialog(title:String,description:String,onCancel:()->Unit,onConfirm:(CharArray)->Unit){
+internal fun PasswordDialog(title:String,description:String,onCancel:()->Unit,onConfirm:(CharArray)->Unit,error:String="",busy:Boolean=false){
     var password by remember{mutableStateOf("")}
-    AlertDialog(onDismissRequest=onCancel,title={Text(title)},text={Column{Text(description);OutlinedTextField(password,{password=it},label={Text("Senha · mínimo 8 caracteres")},visualTransformation=PasswordVisualTransformation(),keyboardOptions=androidx.compose.foundation.text.KeyboardOptions(keyboardType=androidx.compose.ui.text.input.KeyboardType.Password,autoCorrectEnabled=false))}},
-        confirmButton={TextButton(onClick={val chars=password.toCharArray();password="";onConfirm(chars)},enabled=password.length>=8){Text("Continuar")}},dismissButton={TextButton(onClick={password="";onCancel()}){Text("Cancelar")}})
+    AlertDialog(onDismissRequest=onCancel,title={Text(title)},text={Column{Text(description)
+        if(error.isNotBlank())Text(error,color=Gold,modifier=Modifier.padding(vertical=8.dp))
+        if(busy)LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical=8.dp))
+        OutlinedTextField(password,{password=it},enabled=!busy,label={Text("Senha · mínimo 8 caracteres")},visualTransformation=PasswordVisualTransformation(),keyboardOptions=androidx.compose.foundation.text.KeyboardOptions(keyboardType=androidx.compose.ui.text.input.KeyboardType.Password,autoCorrectEnabled=false))}},
+        confirmButton={TextButton(onClick={val chars=password.toCharArray();password="";onConfirm(chars)},enabled=password.length>=8&&!busy){Text("Continuar")}},dismissButton={TextButton(onClick={password="";onCancel()}){Text("Cancelar")}})
 }
 
 @Composable
