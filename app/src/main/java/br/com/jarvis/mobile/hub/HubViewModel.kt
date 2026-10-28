@@ -145,7 +145,8 @@ class HubViewModel(application:Application):AndroidViewModel(application){
     fun closeMailDetail(){_state.update{it.copy(mailDetail="")}}
     fun classifyMail(id:String,category:EmailCategory)=run{data.gmail.classify(id,category);val mail=data.gmail.cached();_state.update{it.copy(mail=mail)}}
     fun disconnectMail()=run{
-        MailRefreshWorker.cancel(getApplication());val revoked=data.gmail.disconnect()
+        MailRefreshWorker.cancel(getApplication());_state.update{it.copy(mail=MailSnapshot(),mailDetail="")}
+        val revoked=withTimeoutOrNull(5000){data.gmail.disconnect()}?:false
         _state.update{it.copy(mail=MailSnapshot(),mailDetail="",notice=if(revoked)"Conta desconectada e cache local removido." else "Cache e conexão locais removidos. Sem rede, a revogação no Google não foi confirmada; confira os acessos da sua Conta Google.")}
     }
     fun findCity(name:String)=run{val result=data.weather.search(name);_state.update{it.copy(cityResults=result,notice=if(result.isEmpty())"Nenhuma cidade encontrada." else "Escolha a cidade para autorizar a consulta de clima.")}}

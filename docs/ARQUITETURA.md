@@ -1,3 +1,31 @@
+# Arquitetura 3.0 — centrais pessoais
+
+MainActivity (FragmentActivity para autenticação nativa) integra três ViewModels e um AppData singleton. JarvisViewModel mantém voz, modos, áudio, comandos Android e conversa local; HubViewModel coordena fontes e digest; BrainViewModel mantém editor/rascunhos/backup. Comunicação por StateFlow e eventos tipados, com cancelamento/geração e lifecycle visível. Nenhum módulo cria uma segunda saída de voz.
+
+```mermaid
+flowchart TD
+    UI[Compose / núcleo / centrais] --> Core[JarvisViewModel / roteador]
+    UI --> Brain[BrainViewModel]
+    Core --> Hub[HubViewModel / digest local]
+    Hub --> Repos[Agenda / RSS / clima / Gmail]
+    Hub --> Store[BrainStore com sessão autenticada]
+    Brain --> Store
+    Store --> DB[Room + payload AES-GCM / Keystore]
+    Repos --> DB
+    Hub --> Core
+    Core --> Voice[SpeechOutput / foco / Soundscape compartilhados]
+    Worker[WorkManager sem áudio] --> Gmail[GmailRepository somente leitura]
+    Gmail --> DB
+```
+
+Room v1 usa uma entidade com chave composta tipo/UUID, data e payload binário autenticado; sem FTS de texto pessoal e sem fallback destrutivo de migração. Chaves independentes para notas e cache; autenticador de sessão fecha no background. Escritas de cache carregam contador persistente de geração: desconectar/apagar invalida resultados antigos, inclusive OAuth. Reautorização da mesma conta preserva correções locais; troca de conta limpa mensagens anteriores.
+
+HttpTransport isola HTTPS para testes determinísticos. NetworkClient limita tempo/tamanho, exige TLS, restringe Authorization ao host/caminho Gmail e não segue redirects autenticados. Sem logs de payload. RSS/Atom não aceita DTD, cache tem limite para CursorWindow; notícias grandes não quebram outros módulos. Digest usa templates e fontes independentes com deadlines, sem modelo generativo. DataStore de centrais guarda só assuntos/preferências/data da ativação diária.
+
+WorkManager agenda leitura Gmail quando conta está conectada, com rede/bateria; reautenticação exige ação na tela. Sem áudio ou worker de wake-word. Permissões de leitura de calendário são separadas da escrita anterior. SAF exporta/importa notas com senha; ausência de OAuth não bloqueia agenda/memória/notícias/digest. [Escopo e regras](MISSAO-2.md), [privacidade](PRIVACIDADE.md), [testes](TESTES.md).
+
+O restante documenta a base preservada da Missão 1; trechos sobre ausência de módulos/tráfego adicional referem-se à versão 0.6, não à 3.0 acima.
+
 # Arquitetura — experiência, voz, conversa e ações
 
 ## Experiência cinematográfica (0.6)

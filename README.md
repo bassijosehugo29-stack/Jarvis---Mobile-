@@ -1,73 +1,77 @@
-# JARVIS 3.0 — Missão 2 em desenvolvimento
+# JARVIS Mobile 3.0
 
-Implementação de Second Brain, agenda, notícias, digest e adaptador Gmail em validação. **A compilação e os testes da 3.0 ainda não foram confirmados.** Os resultados da 0.6 abaixo documentam apenas a base preservada. Não representam testes da Missão 2.
+Assistente Android nativo em Kotlin/Jetpack Compose para uso pessoal, inicialmente no Samsung Galaxy S25 FE. Evolui o projeto existente: HUD preto/azul/ciano/dourado, núcleo holográfico, voz, trilha original e três modos permanecem integrados às novas centrais.
 
-# JARVIS Mobile — Missão 1 (0.6.0)
+**Estado desta revisão:** código da Missão 2 em compilação e testes. Ainda não há APK 3.0 confirmado. Os resultados históricos da [Missão 1](docs/MISSAO-1.md) não validam os módulos novos.
 
-Assistente Android nativo em Kotlin/Jetpack Compose. HUD preto, azul-marinho, ciano e dourado; núcleo holográfico interativo, voz configurável e áudio original. Projeto existente e comandos preservados. Destinado inicialmente ao Samsung Galaxy S25 FE; Android 8+ ARM64, com x86_64 incluído para emulador. compileSdk/targetSdk 35.
+## O que está no código
 
-## APK confirmado
+- **Second Brain:** oito áreas, notas com UUID, título, conteúdo e data; edição, exclusão, tags, vínculos, busca e prioridades. Nada é memorizado automaticamente. Notas só entram no digest quando autorizadas individualmente.
+- **Grafo nativo Compose:** categorias coloridas, núcleo, vínculos manuais ou por tags, toque para editar e zoom. Até 80 notas desenhadas; lista paginada em 50 itens, todas pesquisáveis.
+- **Agenda:** leitura dos calendários visíveis do Android mediante permissão, hoje e até sete dias à frente, recorrências, dia inteiro e próximo compromisso. Criação de eventos anterior preservada.
+- **Radar:** RSS públicos brasileiros da EBC, assuntos/palavras-chave, cache e abertura da matéria original. Sem conteúdo inventado quando a fonte falha.
+- **Digest:** resumo local curto ou médio com dados disponíveis, fontes e horário. Primeira ativação manual do dia, comando “bom dia” ou botão DIGEST. Clima opcional por cidade via Open-Meteo, sem GPS.
+- **Gmail:** interface e adaptador oficial somente leitura, classificação local AÇÃO/INFO/RUÍDO corrigível e atualização manual/periódica. **OAuth ainda depende do registro do aplicativo/assinatura e consentimento da conta; não houve conexão real em CI.** Nenhuma mensagem de demonstração aparece como sua.
 
-- [Baixar APK de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231/artifacts/12787512824) — extraia o ZIP e instale app-debug.apk.
-- [Compilação e 77 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231): 55 de unidade + 22 instrumentados Android 35; Lint com 0 erros e 19 avisos não impeditivos.
-- [Relatórios, capturas, vídeo e conversa de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231/artifacts/12787209902). Os artefatos do CI duram sete dias.
-- Código validado: `dc00bef9bf5595aed7dac1e41dac2c0ea71e9ae3`. Documentação posterior não altera esse APK.
-- APK: 18333609 bytes; SHA-256 `175247796161809bc1632c7c7c96346f62931c36390d74241a2c67a2b15b1c28`.
-
-A assinatura debug pode mudar entre runners. Se houver conflito, desinstale a versão anterior antes de instalar. Isso remove preferências e o modelo de conversa baixado, sem apagar eventos já salvos no calendário. [Instalar pelo celular](docs/APK-PELO-CELULAR.md).
-
-## Três modos com escolha salva
-
-- **Silencioso:** sem voz, música ou efeitos do JARVIS; respostas em texto, núcleo estático em repouso e uma escuta por toque. Escrever dispensa microfone. O reconhecedor Android pode emitir avisos próprios; usar texto evita chamar esse serviço.
-- **Assistente (padrão):** voz, efeitos discretos e animação moderada; música opcional, desligada inicialmente.
-- **Cinematográfico:** partículas, formação e movimentos completos do núcleo, ambiente eletrônico original e efeitos de processamento. A música reduz durante a fala e para durante captura.
-
-O seletor fica na tela principal. Trocar de modo interrompe a sessão em curso e não inicia microfone. DataStore salva modo, chaves, volumes e perfil vocal. Nos ajustes, voz/música/efeitos têm controles independentes; música possui preferência própria para Assistente e Cinema. Ao sair, bloquear ou abrir outro app, áudio e captura param. Não há escuta oculta.
-
-O núcleo mostra inicialização, espera, escuta pelo RMS real, processamento, fala pelos callbacks TTS e erro temporário com explicação. Cadências de desenho são limitadas por modo/estado; não houve medição de bateria/FPS no Galaxy. [Especificação, áudio e limites](docs/MISSAO-1.md).
+[Missão 2 e limitações](docs/MISSAO-2.md) · [privacidade/permissões](docs/PRIVACIDADE.md) · [configuração Gmail](docs/GMAIL-OAUTH.md).
 
 ## Primeiro uso
 
-1. Escolha Assistente. Abra ajustes, use **Listar vozes instaladas** e **Testar voz**. Ajuste o volume de mídia; confira saída em alto-falante/fones/Bluetooth.
-2. Escolha mecanismo/voz portuguesa disponível e ajuste velocidade/tom. Perfil inicial calmo: 0,90× e 0,88×. Android não informa gênero de forma padronizada, por isso não se garante voz masculina ou qualidade de estúdio; não há clonagem. **Ajustar voz do Android** permite instalar/configurar dados de idioma.
-3. Toque no núcleo, permita microfone durante o uso e ouça **“Às suas ordens, senhor”**. Em Assistente/Cinema, a sessão continua enquanto visível; Jarvis é opcional nos próximos pedidos. No Silencioso, toque a cada solicitação.
-4. Para conversa livre, use **Baixar conversa offline • 491 MB** por Wi-Fi e aguarde **Conversa offline pronta**; ou importe o modelo oficial já baixado. Pode conversar por texto sem microfone. Os comandos funcionam sem esse download.
+1. Instale o APK validado seguindo o [guia pelo celular](docs/APK-PELO-CELULAR.md). Use PIN, padrão ou senha do Android para poder abrir a memória.
+2. Nos ajustes do JARVIS, liste as vozes e teste uma voz portuguesa **local instalada**. Instale pt-BR nos ajustes de texto para fala do Android. Ajuste o volume de mídia; confira alto-falante/fones/Bluetooth.
+3. Toque no núcleo e permita microfone durante o uso. A primeira ativação diária pode apresentar o digest. Para comandos, diga “Jarvis, minha agenda” ou “Jarvis, abrir ChatGPT”. A opção “Primeira ativação do dia” fica no DIGEST.
+4. Abra **⋮ → SECOND BRAIN**, autentique no Android e crie uma nota. Revise antes de salvar. Para ouvir dados pessoais é obrigatória uma voz local; sem ela, o texto permanece visível com orientação.
+5. Em **AGENDA**, permita leitura quando quiser consultar seus calendários. Em **RADAR**, escolha assuntos e atualize. Configure clima apenas se desejar enviar a cidade ao Open-Meteo.
+6. Gmail é opcional; leia o [guia OAuth](docs/GMAIL-OAUTH.md). O restante funciona sem Gmail.
 
-Qwen2.5 0.5B Instruct Q4_K_M (Apache-2.0) com llama.cpp (MIT) gera respostas no celular, por CPU. Modelo de 491400032 bytes, tamanho/SHA-256 conferidos, separado do APK. Leve, com contexto curto e saída limitada: pode ser simples, lento ou errado; não equivale ao ChatGPT e não busca informações atuais. Falas geradas não executam ações no telefone. [Detalhes](docs/CONVERSA-0.5.md).
+O TTS nativo pode ter vozes diferentes por dispositivo. O perfil inicial é calmo (velocidade 0,90×, tom 0,88×), ambos ajustáveis; gênero/qualidade de estúdio não são garantidos. Não há clonagem de voz.
 
-## Comandos preservados
+## Três modos com escolha salva
 
-- “Jarvis, abrir ChatGPT”: abre somente com.openai.chatgpt, quando instalado.
-- “Abrir WhatsApp” / “entrar no Instagram”: abre aplicativo instalado pelo nome, perguntando em caso de ambiguidade.
-- “Alarme para sete e trinta”: solicita ao relógio oficial via intent; ele pode exigir confirmação e não retorna comprovante de salvamento.
-- “Agende dentista amanhã às quinze horas”: funcionalidade anterior preservada, com permissão de calendário e confirmação após gravação/leitura pelo Calendar Provider. Sem novos módulos de agenda nesta missão.
-- “Parar”: encerra escuta; toque no núcleo também interrompe fala/processamento.
+| Modo | Comportamento |
+| --- | --- |
+| Silencioso | Respostas em texto, sem fala/música/efeitos do JARVIS; animações reduzidas. Microfone apenas por toque explícito, uma escuta por vez. |
+| Assistente | Padrão, voz e efeitos discretos, animação moderada. Música opcional inicialmente desligada. |
+| Cinematográfico | Núcleo e partículas completos, trilha original, efeitos, redução da música na fala e pausa durante captura. |
 
-[Formatos de comandos](docs/COMANDOS-0.4.md). Não controla telas internas de qualquer app, mensagens/compras, notebook ou serviços que não ofereçam integração oficial.
+DataStore persiste modos, volumes, perfil vocal, assuntos e preferências do digest. Trocar de modo encerra a sessão em curso. Ao sair/bloquear/abrir outro aplicativo, captura, fala e trilha param e as notas são bloqueadas. Não há escuta oculta. O serviço Android de reconhecimento pode emitir seus próprios avisos; para não chamá-lo, use texto.
 
-## Som, privacidade e custos
+## Comandos
 
-OriginalScore.kt sintetiza trilha de 16 s e cinco efeitos originais, sem samples. As novas composições e seu áudio renderizado estão sob CC0; licenças do restante do projeto permanecem próprias. Um foco de áudio coordena TTS/AudioTrack e interrompe ao perder prioridade. Música reduz a 12% de seu volume configurado durante fala e silencia durante escuta; controles não alteram o volume global do Android.
+“Jarvis, minha agenda”, “o que tenho hoje”, “próximo compromisso”, “agenda da semana”, “meus e-mails”, “tem e-mail importante”, “notícias”, “notícias de tecnologia”, “bom dia”, “abrir Second Brain”, “adicionar uma nota”, “quais são minhas metas”. Esses comandos são resolvidos localmente e consultam somente as fontes autorizadas.
 
-Sem API paga, chaves, assinaturas, backend de inferência, gravação, telemetria, boot, acessibilidade ou serviço de captura em segundo plano. O único tráfego próprio é o download de modelo solicitado. SpeechRecognizer/TTS são provedores Android, com pt-BR preferencial e fallback pt-PT na fala; idiomas/vozes/rede dependem desses provedores. Não se promete operação universal offline do reconhecimento/TTS. O download solicitado pode continuar pelo DownloadManager, com notificação, sem microfone.
+Continuam disponíveis abrir ChatGPT oficial (`com.openai.chatgpt`), abrir aplicativos instalados pelo nome, alarmes pelo relógio Android, criação confirmada de eventos e “parar”. Abrir um aplicativo não permite controlar automaticamente suas telas internas. Alarmes oficiais podem exigir confirmação; não há retorno de salvamento pelo intent.
 
-Não houve teste físico no Galaxy, nem comprovação de voz humana Samsung, Bluetooth/DND ou autonomia. Nenhuma Play Store, release pública ou cobrança foi ativada. Os runners padrão do repositório público são usados; não habilite cobrança para este projeto. Nenhum módulo novo de e-mail, notícias, agenda ou memória avançada foi iniciado.
+Conversa livre local continua opcional: baixe por Wi-Fi o modelo gratuito de 491 MB ou importe o GGUF oficial. [Detalhes da conversa](docs/CONVERSA-0.5.md). Esse modelo pequeno pode errar; não recebe notas/e-mails automaticamente e não executa ações com o texto que gera. Não substitui o ChatGPT.
 
-## Compilar
+## Segurança e custos
 
-Pelo celular: [Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Aguarde ambos os jobs verdes, baixe JARVIS-Mobile-debug, extraia e instale. Use Site para computador se necessário. [Guia](docs/APK-PELO-CELULAR.md).
+Notas e caches pessoais têm payload AES-GCM com chaves não exportáveis do Android Keystore; o banco não é SQLCipher (UUIDs/tipos/datas de atualização são metadados). Second Brain pede biometria ou credencial do dispositivo e bloqueia ao sair. Exportação é manual pelo Android, com senha, PBKDF2 e AES-GCM; revise importações antes de confirmar. Backup automático Android dos dados é desativado.
 
-No computador: JDK 17, SDK Platform 35, Build Tools 35.0.0, NDK 27.2.12479018, CMake 3.22.1, Gradle 8.11.1, AGP 8.9.2, Kotlin/Compose 2.1.20. O wrapper oficial é obtido/verificado pelos launchers; configure ANDROID_HOME ou sdk.dir em local.properties.
+Dados pessoais só usam vozes declaradas locais e instaladas pelo Android; sem fallback on-line. Ditado de notas exige reconhecedor no dispositivo, sem fallback para rede. Reconhecimento geral de comandos prioriza o dispositivo, mas o serviço Android pode usar rede; para conteúdo sensível use o editor ou ditado local. Telas pessoais bloqueiam captura; portanto prints dessas telas podem sair pretos por proteção.
+
+Sem APIs pagas obrigatórias, chaves embutidas, backend, telemetria ou assinaturas. Tráfego próprio: modelo solicitado, RSS EBC, Open-Meteo se configurado e Gmail somente após OAuth. WorkManager pode atualizar e-mails autorizados aproximadamente a cada hora; Android decide quando executar, sem microfone. EBC/Open-Meteo podem estar indisponíveis. Open-Meteo gratuito é para uso pessoal não comercial, com atribuição CC BY 4.0.
+
+Nenhuma loja, release pública ou serviço pago foi ativado. Actions usa runners padrão; repositórios privados estão sujeitos à franquia da conta, sem ativar cobrança.
+
+## Compilar e verificar
+
+Pelo celular: [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Aguarde **os dois jobs verdes**, abra o run, baixe **JARVIS-Mobile-debug**, extraia e instale `app-debug.apk`. Artefatos duram sete dias. [Passos completos](docs/APK-PELO-CELULAR.md).
+
+No computador: JDK 17, Platform/target/compile SDK 35, Build Tools 35.0.0, NDK 27.2.12479018, CMake 3.22.1; Gradle 8.11.1, AGP 8.9.2, Kotlin/Compose 2.1.20, KSP 2.1.20-2.0.1, Room 2.7.2. Android mínimo 26; ABIs arm64-v8a e x86_64. Configure ANDROID_HOME ou sdk.dir em local.properties. Não versione esse arquivo.
 
 ```sh
 ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
-# Emulador/dispositivo para teste de conversa real:
+python3 scripts/verify_apk.py
+# Testes Android exigem emulador/dispositivo; o teste de conversa usa o modelo real:
 python3 scripts/fetch_test_model.py /tmp/jarvis-conversation-model.gguf
 adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
 adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf
 sh scripts/test_on_emulator.sh
 ```
 
-No Windows use .\gradlew.bat. O CMake busca llama.cpp por commit fixo na compilação; nenhum código nativo é baixado em execução. Pesos GGUF não são versionados. [Validação](docs/VALIDATION.md), [testes](docs/TESTES.md), [arquitetura](docs/ARQUITETURA.md).
+Windows: `.\gradlew.bat`. CMake obtém llama.cpp em commit fixado durante compilação; nenhum binário executável é baixado pelo app. [Arquitetura](docs/ARQUITETURA.md), [testes](docs/TESTES.md) e [validação real](docs/VALIDATION.md).
+
+**Assinatura:** sem os quatro Secrets opcionais de assinatura, o CI usa chave debug temporária. Uma atualização com chave diferente exige desinstalar a anterior, apagando dados locais: exporte notas antes. Para Gmail e atualizações estáveis, configure uma chave privada fixa conforme o [guia](docs/GMAIL-OAUTH.md). Nenhuma chave privada é guardada no repositório ou artefato.
 
 Projeto pessoal independente; marcas pertencem a seus titulares.

@@ -38,9 +38,11 @@ fun HubScreen(state:HubState,jarvis:JarvisState,brain:BrainState,model:HubViewMo
             }
             ModeSelector(jarvis.experience,onMode,Modifier.padding(horizontal=20.dp))
             if(jarvis.voiceIssue.isNotBlank())Text(jarvis.voiceIssue,color=Gold,fontSize=12.sp,modifier=Modifier.padding(horizontal=20.dp,vertical=8.dp))
+            if(jarvis.notice.isNotBlank())Text(jarvis.notice,color=Gold,fontSize=12.sp,modifier=Modifier.padding(horizontal=20.dp,vertical=4.dp))
             if(state.panel!=HubPanel.BRAIN)TextButton(onClick=onToggle,modifier=Modifier.fillMaxWidth()){
                 Text(if(jarvis.enabled||jarvis.speaking||jarvis.working)"Pausar JARVIS" else "Ativar JARVIS",color=Cyan)
-            }else Text(if(jarvis.listening)"Ditado local em uso · toque no núcleo para interromper" else "Memória protegida · ditado apenas no dispositivo",color=Muted,fontSize=11.sp,modifier=Modifier.padding(20.dp,8.dp))
+            }else if(jarvis.privateDictation)TextButton(onClick=onToggle,modifier=Modifier.fillMaxWidth()){Text("Interromper ditado local",color=Cyan)}
+            else Text("Memória protegida · ditado apenas no dispositivo",color=Muted,fontSize=11.sp,modifier=Modifier.padding(20.dp,8.dp))
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp).testTag("hub-content"),verticalArrangement=Arrangement.spacedBy(12.dp)){
                 if(state.notice.isNotBlank())Text(state.notice,color=Gold,fontSize=13.sp)
                 if(state.busy)LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -135,7 +137,7 @@ private fun MailPanel(state:HubState,model:HubViewModel,connect:()->Unit){
     if(state.mail.account.isBlank()){
         Text("Conexão segura com o Gmail",color=Gold,fontSize=21.sp)
         Text("Acesso real exige um cliente OAuth registrado para este aplicativo e a assinatura deste APK. O JARVIS não pede sua senha e não exibe mensagens de exemplo como se fossem suas.",color=Muted)
-        Text("Use o guia GMAIL-OAUTH.md no repositório. Se a configuração estiver pronta, autorize sua conta pela tela oficial do Google.",color=Muted,fontSize=12.sp)
+        Text("Use o guia docs/GMAIL-OAUTH.md no repositório. Se a configuração estiver pronta, autorize sua conta pela tela oficial do Google.",color=Muted,fontSize=12.sp)
         Button(onClick=connect,modifier=Modifier.fillMaxWidth().testTag("gmail-connect")){Text("Conectar Gmail pelo Google")};return
     }
     Text(state.mail.account,color=Gold,fontSize=16.sp)

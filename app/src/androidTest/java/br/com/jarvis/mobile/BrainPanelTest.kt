@@ -62,6 +62,6 @@ class BrainPanelTest {
         compose.onNodeWithTag("brain-graph").assertExists()
         compose.onNodeWithText("1/20 · 50 por página").assertExists()
         compose.onNodeWithTag("brain-search").performScrollTo().performTextInput("Nota CI 997")
-        compose.onNodeWithText("Nota CI 997").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Nota CI 997") and !hasSetTextAction()).performScrollTo().assertIsDisplayed()
     }
 }

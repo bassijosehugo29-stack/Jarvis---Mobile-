@@ -8,5 +8,8 @@ local.properties
 *.aab
 *.jks
 *.keystore
+*.jks.base64
+jarvis-test.base64
+*.p12
 .externalNativeBuild/
 .cxx/

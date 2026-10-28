@@ -1,16 +1,29 @@
-# Instalar pelo celular — versão 0.6
+# Gerar e instalar o APK pelo celular
 
-[Baixar APK de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231/artifacts/12787512824) · [Compilação e 77 testes aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40621754231).
+A versão 3.0 está em validação. O link do APK final e os testes comprovados serão registrados em [VALIDATION.md](VALIDATION.md).
 
-1. Baixe o ZIP em Artifacts, logado no GitHub, e extraia em Meus Arquivos. O APK direto fornecido na conversa já pode ser instalado sem extrair.
-2. Instale app-debug.apk e permita essa origem quando o Android solicitar. Se houver conflito de assinatura, desinstale o JARVIS anterior antes. Isso limpa preferências/modelo local, sem apagar eventos já salvos no calendário.
-3. Escolha **Assistente**. Nos ajustes, use **Listar vozes instaladas**, escolha uma opção portuguesa e **Testar voz**. Aumente o volume de mídia e confira saída Bluetooth/fones. Ajuste tom/velocidade. Se faltarem dados de voz, use **Ajustar voz do Android**.
-4. Experimente **Cinema**, com música/efeitos e seus volumes nos ajustes. A trilha reduz durante respostas e para durante captura. **Silêncio** desliga todo áudio do JARVIS; toque para uma única escuta ou escreva sem microfone. O reconhecedor pode ter avisos próprios do Android.
-5. Para conversar livremente, peça **Baixar conversa offline • 491 MB**, por Wi-Fi, e aguarde **Conversa offline pronta**. Download separado gratuito; modelo leve, com limitações. Comandos de abrir apps/alarmes continuam sem ele.
-6. Ative o núcleo e permita microfone durante o uso. Em Assistente/Cinema, ouça “Às suas ordens, senhor” e fale. Para parar, toque no núcleo/diga parar. Sair ou bloquear interrompe áudio e captura.
+## Gerar no GitHub, sem Android Studio no celular
 
-Voz humana e comportamento físico Samsung ainda precisam de teste. Não há promessa de timbre específico; depende das vozes instaladas. [Roteiro e limites](MISSAO-1.md).
+1. Entre na sua conta e abra [Actions do projeto](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions).
+2. Escolha **Android - APK de teste → Run workflow → main → Run workflow**. Se o menu não aparecer, use Chrome → ⋮ → **Para computador**. O push de código na main também dispara o fluxo.
+3. Aguarde os dois jobs verdes: **debug-apk** e **Testes instrumentados Android 35**. Se algum falhar, abra o log; não confunda o APK compilado de um run com falha com a entrega validada.
+4. Abra essa execução e vá a **Artifacts → JARVIS-Mobile-debug**. É preciso estar logado no GitHub. O download é ZIP; extraia em **Meus Arquivos** e toque em **app-debug.apk**.
+5. Autorize **Instalar apps desconhecidos** apenas para o navegador/Meus Arquivos usado, se o Android pedir, e instale. Você pode desabilitar a origem depois. Artefatos expiram após sete dias: gere outra execução se necessário.
 
-## Gerar outra versão pelo celular
+A release antiga “Javis” com ZIP de algumas centenas de bytes não contém este APK. Não precisa comprar serviço, publicar loja nem habilitar cobrança. O projeto é público; repositórios privados têm franquia de Actions conforme conta.
 
-[Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Use **Site para computador** se o menu não aparecer. Aguarde debug-apk e Testes instrumentados Android 35 aprovados. Em Artifacts, baixe JARVIS-Mobile-debug, extraia e instale. Artefatos duram sete dias. Não use a release antiga Javis, que não contém esta versão. O fluxo não publica Play Store nem cria release ou serviços pagos.
+## Atualização e assinatura
+
+Sem Secrets opcionais, o certificado debug do CI é temporário e pode mudar a cada execução. Se houver “aplicativo não instalado” por conflito de assinatura, **exporte as notas com senha antes de desinstalar** a versão anterior e instalar a nova. Desinstalar remove notas/cache, preferências e o modelo baixado; não remove eventos do calendário nem e-mails originais. Reimporte o backup de notas após instalar e autenticar. A primeira transição da 0.6 também pode exigir desinstalação.
+
+Configure uma assinatura privada fixa para atualizações futuras e Gmail conforme [GMAIL-OAUTH.md](GMAIL-OAUTH.md). O artefato JARVIS-relatorios inclui apk.json com SHA-1/SHA-256 do certificado e hash SHA-256 do arquivo realmente compilado. Não publique a chave privada.
+
+## Primeiro teste no Galaxy
+
+- Configure PIN/biometria de bloqueio Android; abrir Second Brain exige autenticação.
+- No JARVIS, escolha Assistente e teste uma voz portuguesa **local instalada**. Instale pt-BR nos ajustes de texto para fala do Android, aumente volume de mídia e confira Bluetooth/fones. Dados pessoais ficam em texto se não houver voz local.
+- Toque no núcleo e permita microfone durante o uso. Primeira ativação diária pode ler o digest; a opção fica na central DIGEST. Diga “Jarvis, minha agenda”, “notícias” ou “abrir ChatGPT”. Sair/bloquear interrompe captura/áudio.
+- Abra ⋮ para Second Brain/agenda/radar/digest/e-mails/privacidade. CalendarProvider pede permissão apenas quando necessário. Gmail é opcional e ainda exige OAuth; os demais módulos não dependem dele.
+- Para conversa livre, baixe o modelo offline gratuito de 491 MB por Wi-Fi. Comandos simples não dependem desse download.
+
+[Limitações e roteiro físico](TESTES.md) · [Missão 2](MISSAO-2.md) · [permissões e dados](PRIVACIDADE.md).

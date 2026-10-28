@@ -30,13 +30,13 @@ object RssParser {
                         "link"->{val href=parser.getAttributeValue(null,"href");if(href!=null){if(parser.getAttributeValue(null,"rel") in listOf(null,"alternate"))link=href}else link=parser.nextText()}
                         "pubdate","published","date"->date=parser.nextText()
                         "updated"->if(date.isBlank())date=parser.nextText()
-                        "guid","id"->id=parser.nextText()
+                        "guid","id"->id=parser.nextText().take(500)
                     }
                 }
             }else if(type==XmlPullParser.END_TAG&&parser.name.lowercase() in setOf("item","entry")&&inside){
                 inside=false
                 val uri=runCatching{URI(link.trim())}.getOrNull()
-                if(title.isNotBlank()&&uri?.scheme in setOf("http","https")&&!uri?.host.isNullOrBlank()){
+                if(title.isNotBlank()&&link.length<=2048&&uri?.scheme in setOf("http","https")&&!uri?.host.isNullOrBlank()){
                     val safe=if(uri!!.scheme=="http")"https"+link.trim().removePrefix("http") else link.trim()
                     val published=parseDate(date)?.takeIf{it<=now+300000L}
                     items+=NewsItem(id.ifBlank{safe},android.text.Html.fromHtml(title,android.text.Html.FROM_HTML_MODE_LEGACY).toString(),safe,source,published,setOf(topic))
@@ -52,7 +52,7 @@ object RssParser {
         ?:runCatching{ZonedDateTime.parse(value,DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli()}.getOrNull()
 }
 
-class NewsRepository(private val storage:HubStorage,private val http:NetworkClient){
+class NewsRepository(private val storage:HubStorage,private val http:HttpTransport){
     val feeds=listOf(
         NewsFeed("https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml","Brasil"),
         NewsFeed("https://agenciabrasil.ebc.com.br/rss/economia/feed.xml","Economia"),
@@ -70,7 +70,10 @@ class NewsRepository(private val storage:HubStorage,private val http:NetworkClie
                 val reply=http.get(feed.url,etag=previous?.optString("etag")?.takeIf{it.isNotBlank()},modified=previous?.optString("modified")?.takeIf{it.isNotBlank()})
                 val body=if(reply.code==304)previous?.getString("body")?:error("Sem cache")else{check(reply.code in 200..299);reply.body}
                 val parsed=withContext(Dispatchers.Default){RssParser.parse(body,"EBC / Agência Brasil",feed.topic,now)}
-                Triple(feed,parsed,JSONObject().put("body",body).put("etag",reply.etag?:previous?.optString("etag")).put("modified",reply.modified?:previous?.optString("modified")))
+                // Keep each Room row below CursorWindow limits, even for unusually large feeds.
+                val cache=if(body.toByteArray(Charsets.UTF_8).size<=128*1024)
+                    JSONObject().put("body",body).put("etag",reply.etag?:previous?.optString("etag")).put("modified",reply.modified?:previous?.optString("modified")) else JSONObject()
+                Triple(feed,parsed,cache)
             }catch(e:CancellationException){throw e}catch(_:Exception){null}
         }}.awaitAll()
         val succeeded=results.filterNotNull()
@@ -78,8 +81,11 @@ class NewsRepository(private val storage:HubStorage,private val http:NetworkClie
         val old=decodeItems(saved?.optJSONArray("items"));val all=(succeeded.flatMap{it.second}+old).filter{it.publishedAt==null||it.publishedAt>=now-7*86400000L}
             .groupBy{it.url}.values.map{group->group.first().copy(topics=group.flatMap{it.topics}.toSet())}.sortedByDescending{it.publishedAt?:0L}.take(500)
         val feedCache=JSONObject();succeeded.forEach{feedCache.put(it.first.url,it.third)}
-        storage.put("news",JSONObject().put("time",now).put("items",encodeItems(all)).put("feeds",feedCache),epoch)
-        NewsSnapshot(all,SourceInfo(SourceStatus.READY,"${succeeded.size}/${feeds.size} fontes atualizadas · EBC",now))
+        var kept=all
+        fun cache()=JSONObject().put("time",now).put("items",encodeItems(kept)).put("feeds",feedCache)
+        while(cache().toString().toByteArray(Charsets.UTF_8).size>1024*1024&&kept.isNotEmpty())kept=kept.dropLast(1)
+        storage.put("news",cache(),epoch)
+        NewsSnapshot(kept,SourceInfo(SourceStatus.READY,"${succeeded.size}/${feeds.size} fontes atualizadas · EBC",now))
     }
     fun select(items:List<NewsItem>,topics:Set<String>):List<NewsItem>{
         if(topics.isEmpty())return emptyList()

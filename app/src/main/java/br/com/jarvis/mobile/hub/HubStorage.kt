@@ -26,9 +26,10 @@ class HubStorage(context: Context) {
     suspend fun remove(kind:String)=withContext(Dispatchers.IO){lock.withLock{db.records().clearKind(kind)}}
     suspend fun connectMail(email:String,expectedEpoch:Long):Long=withContext(Dispatchers.IO){lock.withLock{
         check(epoch()==expectedEpoch){"Autorização invalidada."}
+        val previous=db.records().records("gmail-account").firstOrNull()?.let{JSONObject(String(cipher.decrypt(it.payload,"gmail-account"),Charsets.UTF_8)).optString("email")}
         val next=expectedEpoch+1
         check(meta.edit().putLong("epoch",next).commit())
-        for(kind in listOf("gmail-account","mail","mail-overrides"))db.records().clearKind(kind)
+        if(previous!=email)for(kind in listOf("gmail-account","mail","mail-overrides"))db.records().clearKind(kind)
         val value=JSONObject().put("email",email)
         db.records().put(PersonalRecord("gmail-account","current",System.currentTimeMillis(),cipher.encrypt(value.toString().toByteArray(Charsets.UTF_8),"gmail-account")))
         next

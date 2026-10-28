@@ -56,6 +56,9 @@ class PersonalStorageTest {
         val connected=storage.connectMail("ci@example.invalid",initial)
         storage.put("mail",JSONObject().put("private","CACHE PRIVADO CI"),connected)
         assertEquals("CACHE PRIVADO CI",storage.get("mail")!!.getString("private"))
+        storage.put("mail-overrides",JSONObject().put("CI1","ACTION"),connected)
+        storage.connectMail("ci@example.invalid",connected)
+        assertEquals("ACTION",storage.get("mail-overrides")!!.getString("CI1"))
         storage.disconnectMail()
         assertNull(storage.get("mail"));assertNull(storage.get("gmail-account"))
         try{storage.put("mail",JSONObject(),connected);fail("Late worker restored cache")}catch(_:IllegalStateException){}

@@ -23,8 +23,8 @@ class SpeechOutputTest {
 
     @Test fun personalTextCannotUseOnlineVoiceEvenAfterEngineHasBeenWarmed() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
-        val marker=java.io.File(instrumentation.context.filesDir,"tts-network-only")
-        marker.writeText("CI only")
+        val control=android.net.Uri.parse("content://br.com.jarvis.mobile.test.tts-fixture")
+        instrumentation.targetContext.contentResolver.call(control,"network",null,null)
         lateinit var output:SpeechOutput
         var created=false
         val publicDone=CountDownLatch(1);val privateDone=CountDownLatch(1)
@@ -38,12 +38,12 @@ class SpeechOutputTest {
             assertTrue(publicDone.await(25,TimeUnit.SECONDS));assertTrue(publicResult.get() is SpeechResult.Completed)
             instrumentation.runOnMainSync{output.speak("Dado pessoal de teste",true){privateResult.set(it);privateDone.countDown()}}
             assertTrue(privateDone.await(10,TimeUnit.SECONDS));assertTrue(privateResult.get().toString(),privateResult.get() is SpeechResult.TextOnly)
-        }finally{marker.delete();if(created)instrumentation.runOnMainSync{output.close()}}
+        }finally{instrumentation.targetContext.contentResolver.call(control,"local",null,null);if(created)instrumentation.runOnMainSync{output.close()}}
     }
 
     @Test fun personalTextUsesInstalledLocalVoiceAndProducesRealPcm() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
-        java.io.File(instrumentation.context.filesDir,"tts-network-only").delete()
+        instrumentation.targetContext.contentResolver.call(android.net.Uri.parse("content://br.com.jarvis.mobile.test.tts-fixture"),"local",null,null)
         val done=CountDownLatch(1);val result=AtomicReference<SpeechResult>()
         lateinit var output:SpeechOutput
         instrumentation.runOnMainSync{

@@ -1,46 +1,56 @@
-# Testes da versão 0.6
+# Testes — JARVIS 3.0
 
-A revisão cinematográfica passou em 55 testes de unidade e 22 instrumentados, total 77, sem falhas; execução 40621754231. Novos testes cobrem política dos três modos, sanidade do PCM original, persistência em DataStore reaberto, seleção imediata de modos, silêncio sem iniciar TTS, parâmetros/markers de voz e AudioTrack real com duck/interrupção de foco. Resultados, integridade e limites em VALIDATION.md.
+Resultados efetivamente executados ficam em [VALIDATION.md](VALIDATION.md); testes adicionados não devem ser contados como aprovados antes do CI concluir.
 
-# Cobertura preservada da base 0.5
+## Cobertura nova
 
-A versão 0.5 passou em 47 testes de unidade e 15 instrumentados (62 total), além de Lint e compilação; execução 40604934666. Resultados confirmados e links serão registrados em [VALIDATION.md](VALIDATION.md). Resultados da 0.4 não validam o novo runtime.
+| Área | Verificação automatizada |
+| --- | --- |
+| Notas/regras | Oito categorias, padrões de consentimento, busca acentos/conteúdo/tags, filtros, prioridades, vínculos e merge por UUID/data; lote sintético de 1.000 notas. |
+| Backup | AES-GCM/PBKDF2 round-trip, salts/IVs distintos, formato inválido, senha incorreta, adulteração; importação sem escrita antes da confirmação e sem parcial em dados inválidos. |
+| Android privado | Room real, payload sem título/conteúdo em claro, Keystore e AAD por registro, reabertura persistente, bloqueio e limpeza. Invalidação de worker/OAuth atrasado após desconexão/exclusão. |
+| Interface | Editor/salvar/excluir/pesquisar, grafo nativo, memória bloqueada, paginação com 1.000 notas. Lifecycle real limpa rascunho e fecha sessão; FLAG_SECURE presente. |
+| Agenda | UTC/dia inteiro/fim exclusivo, evento atravessando meia-noite, contagem regressiva e próximo evento. Provider real em agenda LOCAL somente leitura com recorrência, cancelamento, dia inteiro e ausência de mutação. |
+| Notícias | RSS/Atom, entidade HTML, data desconhecida/futura, URL insegura/DTD recusadas. Transporte fixture testa cache Room, TTL/ETag/304, deduplicação, filtro e fallback off-line; disponibilidade real tem relatório separado. |
+| Clima | Sem requisição antes de opt-in, cache, nulo não vira zero, indisponibilidade e desativação, com transporte fixture e Room real. |
+| Digest/e-mail | Dados ausentes distintos de vazio real, somente notas autorizadas, fontes/cache, data local, limites de palavras, regras AÇÃO/INFO/RUÍDO. Parsing de metadata Gmail sintético, sem conta real. |
+| Integração | Comandos novos pelo roteador compartilhado; Silencioso não reproduz áudio, não abre microfone nem apresenta Gmail falso. |
+| Voz privada | Mecanismo fixture real produz PCM local; engine já aquecida com voz declarada on-line é recusada para dados pessoais, retornando texto. |
 
-## Cobertura
-
-- CommandParserTest: pedidos explícitos, transcrições da palavra Jarvis, preparação do modelo, alarmes/datas e perguntas de conversa que não podem executar ações.
-- AppResolverTest: rótulos, aliases, acentos, ambiguidade e respostas numeradas com/sem Jarvis.
-- EventParserTest/ConversationGateTest: campos ausentes, títulos, fusos, durações, limites, conflitos, expiração e cancelamento.
-- VoiceSelectionTest: prioridade pt-BR, voz instalada, pt-PT como alternativa e rejeição de outros idiomas.
-- ChatHistoryTest: contexto, limites, limpeza e delimitadores de papéis.
-- JarvisScreenTest/MainActivityVisualTest: núcleo, ausência de atalhos, mensagem sem microfone, diagnósticos de voz, ajustes, cabeçalho, fonte ampliada e Activity real.
-- SpeechOutputTest: API TTS real com serviço de fixture no APK de testes, produzindo PCM, completando callback, fallback sem pt-BR e falha de síntese explícita. O fixture usa Java/Android puro porque roda em processo separado sem bibliotecas do APK alvo. Não comprova alto-falante nem voz humana do Galaxy.
-- LocalConversationTest: modelo oficial com hash conferido, importação, duas mensagens pela Activity real, inferência JNI e contexto do nome Rafael. Exporta transcrição fictícia para os relatórios.
-- CalendarProviderTest, InstalledAppsTest e AlarmIntentTest: gravação/leitura em calendário LOCAL isolado e limpo ao terminar, launcher exportado, intents e limites das confirmações oficiais.
-- Lint, compilação Kotlin/Java/C++/Compose e inspeção de integridade/alinhamento do APK.
+Testes anteriores de modos/áudio/foco/duck/persistência/voz/parser/apps/alarmes/criação de calendário/conversa JNI e Compose permanecem. Os fixtures ficam exclusivamente no APK de androidTest, separado do APK entregue. A voz fixture produz tom PCM: não comprova dicção/alto-falante do Samsung. O teste do grafo não é medição de FPS, bateria ou benchmark do Galaxy.
 
 ## Executar
 
-JDK 17, SDK 35, Build Tools 35.0.0, NDK 27.2.12479018, CMake 3.22.1 e dispositivo/emulador ARM64 ou x86_64. Modelo precisa de cerca de 491 MB e acesso inicial à internet, sem chave ou inference API.
+JDK 17 e SDK/NDK/CMake conforme README. Para unidade/lint/compilar:
 
 ```sh
 ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+python3 scripts/verify_apk.py
+```
+
+Para Android, use emulador API 35 com Google APIs e KVM ou aparelho de teste. O teste de conversa importa modelo oficial real de aproximadamente 491 MB, com hash validado, e usa dados fictícios:
+
+```sh
 python3 scripts/fetch_test_model.py /tmp/jarvis-conversation-model.gguf
 adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
 adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf
 sh scripts/test_on_emulator.sh
 ```
 
-O shell preserva o resultado real dos testes e tenta coletar relatórios, capturas/transcrição e erros de runtime mesmo após falha. Só grava prévia e reinstala a Activity se os testes passarem. O CI não suprime erros do app. O launcher do emulador é parado para impedir sua sobreposição de ANR às capturas. O SDK Android não está instalado no executor local: evidência de compilação vem do GitHub Actions, não da verificação Python de estrutura.
+O script preserva o código real dos testes, coleta relatórios/capturas/transcrição fictícia e erros AndroidRuntime. Não transforma falha em sucesso. Telas pessoais não são desprotegidas no debug para gerar screenshots; FLAG_SECURE pode produzir imagens pretas, como esperado. Algumas capturas históricas de troca de modos são parciais no emulador; isso está registrado na validação da base.
 
-## Aceite no Galaxy S25 FE
+`python3 scripts/probe_public_sources.py` consulta somente feeds públicos e previsão de uma localização de CI, sem contas. Retorna relatório de disponibilidade em build/verification/public-sources.json; indisponibilidade externa não é substituída por notícias falsas. `verify_apk.py` verifica assinatura com apksigner, CRC, versão, permissões, ABIs e alinhamento de 16 KB. Ambos os relatórios são artefatos, sem chaves privadas/tokens.
 
-1. Testar voz com volume de mídia audível, alto-falante, fones/Bluetooth e uma voz pt-BR instalada. Negar/remover voz deve gerar orientação, sem fingir que falou.
-2. Preparar modelo por Wi-Fi, interromper/retomar, cancelar e importar o arquivo oficial. Modelo errado/incompleto deve ser recusado; sem modelo, comandos ainda funcionam e conversa pede preparação.
-3. Ativar e ouvir a saudação; perguntar sem repetir Jarvis, ouvir uma resposta e fazer uma pergunta que dependa do contexto anterior. Interromper no núcleo e conferir o retorno da escuta após fala.
-4. Testar mensagem por texto sem microfone; keyboard, fonte 150%, TalkBack, rotação e erro de volume visível.
-5. Abrir aplicativo, criar alarme e agendar compromisso; conferir o resultado nos apps oficiais. Perguntar sobre um alarme não pode criar um alarme.
-6. Sair, bloquear, trocar app, atender chamada e voltar: microfone/TTS param; reativação é manual. Nenhuma conversa incompleta pode disparar ação posterior.
-7. Validar modelos pt-BR offline em modo avião; disponibilidade real é do provedor. Medir latência, aquecimento, bateria e português do modelo local. Não concluir desempenho do Galaxy a partir do emulador.
+## Aceite manual no Galaxy S25 FE
 
-Apenas o dono pode confirmar que ouviu a voz física no aparelho. O teste emulador valida componentes e integração, sem substituir esse aceite. Remova compromissos e alarmes de teste ao terminar.
+1. Instalar, conferir os três modos e volumes, selecionar dados de voz pt-BR locais, ouvir “Às suas ordens, senhor”. Testar mídia zerada, alto-falante, fones/Bluetooth/DND e voz ausente: erro visível, sem fingir fala.
+2. Autorizar/recusar microfone; comandos pt-BR, parada, sair/bloquear/trocar app/chamada. Nenhuma retomada ou escuta de fundo. Silencioso só deve ativar uma captura por toque; use texto para evitar sons do reconhecedor Android.
+3. Desbloquear Second Brain com biometria e PIN real, cancelar, fechar/reabrir e verificar bloqueio. Criar/editar/apagar, tags/vínculos, pesquisa/categorias. Ditado de notas só com reconhecedor local; sem ele, editor e aviso.
+4. Exportar com senha longa, importar com prévia/confirmar; tentar senha errada/arquivo alterado. Confirmar que notas não autorizadas não aparecem no digest. Guardar backup/senha fora do app.
+5. Permitir só leitura e conferir calendário sincronizado, recorrência, dia inteiro e próximo evento. Agendar um compromisso pela função anterior e verificar no app oficial; remover testes depois.
+6. Atualizar notícias, filtrar e abrir fonte original; modo avião/cache antigo. Configurar/remover cidade e conferir data/previsão/indisponibilidade. Conferir digest curto/médio e primeira ativação diária, inclusive em Silencioso.
+7. Só depois de configurar OAuth da assinatura instalada, autorizar Gmail na tela Google, conferir conta/amostra real e corrigir classificação local. Testar expiração, offline, reconexão e desconexão; garantir que o Gmail original não foi alterado.
+8. Apagar dados pelo painel com autenticação; conferir notas/cache/conta removidos e originais/backups externos preservados. Sem rede, revisar revogação na Conta Google.
+9. Preparar conversa local opcional e testar contexto/interrupção. Medir latência, temperatura, bateria e fluidez reais; não inferir do emulador. Fonte ampliada/teclado/TalkBack/rotação também precisam de aceite no aparelho.
+
+Biometria física, ASR/TTS Samsung e OAuth real não são simulados como aceitos. Não há medição de desempenho/autonomia física nesta entrega.

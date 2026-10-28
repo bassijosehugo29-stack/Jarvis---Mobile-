@@ -5,6 +5,8 @@ from pathlib import Path
 
 encoded = os.environ.get('JARVIS_KEYSTORE_B64', '')
 required = ['JARVIS_KEYSTORE_PASSWORD', 'JARVIS_KEY_ALIAS', 'JARVIS_KEY_PASSWORD']
+if not encoded and any(os.environ.get(key) for key in required):
+    raise SystemExit('Assinatura fixa incompleta: falta JARVIS_KEYSTORE_B64. Configure os quatro Secrets.')
 if encoded:
     if not all(os.environ.get(key) for key in required):
         raise SystemExit('Assinatura fixa incompleta: configure os quatro Secrets documentados.')

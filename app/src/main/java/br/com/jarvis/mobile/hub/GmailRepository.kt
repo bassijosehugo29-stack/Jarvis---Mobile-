@@ -13,7 +13,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 class GmailConsentRequired:Exception()
-class GmailRepository(private val context:Context,private val storage:HubStorage,private val http:NetworkClient){
+class GmailRepository(private val context:Context,private val storage:HubStorage,private val http:HttpTransport){
     private val scope="https://www.googleapis.com/auth/gmail.readonly"
     fun request(email:String?=null):AuthorizationRequest = AuthorizationRequest.builder().setRequestedScopes(listOf(Scope(scope))).apply{
         if(!email.isNullOrBlank())setAccount(Account(email,"com.google"))
@@ -91,9 +91,10 @@ class GmailRepository(private val context:Context,private val storage:HubStorage
     }
     suspend fun disconnect():Boolean{
         val email=connectedAccount();var revoked=true
+        storage.disconnectMail() // Invalidate locally before any cancellable network operation.
         if(email!=null)try{Identity.getAuthorizationClient(context).revokeAccess(RevokeAccessRequest.builder().setAccount(Account(email,"com.google")).setScopes(listOf(Scope(scope))).build()).awaitTask()}
         catch(e:CancellationException){throw e}catch(_:Exception){revoked=false}
-        storage.disconnectMail();return revoked
+        return revoked
     }
     internal fun parseMessage(json:JSONObject,email:String):EmailItem{
         val headers=json.optJSONObject("payload")?.optJSONArray("headers")?:JSONArray()

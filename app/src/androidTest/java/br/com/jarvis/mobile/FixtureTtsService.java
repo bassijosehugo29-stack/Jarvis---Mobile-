@@ -12,6 +12,7 @@ import java.util.Locale;
 
 /** Test-APK service runs in its own process: use only Java/Android classes, no target-APK runtime. */
 public class FixtureTtsService extends TextToSpeechService {
+    static volatile boolean networkOnly = false;
     @Override public int onIsLanguageAvailable(String language, String country, String variant) {
         if (!language.equals("pt") && !language.equals("por")) return TextToSpeech.LANG_NOT_SUPPORTED;
         if (country.equals("BR") || country.equals("BRA")) return TextToSpeech.LANG_MISSING_DATA;
@@ -20,7 +21,6 @@ public class FixtureTtsService extends TextToSpeechService {
     @Override public String[] onGetLanguage() { return new String[]{"por", "PRT", ""}; }
     @Override public int onLoadLanguage(String language, String country, String variant) { return onIsLanguageAvailable(language, country, variant); }
     @Override public List<Voice> onGetVoices() {
-        boolean networkOnly = new java.io.File(getFilesDir(), "tts-network-only").exists();
         return Collections.singletonList(new Voice("jarvis-fixture-pt-PT", Locale.forLanguageTag("pt-PT"),
             Voice.QUALITY_NORMAL, Voice.LATENCY_NORMAL, networkOnly, Collections.<String>emptySet()));
     }

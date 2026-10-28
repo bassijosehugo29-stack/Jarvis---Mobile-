@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <provider android:name="br.com.jarvis.mobile.FixtureTtsControl" android:authorities="br.com.jarvis.mobile.test.tts-fixture" android:exported="true" />
         <service android:name="br.com.jarvis.mobile.FixtureTtsService" android:exported="true">
             <intent-filter><action android:name="android.intent.action.TTS_SERVICE" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
             <meta-data android:name="android.speech.tts" android:resource="@xml/test_tts_engine" />

@@ -8,10 +8,13 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 data class HttpReply(val code:Int,val body:String,val etag:String?=null,val modified:String?=null)
+interface HttpTransport {
+    suspend fun get(url:String,bearer:String?=null,etag:String?=null,modified:String?=null):HttpReply
+}
 
 /** No logging interceptor. Authorization is never attached to public RSS/weather requests. */
-class NetworkClient {
-    suspend fun get(url:String,bearer:String?=null,etag:String?=null,modified:String?=null):HttpReply=withContext(Dispatchers.IO){
+class NetworkClient:HttpTransport {
+    override suspend fun get(url:String,bearer:String?,etag:String?,modified:String?):HttpReply=withContext(Dispatchers.IO){
         var target=URL(url);var redirects=0
         while(true){
             currentCoroutineContext().ensureActive()
@@ -29,7 +32,8 @@ class NetworkClient {
                 if(code in setOf(301,302,303,307,308)){
                     require(bearer==null&&redirects++<3)
                     val next=URL(target,connection.getHeaderField("Location"))
-                    require(next.protocol=="https" && (next.host==target.host || (target.host.endsWith("ebc.com.br")&&next.host.endsWith("ebc.com.br"))))
+                    fun ebc(host:String)=host=="ebc.com.br"||host.endsWith(".ebc.com.br")
+                    require(next.protocol=="https" && (next.host==target.host || (ebc(target.host)&&ebc(next.host))))
                     target=next;continue
                 }
                 if(code==304)return@withContext HttpReply(code,"",connection.getHeaderField("ETag"),connection.getHeaderField("Last-Modified"))
