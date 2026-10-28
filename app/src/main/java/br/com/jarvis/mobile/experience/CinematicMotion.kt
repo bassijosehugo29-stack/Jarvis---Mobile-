@@ -5,7 +5,9 @@ object CinematicMotion {
     fun interval(visible: Boolean, animations: Boolean, phase: CorePhase, mode: OperationMode): Long = when {
         !visible || !animations || (mode == OperationMode.SILENT && phase == CorePhase.IDLE) -> 0L
         mode == OperationMode.SILENT -> 100L
-        phase == CorePhase.IDLE && mode == OperationMode.ASSISTANT -> 83L
+        phase == CorePhase.IDLE && mode == OperationMode.ASSISTANT -> 125L
+        // Leave CPU for local inference; full-rate processing remains explicit in Cinema.
+        phase == CorePhase.PROCESSING && mode == OperationMode.ASSISTANT -> 100L
         phase == CorePhase.IDLE -> 50L
         else -> 33L
     }

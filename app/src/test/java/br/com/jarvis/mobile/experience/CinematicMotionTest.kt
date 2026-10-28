@@ -17,5 +17,10 @@ class CinematicMotionTest {
         assertNull(CinematicMotion.level(Float.NaN)); assertNull(CinematicMotion.level(Float.POSITIVE_INFINITY))
         assertEquals(0f, CinematicMotion.level(-8f)!!, 0f); assertEquals(1f, CinematicMotion.level(9f)!!, 0f)
         assertTrue(CinematicMotion.speed(CorePhase.PROCESSING) > CinematicMotion.speed(CorePhase.IDLE))
+        assertTrue(CinematicMotion.interval(true, true, CorePhase.PROCESSING, OperationMode.ASSISTANT) >= 100L)
+        assertTrue(CinematicMotion.interval(true, true, CorePhase.PROCESSING, OperationMode.CINEMATIC) <
+            CinematicMotion.interval(true, true, CorePhase.PROCESSING, OperationMode.ASSISTANT))
+        assertTrue(CinematicMotion.interval(true, true, CorePhase.IDLE, OperationMode.ASSISTANT) >
+            CinematicMotion.interval(true, true, CorePhase.LISTENING, OperationMode.ASSISTANT))
     }
 }

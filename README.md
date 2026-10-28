@@ -21,7 +21,7 @@ Sessões em primeiro plano retomam a escuta depois da resposta, sem toque a cada
 
 ## Primeiro uso
 
-1. Instale primeiro o APK **JARVIS Voz A** e depois **JARVIS Mobile**, da mesma entrega, seguindo o [guia pelo celular](docs/APK-PELO-CELULAR.md). Use PIN, padrão ou senha do Android para poder abrir a memória.
+1. Instale primeiro o APK **JARVIS Voz A** e depois **JARVIS Mobile**, da mesma entrega, seguindo o [guia da prévia](docs/JARVIS-4-FASE-1.md). Use PIN, padrão ou senha do Android para poder abrir a memória.
 2. Escolha **Assistente → ajustes → A · Executivo clássico → Testar voz**. O modelo já está no APK do motor. Ajuste o volume de mídia; confira alto-falante/fones/Bluetooth. “Voz do Android” continua sendo uma alternativa explícita nos ajustes.
 3. Toque no núcleo e permita microfone durante o uso. A primeira ativação diária pode apresentar o digest. Para comandos, diga “Jarvis, minha agenda” ou “Jarvis, abrir ChatGPT”. A opção “Primeira ativação do dia” fica no DIGEST.
 4. Abra **⋮ → SECOND BRAIN**, autentique no Android e crie uma nota. Revise antes de salvar. Para ouvir dados pessoais é obrigatória uma voz local; sem ela, o texto permanece visível com orientação.
@@ -70,7 +70,7 @@ python3 scripts/prepare_voice_a.py
 ./gradlew :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :voice-engine:lintDebug :app:assembleDebug :voice-engine:assembleDebug :app:assembleDebugAndroidTest
 python3 scripts/verify_apk.py
 python3 scripts/bundle_voice_a_source.py
-# Testes Android exigem emulador/dispositivo; o teste de conversa usa o modelo real:
+# Testes Android automatizados exigem emulador descartável (o script recusa aparelho físico); o teste de conversa usa o modelo real:
 python3 scripts/fetch_test_model.py /tmp/jarvis-conversation-model.gguf
 adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
 adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf

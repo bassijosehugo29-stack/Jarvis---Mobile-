@@ -1,9 +1,15 @@
 #!/usr/bin/env sh
 # Keep the real Gradle result while collecting evidence even after a failed test.
 set -u
+jarvis_emulator_flag=$(adb shell getprop ro.kernel.qemu 2>/dev/null | tr -d '\r')
+if [ "$jarvis_emulator_flag" != "1" ]; then
+    printf '%s\n' 'Testes destrutivos de fixtures: execute somente em emulador descartável. Nenhum aplicativo foi instalado ou removido.' >&2
+    exit 2
+fi
 ./gradlew --no-daemon --max-workers=2 :voice-engine:assembleDebug || exit $?
 adb install -r voice-engine/build/outputs/apk/debug/voice-engine-debug.apk || exit $?
 adb shell settings put global animator_duration_scale 1
+adb shell am force-stop com.google.android.apps.nexuslauncher || true
 ./gradlew --no-daemon --max-workers=2 :app:connectedDebugAndroidTest
 jarvis_test_status=$?
 mkdir -p app/build/reports/screenshots app/build/reports/conversation
