@@ -7,9 +7,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.ViewModelProvider
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.onRoot
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import br.com.jarvis.mobile.experience.*
@@ -39,9 +36,10 @@ class ExperienceModesTest {
             }
             if (mode == OperationMode.CINEMATIC) {
                 compose.waitUntil(5_000) { !model().state.value.initializing }
-                saveUiScreenshot("jarvis-cinema.png", compose.onRoot().captureToImage().asAndroidBitmap())
+                saveUiScreenshot("jarvis-cinema.png", requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()))
             }
-            if (mode == OperationMode.SILENT) saveUiScreenshot("jarvis-silencioso.png", compose.onRoot().captureToImage().asAndroidBitmap())
+            if (mode == OperationMode.SILENT) saveUiScreenshot("jarvis-silencioso.png",
+                requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()))
         }
         compose.onNodeWithTag("jarvis-message").performScrollTo().performTextInput("Jarvis")
         compose.onNodeWithText("Converse com o JARVIS").assertExists()
