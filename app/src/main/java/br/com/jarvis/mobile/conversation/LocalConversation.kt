@@ -43,6 +43,6 @@ class LocalConversation(private val models: ModelStore) {
         }
     }
     fun cancel() { if (initialized) LlamaBridge.cancel() }
-    fun clear() { history.clear() }
+    fun clear() { cancel(); if (initialized) LlamaBridge.executor.execute { history.clear() } else history.clear() }
     fun release() { if (initialized) { LlamaBridge.cancel(); LlamaBridge.executor.execute { LlamaBridge.release() } } }
 }

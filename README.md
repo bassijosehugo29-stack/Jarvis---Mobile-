@@ -1,3 +1,7 @@
+# JARVIS 3.0 — Missão 2 em desenvolvimento
+
+Implementação de Second Brain, agenda, notícias, digest e adaptador Gmail em validação. **A compilação e os testes da 3.0 ainda não foram confirmados.** Os resultados da 0.6 abaixo documentam apenas a base preservada. Não representam testes da Missão 2.
+
 # JARVIS Mobile — Missão 1 (0.6.0)
 
 Assistente Android nativo em Kotlin/Jetpack Compose. HUD preto, azul-marinho, ciano e dourado; núcleo holográfico interativo, voz configurável e áudio original. Projeto existente e comandos preservados. Destinado inicialmente ao Samsung Galaxy S25 FE; Android 8+ ARM64, com x86_64 incluído para emulador. compileSdk/targetSdk 35.

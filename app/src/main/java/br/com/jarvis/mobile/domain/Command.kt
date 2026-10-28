@@ -11,6 +11,13 @@ sealed interface Command {
     data object Stop : Command
     data object Help : Command
     data object PrepareConversation : Command
+    data class Agenda(val range: String = "today") : Command
+    data class Mail(val actionOnly: Boolean = false) : Command
+    data class News(val topic: String? = null) : Command
+    data class Digest(val automatic: Boolean = false) : Command
+    data object OpenBrain : Command
+    data object AddNote : Command
+    data object Goals : Command
     data object Unknown : Command
 }
 

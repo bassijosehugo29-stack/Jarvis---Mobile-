@@ -54,7 +54,8 @@ fun JarvisScreen(
     onSendMessage: (String) -> Unit = {},
     onCancelModel: () -> Unit = {},
     onExperienceChange: (ExperienceSettings) -> Unit = {},
-    onLoadVoices: () -> Unit = {}
+    onLoadVoices: () -> Unit = {},
+    onOpenHub: () -> Unit = {}
 ) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val device = rememberHudDeviceState()
@@ -69,7 +70,7 @@ fun JarvisScreen(
             HolographicBackground(Modifier.fillMaxSize())
             Column(Modifier.fillMaxHeight().widthIn(max = 620.dp).fillMaxWidth()
                 .safeDrawingPadding().imePadding().align(Alignment.TopCenter)) {
-                Header(onSettings = { showSettings = true })
+                Header(onSettings = { showSettings = true }, onHub = onOpenHub)
                 DeviceStrip(device)
                 ModeSelector(state.experience, onExperienceChange, Modifier.padding(horizontal = 22.dp).padding(bottom = 10.dp))
                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
@@ -203,7 +204,7 @@ fun JarvisScreen(
                     Spacer(Modifier.width(10.dp))
                     Text("Abrir permissões do aplicativo")
                 }
-                Text("JARVIS Mobile · 0.6.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
+                Text("JARVIS Mobile · 3.0.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 18.dp))
             }
         }
@@ -211,7 +212,7 @@ fun JarvisScreen(
 }
 
 @Composable
-private fun Header(onSettings: () -> Unit) {
+private fun Header(onSettings: () -> Unit, onHub: () -> Unit) {
     val large = LocalDensity.current.fontScale >= 1.35f
     Row(Modifier.fillMaxWidth().testTag("jarvis-header").padding(horizontal = 22.dp)
         .padding(top = 8.dp, bottom = 8.dp).heightIn(min = 52.dp),
@@ -223,6 +224,9 @@ private fun Header(onSettings: () -> Unit) {
                 color = Color(0xFFE7FCFF), style = TextStyle(shadow = Shadow(Cyan.copy(alpha = 0.55f), blurRadius = 12f)))
             Text("ASSISTENTE DE VOZ", color = Muted, fontSize = 8.sp, letterSpacing = 1.8.sp,
                 fontFamily = FontFamily.Monospace, modifier = Modifier.padding(top = 3.dp))
+        }
+        IconButton(onClick = onHub, modifier = Modifier.size(44.dp).testTag("hub-open")) {
+            Text("⋮", color = Cyan, fontSize = 26.sp, modifier = Modifier.semantics { contentDescription = "Centrais pessoais" })
         }
         HudPanel {
             IconButton(onClick = onSettings, modifier = Modifier.size(44.dp)) {

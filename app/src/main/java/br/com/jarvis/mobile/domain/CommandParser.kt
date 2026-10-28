@@ -13,6 +13,17 @@ class CommandParser {
             Regex("^(pare|parar|desativar|silencio|cancelar)\\b").containsMatchIn(content) -> Command.Stop
             Regex("^(ajuda|comandos)$").matches(content) -> Command.Help
             Regex("^(preparar|prepare|baixar|baixe)\\s+(?:o\\s+|a\\s+)?(?:modelo|conversa)(?:\\s+offline)?$").matches(content) -> Command.PrepareConversation
+            content in setOf("minha agenda", "o que tenho hoje", "agenda de hoje") -> Command.Agenda()
+            content in setOf("proximo compromisso", "qual e o proximo compromisso") -> Command.Agenda("next")
+            content in setOf("agenda da semana", "minha agenda da semana") -> Command.Agenda("week")
+            content in setOf("meus e mails", "meus emails", "meus e-mails") -> Command.Mail()
+            content in setOf("tem e mail importante", "tem email importante", "tem e-mail importante") -> Command.Mail(true)
+            content == "noticias" -> Command.News()
+            content.startsWith("noticias de ") -> Command.News(content.removePrefix("noticias de ").trim().take(80))
+            content in setOf("bom dia", "digest", "resumo do dia") -> Command.Digest()
+            content in setOf("abrir second brain", "abrir secondbrain", "abrir memoria", "abra second brain") -> Command.OpenBrain
+            content in setOf("adicionar uma nota", "adicione uma nota", "nova nota", "adicionar nota") -> Command.AddNote
+            content in setOf("quais sao minhas metas", "minhas metas", "quais minhas metas") -> Command.Goals
             opening != null -> {
                 val name = opening.groupValues[1].replace(Regex("^(?:\\s*(?:no|na|o|a|aplicativo|app)\\b)+\\s*"), "").trim()
                     .replace(Regex("\\s+por favor$"), "")

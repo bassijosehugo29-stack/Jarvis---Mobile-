@@ -23,6 +23,7 @@ sealed interface SpeechResult {
     data class Completed(val audioBytes: Long) : SpeechResult
     data class Failed(val message: String) : SpeechResult
     data object Suppressed : SpeechResult
+    data class TextOnly(val reason: String) : SpeechResult
 }
 
 /** Explicit media routing, language/engine failover and visible failures, never silent success. */
@@ -45,6 +46,7 @@ class SpeechOutput(
     }
     private var settings = ExperienceSettings()
     private var inspecting = false
+    private var localOnly = false
     private var engine: TextToSpeech? = null
     private var selectedPackage = ""
     private var selectedLabel = ""
@@ -82,8 +84,10 @@ class SpeechOutput(
         inspecting = true; tried.clear(); nextEngine()
     }
 
-    fun speak(message: String, done: (SpeechResult) -> Unit) {
+    fun speak(message: String, done: (SpeechResult) -> Unit) = speak(message, false, done)
+    fun speak(message: String, requireLocal: Boolean, done: (SpeechResult) -> Unit) {
         stop()
+        localOnly = requireLocal
         if (closed) { done(SpeechResult.Failed("A saída de voz está fechada.")); return }
         if (!settings.voiceAllowed) { done(SpeechResult.Suppressed); return }
         if (ownsFocus) focus.allowAfterUserAction()
@@ -93,7 +97,10 @@ class SpeechOutput(
         if (audio.getStreamVolume(AudioManager.STREAM_MUSIC) == 0) {
             fail("O volume de mídia está zerado. Aumente o volume com o JARVIS aberto e teste a voz."); return
         }
-        if (ready) { tried += selectedPackage; play() }
+        if (ready) {
+            tried += selectedPackage
+            if (selectPortuguese()) play() else nextEngine("Não há uma voz local instalada nesse mecanismo.")
+        }
         else if (!initializing) nextEngine()
     }
 
@@ -122,6 +129,11 @@ class SpeechOutput(
         if (closed || (completion == null && !inspecting)) return
         val candidate = try { packages().firstOrNull { it !in tried } } catch (_: RuntimeException) { null }
         if (candidate == null) {
+            if (localOnly) {
+                val message = "Dados pessoais somente em texto: instale uma voz portuguesa local nos ajustes do Android."
+                onStatus(VoiceStatus(false, message, selectedPackage, selectedLocale))
+                finish(SpeechResult.TextOnly(message)); return
+            }
             fail("$reason Abra os ajustes de voz, instale uma voz em português e use Testar voz."); return
         }
         tried += candidate
@@ -160,13 +172,15 @@ class SpeechOutput(
         val current = engine ?: return false
         return try {
             val voices = current.voices.orEmpty().associateBy { it.name }
-            val choices = portugueseVoices(voices.values.map { VoiceCandidate(it.name, it.locale, it.isNetworkConnectionRequired, it.quality) })
+            val allowed = voices.values.filter { !localOnly || (!it.isNetworkConnectionRequired && TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in it.features) }
+            val choices = portugueseVoices(allowed.map { VoiceCandidate(it.name, it.locale, it.isNetworkConnectionRequired, it.quality) })
                 .sortedBy { if (it.name == settings.voiceName) 0 else 1 }
             for (voice in choices) {
                 if (current.setVoice(voices.getValue(voice.name)) == TextToSpeech.SUCCESS) {
                     selectedLocale = voice.locale.toLanguageTag(); return true
                 }
             }
+            if (localOnly) return false // Language fallback does not prove that the voice works offline.
             for (locale in listOf(Locale.forLanguageTag("pt-BR"), Locale.forLanguageTag("pt-PT"), Locale("pt"))) {
                 if (current.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE && current.setLanguage(locale) >= TextToSpeech.LANG_AVAILABLE) {
                     selectedLocale = locale.toLanguageTag(); return true

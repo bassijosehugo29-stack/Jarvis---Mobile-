@@ -13,11 +13,12 @@ class AndroidSpeechInput(
     private val onReady: () -> Unit,
     private val onResult: (String) -> Unit,
     private val onFailure: (Int) -> Unit,
-    private val onLevel: (Float) -> Unit = {}
+    private val onLevel: (Float) -> Unit = {},
+    private val requireOnDevice: Boolean = false
 ) : SpeechInput, RecognitionListener {
-    override val available = SpeechRecognizer.isRecognitionAvailable(context)
     override val onDevice = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
         SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
+    override val available = SpeechRecognizer.isRecognitionAvailable(context) && (!requireOnDevice || onDevice)
     private var accepting = false
     private var closed = false
     private val recognizer: SpeechRecognizer? = when {

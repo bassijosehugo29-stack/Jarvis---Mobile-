@@ -18,8 +18,15 @@ jobs:
     # GitHub-hosted runners are free for public repos; see README for private quotas.
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      JARVIS_KEYSTORE_B64: ${{ secrets.JARVIS_KEYSTORE_B64 }}
+      JARVIS_KEYSTORE_PASSWORD: ${{ secrets.JARVIS_KEYSTORE_PASSWORD }}
+      JARVIS_KEY_ALIAS: ${{ secrets.JARVIS_KEY_ALIAS }}
+      JARVIS_KEY_PASSWORD: ${{ secrets.JARVIS_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+      - name: Preparar assinatura privada quando configurada
+        run: python3 scripts/prepare_signing.py
       - name: Verificar estrutura
         run: python3 scripts/check_project.py
       - name: Java 17
@@ -66,8 +73,15 @@ jobs:
     needs: debug-apk
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      JARVIS_KEYSTORE_B64: ${{ secrets.JARVIS_KEYSTORE_B64 }}
+      JARVIS_KEYSTORE_PASSWORD: ${{ secrets.JARVIS_KEYSTORE_PASSWORD }}
+      JARVIS_KEY_ALIAS: ${{ secrets.JARVIS_KEY_ALIAS }}
+      JARVIS_KEY_PASSWORD: ${{ secrets.JARVIS_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+      - name: Preparar assinatura privada quando configurada
+        run: python3 scripts/prepare_signing.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
