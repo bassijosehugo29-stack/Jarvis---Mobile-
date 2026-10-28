@@ -42,7 +42,12 @@ permissions = {el.get(android + 'name') for el in manifest.findall('uses-permiss
 check(permissions == {'android.permission.USE_BIOMETRIC', 'android.permission.INTERNET', 'android.permission.RECORD_AUDIO', 'android.permission.READ_CALENDAR', 'android.permission.WRITE_CALENDAR', 'com.android.alarm.permission.SET_ALARM'},
       'Permissões diretas limitadas a biometria, download, microfone, calendário e intent de alarme')
 check(not manifest.findall('.//service') and not manifest.findall('.//receiver'),
-      'Sem serviço de escuta ou receiver de background nesta versão')
+      'App principal sem serviço de escuta ou receiver próprio de background')
+
+engine_manifest=ET.parse(ROOT/'voice-engine/src/main/AndroidManifest.xml').getroot()
+check(not engine_manifest.findall('uses-permission'),'Motor de voz independente sem permissões de internet, microfone ou dados pessoais')
+check(not engine_manifest.findall('.//receiver'),'Motor de voz sem receiver de inicialização')
+
 for activity in manifest.findall('.//activity'):
     name = activity.get(android + 'name')
     full = 'br.com.jarvis.mobile' + name if name.startswith('.') else name
@@ -61,7 +66,7 @@ build = (ROOT / 'app/build.gradle.kts').read_text()
 check('compileSdk = 35' in build and 'targetSdk = 35' in build and 'minSdk = 26' in build,
       'SDKs coerentes com documentação')
 workflow = (ROOT / '.github/workflows/android-debug.yml').read_text()
-check('testDebugUnitTest lintDebug assembleDebug' in workflow and
+check(all(task in workflow for task in [':app:testDebugUnitTest', ':voice-engine:testDebugUnitTest', ':app:lintDebug', ':voice-engine:lintDebug', ':app:assembleDebug', ':voice-engine:assembleDebug']) and
       'app/build/outputs/apk/debug/app-debug.apk' in workflow and 'actions/upload-artifact@v4' in workflow,
       'Workflow inclui testes, lint, montagem e artefato APK')
 check('contents: read' in workflow and 'workflow_dispatch:' in workflow,

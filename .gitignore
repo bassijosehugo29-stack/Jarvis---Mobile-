@@ -13,3 +13,6 @@ jarvis-test.base64
 *.p12
 .externalNativeBuild/
 .cxx/
+
+.voice-a-cache/
+voice-engine/src/main/generated/

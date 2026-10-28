@@ -1,3 +1,7 @@
+# Voz A aprovada — integração 3.1 em validação
+
+O usuário escolheu **A · Executivo clássico**. O projeto agora prepara dois APKs: JARVIS Mobile 3.1 e o motor local JARVIS Voz A, com o modelo Faber pt-BR aprovado, sem permissão de internet/microfone no motor. A compilação e os testes desta integração ainda não foram confirmados. Resultados 3.0 abaixo são históricos e não validam o motor novo. [Instalar e entender a voz A](docs/VOZ-A.md).
+
 # JARVIS Mobile 3.0
 
 Assistente Android nativo em Kotlin/Jetpack Compose para uso pessoal, inicialmente no Samsung Galaxy S25 FE. Evolui o projeto existente: HUD preto/azul/ciano/dourado, núcleo holográfico, voz, trilha original e três modos permanecem integrados às novas centrais.

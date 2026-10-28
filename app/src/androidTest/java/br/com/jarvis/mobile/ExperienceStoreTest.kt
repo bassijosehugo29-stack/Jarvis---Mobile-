@@ -1,9 +1,13 @@
 package br.com.jarvis.mobile
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import br.com.jarvis.mobile.experience.*
+import br.com.jarvis.mobile.voice.VoiceProfile
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
@@ -13,6 +17,21 @@ import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class ExperienceStoreTest {
+    @Test fun upgradesToApprovedVoiceWithoutChangingModeAndPersistsExplicitAlternative()=runBlocking {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val file=File(context.cacheDir,"voice-migration-${System.nanoTime()}.preferences_pb")
+        val job=SupervisorJob();val scope=CoroutineScope(job+Dispatchers.IO)
+        try{
+            val disk=PreferenceDataStoreFactory.create(scope=scope,produceFile={file})
+            disk.edit{it[stringPreferencesKey("mode")]=OperationMode.SILENT.name;it[floatPreferencesKey("pitch")]=0.78f;it[floatPreferencesKey("rate")]=0.81f;it[stringPreferencesKey("engine") ]="legacy.voice"}
+            val store=ExperienceStore(context,disk);val migrated=store.settings.first()
+            assertEquals(OperationMode.SILENT,migrated.mode);assertEquals(VoiceProfile.OFFICIAL_A,migrated.voiceProfile)
+            assertEquals(1f,migrated.pitch,0f);assertEquals(1f,migrated.speechRate,0f);assertEquals("",migrated.enginePackage)
+            store.update{it.copy(voiceProfile=VoiceProfile.ANDROID,pitch=0.83f)}
+            val selected=store.settings.first{it.voiceProfile==VoiceProfile.ANDROID}
+            assertEquals(0.83f,selected.pitch,0f);assertFalse(selected.voiceAllowed)
+        }finally{job.cancelAndJoin();file.delete()}
+    }
     @Test fun modeVolumesAndVoiceSurviveClosingAndReopeningDataStore() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val file = File(context.cacheDir, "experience-test-${System.nanoTime()}.preferences_pb")
@@ -21,7 +40,7 @@ class ExperienceStoreTest {
         try {
             val first = ExperienceStore(context, PreferenceDataStoreFactory.create(scope = scope, produceFile = { file }))
             assertEquals(OperationMode.ASSISTANT, first.settings.first().mode)
-            first.update { it.copy(mode = OperationMode.CINEMATIC, voiceVolume = 0.72f, musicVolume = 0.08f,
+            first.update { it.copy(voiceProfile=VoiceProfile.ANDROID,mode = OperationMode.CINEMATIC, voiceVolume = 0.72f, musicVolume = 0.08f,
                 effectsEnabled = false, pitch = 0.81f, speechRate = 0.92f, enginePackage = "teste.motor", voiceName = "teste.voz") }
             first.update { it.copy(mode = OperationMode.SILENT) }
             job.cancelAndJoin()

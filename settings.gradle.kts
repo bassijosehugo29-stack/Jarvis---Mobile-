@@ -6,4 +6,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = "JARVIS Mobile"
-include(":app")
+include(":app", ":voice-engine")

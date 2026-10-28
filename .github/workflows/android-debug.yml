@@ -28,6 +28,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Preparar assinatura privada quando configurada
         run: python3 scripts/prepare_signing.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Preparar modelo aprovado e motor local da voz A
+        run: |
+          python -m pip install onnx==1.18.0
+          python scripts/prepare_voice_a.py
       - name: Verificar estrutura
         run: python3 scripts/check_project.py
       - name: Verificar disponibilidade das fontes públicas
@@ -53,14 +60,27 @@ jobs:
         run: |
           gradle wrapper --gradle-version 8.11.1 --distribution-type bin --no-daemon
           chmod +x gradlew
-          ./gradlew --no-daemon --max-workers=2 testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+          ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :voice-engine:lintDebug :app:assembleDebug :voice-engine:assembleDebug :app:assembleDebugAndroidTest
       - name: Verificar APK, assinatura e bibliotecas de 16 KB
         run: python3 scripts/verify_apk.py
+      - name: Preparar entrega dos dois APKs
+        run: |
+          mkdir -p build/apk
+          cp app/build/outputs/apk/debug/app-debug.apk build/apk/JARVIS-Mobile-3.1.0-debug.apk
+          cp voice-engine/build/outputs/apk/debug/voice-engine-debug.apk build/apk/JARVIS-Voz-A-1.0.0-debug.apk
+          cp docs/INSTALAR-VOZ-A.txt build/apk/LEIA-ME.txt
+      - name: Fontes correspondentes do motor de voz
+        run: python3 scripts/bundle_voice_a_source.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-Voz-A-fontes
+          path: build/voice-source/JARVIS-Voz-A-fontes.zip
+          retention-days: 7
       - name: Guardar APK de teste
         uses: actions/upload-artifact@v4
         with:
           name: JARVIS-Mobile-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: build/apk/
           if-no-files-found: error
           retention-days: 7
       - name: Guardar relatórios
@@ -70,6 +90,7 @@ jobs:
           name: JARVIS-relatorios
           path: |
             app/build/reports/
+            voice-engine/build/reports/
             build/verification/
           if-no-files-found: ignore
           retention-days: 7
@@ -88,6 +109,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Preparar assinatura privada quando configurada
         run: python3 scripts/prepare_signing.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Preparar modelo aprovado e motor local da voz A
+        run: |
+          python -m pip install onnx==1.18.0
+          python scripts/prepare_voice_a.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -121,7 +149,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 3072
           script: |
             adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
             adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf
@@ -132,8 +160,11 @@ jobs:
         with:
           name: JARVIS-testes-instrumentados
           path: |
-            app/build/reports/androidTests/
-            app/build/reports/screenshots/
-            app/build/reports/conversation/
+            app/build/reports/
+            voice-engine/build/reports/androidTests/
+            app/build/reports/
+            voice-engine/build/reports/screenshots/
+            app/build/reports/
+            voice-engine/build/reports/conversation/
           if-no-files-found: ignore
           retention-days: 7

@@ -1,6 +1,7 @@
 package br.com.jarvis.mobile.experience
 
 import android.content.Context
+import br.com.jarvis.mobile.voice.VoiceProfile
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
@@ -21,12 +22,14 @@ class ExperienceStore(context: Context, private val store: DataStore<Preferences
             p[mode] = s.mode.name; p[voice] = s.voiceEnabled; p[effects] = s.effectsEnabled
             p[assistantMusic] = s.assistantMusic; p[cinemaMusic] = s.cinematicMusic
             p[voiceVolume] = s.voiceVolume; p[musicVolume] = s.musicVolume; p[effectsVolume] = s.effectsVolume
-            p[rate] = s.speechRate; p[pitch] = s.pitch; p[engine] = s.enginePackage; p[voiceName] = s.voiceName
+            p[profile] = s.voiceProfile.name; p[rate] = s.speechRate; p[pitch] = s.pitch; p[engine] = s.enginePackage; p[voiceName] = s.voiceName
         }
     }
 
     private fun decode(p: Preferences): ExperienceSettings {
         val defaults = ExperienceSettings()
+        val selected=VoiceProfile.entries.firstOrNull{it.name==p[profile]}?:VoiceProfile.OFFICIAL_A
+        val migrated=p[profile]==null
         return ExperienceSettings(
             mode = OperationMode.entries.firstOrNull { it.name == p[mode] } ?: defaults.mode,
             voiceEnabled = p[voice] ?: defaults.voiceEnabled, effectsEnabled = p[effects] ?: defaults.effectsEnabled,
@@ -37,7 +40,7 @@ class ExperienceStore(context: Context, private val store: DataStore<Preferences
         ).sanitized()
     }
     private companion object {
-        val mode = stringPreferencesKey("mode"); val voice = booleanPreferencesKey("voice")
+        val profile = stringPreferencesKey("voiceProfile"); val mode = stringPreferencesKey("mode"); val voice = booleanPreferencesKey("voice")
         val effects = booleanPreferencesKey("effects"); val assistantMusic = booleanPreferencesKey("assistant_music")
         val cinemaMusic = booleanPreferencesKey("cinema_music"); val voiceVolume = floatPreferencesKey("voice_volume")
         val musicVolume = floatPreferencesKey("music_volume"); val effectsVolume = floatPreferencesKey("effects_volume")

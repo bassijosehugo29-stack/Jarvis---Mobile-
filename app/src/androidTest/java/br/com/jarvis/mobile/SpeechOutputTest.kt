@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import br.com.jarvis.mobile.voice.SpeechOutput
 import br.com.jarvis.mobile.voice.SpeechResult
 import br.com.jarvis.mobile.voice.VoiceStatus
+import br.com.jarvis.mobile.voice.VoiceProfile
 import br.com.jarvis.mobile.experience.ExperienceSettings
 import br.com.jarvis.mobile.experience.OperationMode
 import org.junit.Assert.*
@@ -65,7 +66,7 @@ class SpeechOutputTest {
         instrumentation.runOnMainSync {
             output = SpeechOutput(compose.activity, {}, listOf(instrumentation.context.packageName),
                 onPlayback = { if (it) started.countDown() }, onRange = { _, _, _ -> range.countDown() })
-            output.configure(ExperienceSettings(speechRate = 0.91f, pitch = 0.83f,
+            output.configure(ExperienceSettings(voiceProfile=VoiceProfile.ANDROID,speechRate = 0.91f, pitch = 0.83f,
                 voiceName = "jarvis-fixture-pt-PT", voiceVolume = 0.6f))
             output.speak("Teste de perfil vocal do JARVIS") { result.set(it); done.countDown() }
         }

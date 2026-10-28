@@ -12,8 +12,8 @@ android {
         applicationId = "br.com.jarvis.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "3.0.0"
+        versionCode = 8
+        versionName = "3.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         externalNativeBuild {

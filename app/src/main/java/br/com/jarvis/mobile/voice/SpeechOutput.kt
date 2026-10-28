@@ -45,6 +45,7 @@ class SpeechOutput(
         if (completion != null) fail("A fala foi interrompida por outro áudio. Tente novamente, senhor.")
     }
     private var settings = ExperienceSettings()
+    private val official get()=settings.voiceProfile==VoiceProfile.OFFICIAL_A && enginePackages==null
     private var inspecting = false
     private var localOnly = false
     private var engine: TextToSpeech? = null
@@ -65,8 +66,8 @@ class SpeechOutput(
 
     fun configure(value: ExperienceSettings) {
         val next = value.sanitized()
-        val engineChanged = next.enginePackage != settings.enginePackage
-        val changed = next.enginePackage != settings.enginePackage || next.voiceName != settings.voiceName
+        val engineChanged = next.enginePackage != settings.enginePackage || next.voiceProfile != settings.voiceProfile
+        val changed = next.enginePackage != settings.enginePackage || next.voiceName != settings.voiceName || next.voiceProfile != settings.voiceProfile
         settings = next
         if (!settings.voiceAllowed) stop()
         if (changed) {
@@ -107,6 +108,7 @@ class SpeechOutput(
     @Suppress("DEPRECATION")
     private fun packages(): List<String> {
         enginePackages?.let { return it.distinct() }
+        if(official)return if(OfficialVoiceA.installation(context)==VoiceAInstallation.READY)listOf(OfficialVoiceA.PACKAGE)else emptyList()
         val manager = context.packageManager
         val intent = Intent(TextToSpeech.Engine.INTENT_ACTION_TTS_SERVICE)
         val found = if (Build.VERSION.SDK_INT >= 33) manager.queryIntentServices(intent, PackageManager.ResolveInfoFlags.of(0))
@@ -129,6 +131,11 @@ class SpeechOutput(
         if (closed || (completion == null && !inspecting)) return
         val candidate = try { packages().firstOrNull { it !in tried } } catch (_: RuntimeException) { null }
         if (candidate == null) {
+            if(official){
+                val message=OfficialVoiceA.unavailableMessage(context)
+                onStatus(VoiceStatus(false,message,OfficialVoiceA.PACKAGE,"pt-BR",failure=true))
+                finish(SpeechResult.TextOnly(message));return
+            }
             if (localOnly) {
                 val message = "Dados pessoais somente em texto: instale uma voz portuguesa local nos ajustes do Android."
                 onStatus(VoiceStatus(false, message, selectedPackage, selectedLocale))
@@ -156,12 +163,12 @@ class SpeechOutput(
                     val current = engine ?: return@post
                     current.setAudioAttributes(attributes)
                     current.setSpeechRate(settings.speechRate)
-                    current.setPitch(settings.pitch)
+                    current.setPitch(if(official)1f else settings.pitch)
                     current.setOnUtteranceProgressListener(listener)
                     ready = true
                     inspecting = false
                     publishVoices()
-                    onStatus(VoiceStatus(true, "Voz pronta • $selectedLabel • $selectedLocale", selectedPackage, selectedLocale))
+                    onStatus(VoiceStatus(true, if(official)"Voz A pronta • Executivo clássico • pt-BR local" else "Voz pronta • $selectedLabel • $selectedLocale", selectedPackage, selectedLocale))
                     if (completion != null) play()
                 }
             }, candidate)
@@ -173,6 +180,11 @@ class SpeechOutput(
         return try {
             val voices = current.voices.orEmpty().associateBy { it.name }
             val allowed = voices.values.filter { !localOnly || (!it.isNetworkConnectionRequired && TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in it.features) }
+            if(official){
+                val approved=allowed.firstOrNull{it.name==OfficialVoiceA.VOICE&&it.locale.toLanguageTag()=="pt-BR"&&!it.isNetworkConnectionRequired&&TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in it.features}?:return false
+                if(current.setVoice(approved)!=TextToSpeech.SUCCESS)return false
+                selectedLocale="pt-BR";return true
+            }
             val choices = portugueseVoices(allowed.map { VoiceCandidate(it.name, it.locale, it.isNetworkConnectionRequired, it.quality) })
                 .sortedBy { if (it.name == settings.voiceName) 0 else 1 }
             for (voice in choices) {
@@ -198,11 +210,11 @@ class SpeechOutput(
         if (!focus.acquire(AssistantAudioFocus.Owner.VOICE)) {
             fail("O Android não liberou o áudio agora. Termine chamadas ou outro áudio e teste novamente."); return
         }
-        onStatus(VoiceStatus(true, "Voz pronta • $selectedLabel • $selectedLocale", selectedPackage, selectedLocale))
+        onStatus(VoiceStatus(true, if(official)"Voz A pronta • Executivo clássico • pt-BR local" else "Voz pronta • $selectedLabel • $selectedLocale", selectedPackage, selectedLocale))
         currentId = "jarvis-${++generation}"
         audioBytes = 0L
         engine?.setSpeechRate(settings.speechRate)
-        engine?.setPitch(settings.pitch)
+        engine?.setPitch(if(official)1f else settings.pitch)
         val params = Bundle().apply {
             putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC)
             putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, settings.voiceVolume)

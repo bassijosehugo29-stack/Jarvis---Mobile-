@@ -1,7 +1,9 @@
 #!/usr/bin/env sh
 # Keep the real Gradle result while collecting evidence even after a failed test.
 set -u
-./gradlew --no-daemon --max-workers=2 connectedDebugAndroidTest
+./gradlew --no-daemon --max-workers=2 :voice-engine:assembleDebug || exit $?
+adb install -r voice-engine/build/outputs/apk/debug/voice-engine-debug.apk || exit $?
+./gradlew --no-daemon --max-workers=2 :app:connectedDebugAndroidTest
 jarvis_test_status=$?
 mkdir -p app/build/reports/screenshots app/build/reports/conversation
 adb pull /sdcard/Pictures/JARVIS/. app/build/reports/screenshots/ || true

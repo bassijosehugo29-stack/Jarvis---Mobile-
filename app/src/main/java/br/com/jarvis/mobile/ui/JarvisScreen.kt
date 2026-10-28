@@ -204,7 +204,7 @@ fun JarvisScreen(
                     Spacer(Modifier.width(10.dp))
                     Text("Abrir permissões do aplicativo")
                 }
-                Text("JARVIS Mobile · 3.0.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
+                Text("JARVIS Mobile · 3.1.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 18.dp))
             }
         }

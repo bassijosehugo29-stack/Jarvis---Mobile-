@@ -213,7 +213,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     fun updateExperience(change: (ExperienceSettings) -> ExperienceSettings) {
         val previous = _state.value.experience
         val next = change(previous).sanitized()
-        if (next.mode != previous.mode || _state.value.speaking) {
+        if (next.mode != previous.mode || next.voiceProfile != previous.voiceProfile || _state.value.speaking) {
             soundscape.stop(); stop("Preferências atualizadas")
         }
         if (next.mode != previous.mode) {
@@ -223,7 +223,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         }
         audioFocus.allowAfterUserAction()
         output.configure(next)
-        _state.update { it.copy(experience = next, preferencesReady = true, voiceIssue = if (next.voiceAllowed) it.voiceIssue else "") }
+        _state.update { it.copy(experience = next, preferencesReady = true, engines=output.engines(),voiceIssue = if (next.voiceAllowed && next.voiceProfile==previous.voiceProfile) it.voiceIssue else "") }
         syncSoundscape()
         pendingPreferenceWrites++
         viewModelScope.launch {
@@ -232,7 +232,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             finally { pendingPreferenceWrites-- }
         }
     }
-    fun loadVoices() { if (foreground) output.loadVoices() }
+    fun loadVoices() { if (foreground) { _state.update { it.copy(engines = output.engines()) }; output.loadVoices() } }
 
     fun testVoice() {
         if (!foreground) return

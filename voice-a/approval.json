@@ -1,0 +1,39 @@
+{
+  "selected": "A",
+  "name": "Executivo clássico",
+  "approved_by_user": true,
+  "profile": {
+    "key": "A",
+    "name": "Executivo clássico",
+    "voice": "faber",
+    "length_scale": 1.08,
+    "noise_scale": 0.55,
+    "noise_w": 0.7,
+    "sentence_silence": 0.24,
+    "filter": "highpass=f=65,equalizer=f=170:t=q:w=0.8:g=1.0,acompressor=threshold=0.125:ratio=1.5:attack=15:release=120:makeup=1"
+  },
+  "model": {
+    "voice": "pt_BR-faber-medium",
+    "language": "pt_BR",
+    "dataset_license_as_declared": "CC0",
+    "card_url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/pt/pt_BR/faber/medium/MODEL_CARD",
+    "files": [
+      {
+        "name": "pt_BR-faber-medium.onnx",
+        "bytes": 63201294,
+        "sha256": "858555e3a064209c57088fe6bd70c4c3dc54d03eaa00c45d5ecaf43a33f95aa7",
+        "upstream_md5_verified": true,
+        "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/pt/pt_BR/faber/medium/pt_BR-faber-medium.onnx"
+      },
+      {
+        "name": "pt_BR-faber-medium.onnx.json",
+        "bytes": 4855,
+        "sha256": "7e694de195ae3fc36dd732c445eb04fb49b649854893cb5506b978f0d50a1d6f",
+        "upstream_md5_verified": true,
+        "url": "https://huggingface.co/rhasspy/piper-voices/resolve/5041a7a49ae5b3a0f30e6837769eb03fdbb231bd/pt/pt_BR/faber/medium/pt_BR-faber-medium.onnx.json"
+      }
+    ],
+    "sample_rate": 22050
+  },
+  "preview_run": 40682580554
+}

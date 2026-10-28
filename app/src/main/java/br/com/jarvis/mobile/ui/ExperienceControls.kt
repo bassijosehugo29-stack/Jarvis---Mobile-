@@ -15,6 +15,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.jarvis.mobile.JarvisState
+import br.com.jarvis.mobile.voice.*
+import android.content.Intent
+import android.content.ComponentName
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import br.com.jarvis.mobile.experience.*
 import kotlin.math.roundToInt
 
@@ -56,21 +61,33 @@ internal fun ExperienceControls(state: JarvisState, onChange: (ExperienceSetting
         color = Muted, fontSize = 12.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 8.dp))
     HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
     Text("Personalidade vocal", color = Gold, fontSize = 16.sp)
-    Text("Ritmo calmo e tom mais grave por padrão. O Android não informa o gênero de todas as vozes: escolha e ouça as opções disponíveis no aparelho.",
-        color = Muted, fontSize = 13.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 8.dp))
-    AudioSlider("Velocidade", s.speechRate, 0.70f..1.15f, !silent, "speech-rate", percent = false) { onChange(s.copy(speechRate = it)) }
-    AudioSlider("Tom", s.pitch, 0.70f..1.10f, !silent, "speech-pitch", percent = false) { onChange(s.copy(pitch = it)) }
-    ChoiceMenu("Mecanismo de voz", state.engines.firstOrNull { it.packageName == s.enginePackage }?.label ?: "Automático (Android)",
-        listOf("" to "Automático (Android)") + state.engines.map { it.packageName to it.label }) {
-        onChange(s.copy(enginePackage = it, voiceName = ""))
+    ChoiceMenu("Identidade vocal",s.voiceProfile.title,VoiceProfile.entries.map{it.name to it.title}){selected->
+        onChange(s.copy(voiceProfile=VoiceProfile.valueOf(selected),speechRate=1f,pitch=1f,enginePackage="",voiceName=""))
     }
-    OutlinedButton(onClick = onLoadVoices, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Listar vozes instaladas") }
-    ChoiceMenu("Voz portuguesa", state.voices.firstOrNull { it.name == s.voiceName }?.label ?: "Automática · prioridade pt-BR",
-        listOf("" to "Automática · prioridade pt-BR") + state.voices.map { it.name to it.label }) {
-        onChange(s.copy(voiceName = it))
+    val context=LocalContext.current
+    if(s.voiceProfile==VoiceProfile.OFFICIAL_A){
+        val installed=OfficialVoiceA.installation(context)==VoiceAInstallation.READY
+        Text("Executivo clássico · Faber pt-BR. Ritmo calmo e tom natural da voz aprovada. A fala é gerada localmente, inclusive para textos novos.",
+            color=Muted,fontSize=13.sp,lineHeight=21.sp,modifier=Modifier.padding(top=8.dp))
+        Text(if(installed)"JARVIS Voz A instalado e verificado." else OfficialVoiceA.unavailableMessage(context),color=if(installed)Cyan else Gold,fontSize=12.sp,modifier=Modifier.padding(top=8.dp))
+        AudioSlider("Velocidade relativa à voz A",s.speechRate,0.70f..1.15f,!silent,"speech-rate",percent=false){onChange(s.copy(speechRate=it))}
+        OutlinedButton(onClick={
+            val intent=if(installed)Intent().setComponent(ComponentName(OfficialVoiceA.PACKAGE,"br.com.jarvis.voicea.EngineActivity"))
+                else Intent(Intent.ACTION_VIEW,Uri.parse(OfficialVoiceA.GUIDE))
+            try{context.startActivity(intent)}catch(_:RuntimeException){/* Missing activity leaves the visible installation guidance. */}
+        },modifier=Modifier.fillMaxWidth().padding(top=8.dp).testTag("voice-a-setup")){Text(if(installed)"Abrir motor da voz A" else "Como instalar JARVIS Voz A")}
+        Text("O motor usa o mesmo certificado do JARVIS. Instale os dois APKs da mesma entrega. Nenhuma troca automática para uma voz diferente.",color=Muted,fontSize=12.sp,lineHeight=19.sp,modifier=Modifier.padding(top=8.dp))
+    }else{
+        Text("Alternativa do aparelho. O timbre e a disponibilidade offline dependem do mecanismo e dos dados de voz instalados.",color=Muted,fontSize=13.sp,lineHeight=21.sp,modifier=Modifier.padding(top=8.dp))
+        AudioSlider("Velocidade",s.speechRate,0.70f..1.15f,!silent,"speech-rate",percent=false){onChange(s.copy(speechRate=it))}
+        AudioSlider("Tom",s.pitch,0.70f..1.10f,!silent,"speech-pitch",percent=false){onChange(s.copy(pitch=it))}
+        ChoiceMenu("Mecanismo de voz",state.engines.firstOrNull{it.packageName==s.enginePackage}?.label?:"Automático (Android)",
+            listOf("" to "Automático (Android)")+state.engines.map{it.packageName to it.label}){onChange(s.copy(enginePackage=it,voiceName=""))}
+        OutlinedButton(onClick=onLoadVoices,modifier=Modifier.fillMaxWidth().padding(top=8.dp)){Text("Listar vozes instaladas")}
+        ChoiceMenu("Voz portuguesa",state.voices.firstOrNull{it.name==s.voiceName}?.label?:"Automática · prioridade pt-BR",
+            listOf("" to "Automática · prioridade pt-BR")+state.voices.map{it.name to it.label}){onChange(s.copy(voiceName=it))}
+        Text("Dados pessoais continuam limitados a uma voz declarada local e instalada. Sem ela, a resposta aparece em texto.",color=Muted,fontSize=12.sp,lineHeight=19.sp,modifier=Modifier.padding(top=8.dp))
     }
-    Text("A voz é do mecanismo instalado, sem clonagem. Algumas opções precisam de dados de idioma ou rede. Alterar o tom não garante uma voz masculina.",
-        color = Muted, fontSize = 12.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 8.dp))
 }
 
 @Composable

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- No INTERNET, microphone, account, storage, boot or background-work permissions. -->
+    <application android:label="JARVIS Voz A" android:icon="@drawable/ic_jarvis" android:allowBackup="false"
+        android:fullBackupContent="false" android:theme="@android:style/Theme.Material.NoActionBar"
+        android:usesCleartextTraffic="false" android:extractNativeLibs="false">
+        <meta-data android:name="jarvis.voice.profile" android:value="executive-a-v1" />
+        <meta-data android:name="jarvis.voice.model.sha256" android:value="858555e3a064209c57088fe6bd70c4c3dc54d03eaa00c45d5ecaf43a33f95aa7" />
+        <service android:name=".VoiceAService" android:exported="true" android:label="JARVIS · Executivo clássico">
+            <intent-filter><action android:name="android.intent.action.TTS_SERVICE" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
+            <meta-data android:name="android.speech.tts" android:resource="@xml/tts_engine" />
+        </service>
+        <activity android:name=".EngineActivity" android:exported="true" android:label="JARVIS Voz A">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+            <intent-filter><action android:name="android.speech.tts.engine.CONFIGURE_ENGINE" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
+            <intent-filter><action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
+        </activity>
+        <activity android:name=".CheckVoiceDataActivity" android:exported="true">
+            <intent-filter><action android:name="android.speech.tts.engine.CHECK_TTS_DATA" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
+        </activity>
+        <activity android:name=".SampleTextActivity" android:exported="true">
+            <intent-filter><action android:name="android.speech.tts.engine.GET_SAMPLE_TEXT" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
+        </activity>
+    </application>
+</manifest>

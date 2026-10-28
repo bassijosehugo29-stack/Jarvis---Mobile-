@@ -11,6 +11,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import android.os.SystemClock
 import br.com.jarvis.mobile.experience.*
+import br.com.jarvis.mobile.voice.VoiceProfile
 import org.junit.Assert.*
 import org.junit.After
 import org.junit.Rule
@@ -59,7 +60,7 @@ class ExperienceModesTest {
     @Test fun movingActivityOutOfForegroundStopsVoiceAndMicrophone() {
         compose.waitUntil(8_000) { model().state.value.preferencesReady }
         compose.runOnUiThread {
-            model().updateExperience { ExperienceSettings(enginePackage = InstrumentationRegistry.getInstrumentation().context.packageName) }
+            model().updateExperience { ExperienceSettings(voiceProfile=VoiceProfile.ANDROID,enginePackage = InstrumentationRegistry.getInstrumentation().context.packageName) }
             model().testVoice()
             assertTrue("Real TTS initialization should be pending", model().state.value.speaking)
             model().onBackground()

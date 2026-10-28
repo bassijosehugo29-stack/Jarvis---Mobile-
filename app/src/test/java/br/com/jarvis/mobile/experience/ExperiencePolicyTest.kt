@@ -40,8 +40,8 @@ class ExperiencePolicyTest {
         val s = ExperienceSettings(voiceVolume = Float.NaN, musicVolume = 8f, effectsVolume = -1f,
             speechRate = Float.POSITIVE_INFINITY, pitch = 0f).sanitized()
         assertEquals(0.90f, s.voiceVolume, 0f); assertEquals(1f, s.musicVolume, 0f)
-        assertEquals(0f, s.effectsVolume, 0f); assertEquals(0.90f, s.speechRate, 0f)
-        assertEquals(0.70f, s.pitch, 0f)
+        assertEquals(0f, s.effectsVolume, 0f); assertEquals(1.0f, s.speechRate, 0f)
+        assertEquals(1.0f, s.pitch, 0f)
     }
     @Test fun coreFollowsPlaybackRatherThanPretendingSynthesisIsAudible() {
         assertEquals(CorePhase.INITIALIZING, JarvisState().corePhase)
