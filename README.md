@@ -8,6 +8,12 @@ Sessões em primeiro plano retomam a escuta depois da resposta, sem toque a cada
 
 [Escopo, validação, medições, downloads e limitações desta fase](docs/JARVIS-4-FASE-1.md). Os resultados históricos da 3.1 estão em [DOWNLOADS-APK.md](docs/DOWNLOADS-APK.md) e [VALIDATION.md](docs/VALIDATION.md); não são testes da 4.0. O teste físico no Samsung permanece pendente.
 
+**Baixar a prévia:** [Voz A · Prévia 4](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12845160681) · [JARVIS 4 · Fase 1](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12845130698). Exige login no GitHub; extraia os ZIPs e instale a voz da prévia antes do assistente. **Não desinstale a 3.1.** Retenção até 26/01/2027, 19:06:54 UTC.
+
+**Validação:** [execução aprovada, três jobs verdes](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413), fonte `6aef8bd`, **141 testes aprovados** (93 unidade + 48 Android), Lint sem erros e com 44 avisos na variante entregue. Assinaturas, alinhamento de 16 KB, hashes e downloads publicados conferidos. [Capturas/vídeos/medições](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12843874193) · [relatório completo](docs/JARVIS-4-FASE-1.md).
+
+**Desempenho ainda em validação:** no emulador SwiftShader, a prévia apresentou CPU/tempo de frame maiores que a 3.1 (repouso: 80,2% de um núcleo; frame p95 376,7 ms). Não se declara fluidez, autonomia ou teste no Galaxy concluídos. A geração local é lenta nesse ambiente e tem limitações de qualidade; os testes de geração em texto, voz A e continuidade foram executados separadamente.
+
 ## O que está no código
 
 - **Second Brain:** oito áreas, notas com UUID, título, conteúdo e data; edição, exclusão, tags, vínculos, busca e prioridades. Nada é memorizado automaticamente. Notas só entram no digest quando autorizadas individualmente.

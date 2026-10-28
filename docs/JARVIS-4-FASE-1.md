@@ -1,6 +1,25 @@
 # JARVIS 4.0 — Fase 1
 
-Esta fase continua o projeto existente na branch `jarvis-4-fase1`. A main 3.1 permanece intacta. APKs e resultados finais desta fase ainda estão em validação; não confundir resultados históricos com a prévia.
+Esta fase continua o projeto existente na branch `jarvis-4-fase1`. A main 3.1 permanece intacta. A prévia ARM64 foi compilada, assinada, publicada e baixada novamente para conferência. Os três jobs da [execução 40751349413](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413) terminaram com sucesso em 28/10/2026. Fonte compilada: `6aef8bdcd8c2aa7ca9285baa809e90a46e8b2f50`. Este relatório trata da prévia 4; os relatórios 3.1 permanecem históricos.
+
+## Downloads pelo celular
+
+É necessário login no GitHub no Chrome. Cada artifact baixa um ZIP com um APK. Extraia em Meus Arquivos, instale primeiro a voz da prévia e depois o assistente. **Mantenha a 3.1 e seu motor instalados.**
+
+| Download | APK dentro do ZIP | Tamanho do APK |
+| --- | --- | ---: |
+| [JARVIS Voz A · Prévia 4](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12845160681) | JARVIS-Voz-A-4-preview.apk | 107.412.527 bytes (107,4 MB) |
+| [JARVIS Mobile 4 · Fase 1](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12845130698) | JARVIS-Mobile-4.0.0-fase1-preview.apk | 16.535.550 bytes (16,5 MB) |
+
+Disponíveis até **26/01/2027 às 19:06:54 UTC**, conforme a retenção atual de 90 dias. [Comprovante de download](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12844183820) · [fontes correspondentes do motor](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12845155688).
+
+SHA-256 do assistente: `298ce61906b4b86b726293e4dd3bfb6edcb3e57f58ad61afbf387cf6ce146d9c`.
+SHA-256 da voz: `aa911da7abacae01ae7b265cd0bb15a3b00f5008e1a13a963053dd1a62585ae3`.
+Certificado SHA-256 de ambos: `dd6772291a36f060694644ea3f5bd1e24e1b88aacbee223634f9896ecb46aa6b` (chave de debug temporária). As assinaturas foram verificadas com apksigner antes do upload, e o job final comprovou que os dois APKs baixados são idênticos aos assinados. CRC/estrutura do APK do assistente também foram conferidos depois do download externo. Bibliotecas ARM64 e alinhamento ZIP/ELF de 16 KB verificados. Sem classes/serviços das fixtures de teste no APK distribuído.
+
+## Capturas e demonstração
+
+[Baixar capturas, dois vídeos e medições](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12843874193). `screenshots/jarvis-v4-main-real.png` é a tela real da MainActivity em uma instalação nova no emulador Android 35. `jarvis-hud.mp4` mostra a tela real por seis segundos. `jarvis-v4-estados.mp4` demonstra os seis estados com sinal de áudio **simulado**, sem reproduzir uma conversa real; a tela contém essa identificação. As capturas `jarvis-v4-real-<estado>-cinematic.png` também são demonstrações explicitamente simuladas. Nenhuma é captura de um Galaxy S25 FE.
 
 ## O que mudou
 
@@ -40,6 +59,39 @@ CoreShowcaseActivity só existe no debug de CI e é excluída da prévia entregu
 
 Frames reais do compositor (gfxinfo), CPU do processo e PSS são coletados em estados visuais sintéticos fora do relógio virtual do Compose; startup/idle são comparados com a 3.1 em instalações novas no mesmo emulador. Startup usa TotalTime de am start -W (primeiro desenho, não readiness do reconhecedor/modelo); PSS/CPU são medidos sem modelo de conversa carregado e sem captura ou síntese em curso. CPU é percentual de um núcleo e não inclui o processo do motor da voz, compositor, serviços do sistema ou consumo total do telefone. Amostras são curtas, incluem o ambiente de teste e não são benchmark do Samsung. Arquivos brutos acompanham a entrega. Batterystats virtual não mede mAh, autonomia ou temperatura reais. A medição comparativa recusa execução fora do CI e em dispositivo que não seja emulador, pois recria exclusivamente os fixtures do runner.
 
+## Resultado efetivo da validação
+
+- **93 testes de unidade:** 88 no assistente e 5 no motor; zero falhas e zero ignorados.
+- **48 testes Android 35 x86_64:** zero falhas e zero ignorados, em 5min39s. [Relatórios Android e áudios de fixtures públicas](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12843834470).
+- **Lint da variante entregue:** zero erros e 44 avisos (33 app + 11 motor). Debug também teve zero erros; não se somam avisos duplicados entre variantes. [Relatórios de unidade, Lint e verificação dos APKs](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40751349413/artifacts/12844376225).
+- Testes reais do motor A geraram PCM a partir do modelo aprovado, incluindo frases novas; callback de amplitude positiva conferido. O motor não tem permissão de rede ou microfone. Isso não comprova audição/rota acústica no telefone.
+- O fluxo de dois turnos usou ASR de fixture e TTS Android de teste; comprovou retomada automática, interrupção ao sair e descarte de resultado tardio. Não valida reconhecimento acústico de microfone.
+- O modelo de conversa livre real foi testado no modo Silencioso com duas mensagens e contexto. Levou 2min40s no emulador; o conteúdo continha o nome da fixture nos dois turnos. A resposta usou o pronome de modo inadequado (“Meu nome é Rafael”), um limite do modelo pequeno. Esse teste não valida a combinação acústica do modelo com a voz A nem qualidade de diálogo aberto.
+- ACTION_ASSIST resolveu a MainActivity e a abriu oficialmente pelo Android (`Status: ok`); testes verificaram ausência de captura automática. Interrupção simultânea foi recusada em alto-falante conforme a política. Parsing do comando WhatsApp e resolução/ausência cobertos; não houve WhatsApp oficial instalado nesse emulador.
+- Logs coletados de AndroidRuntime e crashes nativos do app estão vazios. Isso não equivale a garantia de ausência de bugs.
+- Shell validado; proteção do script de testes contra aparelho físico comprovada com adb falso, recusando antes de instalar/instrumentar. A medição comparativa também exige CI e emulador antes de recriar os fixtures.
+
+## Medições e pendências de desempenho
+
+Medições reais do mesmo emulador Android 35 x86_64, perfil Pixel 6 com SwiftShader (GPU emulada por software), instalações novas. Três inicializações por versão e amostras curtas de cinco segundos em repouso Assistente. O modelo de conversa não estava carregado; sem captura ou síntese em curso. O desempenho medido **não confirmou a fluidez desejada**, e não se afirma melhoria de CPU/frames.
+
+| Métrica | Base 3.1 | Prévia 4 |
+| --- | ---: | ---: |
+| Mediana TotalTime de am start -W | 3.254 ms | 3.500 ms |
+| PSS do processo principal | 79,5 MiB | 91,5 MiB |
+| CPU do processo, percentual de um núcleo | 36,8% | 80,2% |
+| Frame p95 (timestamps gfxinfo) | 76,6 ms | 376,7 ms |
+| APK assistente distribuído | 21.044.192 bytes | 16.535.550 bytes |
+| APK motor A distribuído | 143.608.608 bytes | 107.412.527 bytes |
+
+A distribuição 4 contém ARM64 para o Galaxy; a anterior também trazia x86_64. Os modelos/qualidade da voz foram mantidos. Não atribuir a redução de APK apenas à renderização.
+
+Os sete estados visuais (seis Cinema mais repouso Silencioso) têm CPU/PSS/frames registrados separadamente no JSON. No repouso Silencioso, foram desenhados somente dois frames durante a amostra de 2,2 s, com relógio do núcleo desligado; houve 12,7% de CPU do processo incluindo HUD/ambiente. Os arquivos brutos de meminfo, gfxinfo, batterystats e startup estão no artifact visual. Frames com timestamps inválidos ou duração fora de 0–1000 ms não entram nos percentis do coletor; são amostras de diagnóstico, não benchmark de publicação. CPU não inclui compositor, sistema ou processo separado da voz.
+
+A geometria reutilizada, agrupamento de marcadores e redução de cadência foram implementados, porém **não se considera a otimização de fluidez encerrada** diante desses números. Precisam de perfil em GPU real/Android 16 no Galaxy para orientar o próximo ajuste. Não houve medição física de autonomia, mAh, temperatura, reconhecimento, fones ou rota de som. Batterystats virtual serve só como diagnóstico.
+
+As tentativas anteriores 58bc2ec/9fe2eeb registraram custos altos de desenho e dois timeouts de 100 s no teste do modelo local, além de ANR do Pixel Launcher em uma captura do emulador. O teste passou a isolar geração em Silencioso e a verificar término do trabalho antes do conteúdo, mantendo o limite e a exigência de contexto. Voz real e retomada de sessão seguem em testes próprios; não se atribui a causa dos timeouts apenas ao launcher. Os resultados finais acima correspondem exclusivamente à fonte 6aef8bd desta execução.
+
 ## Teste no Galaxy (pendente)
 
 1. Mantenha a 3.1 instalada. No Chrome com login no GitHub, baixe o par **da mesma execução**, extraia os ZIPs em Meus Arquivos e instale primeiro a Voz A da prévia e depois JARVIS 4 · Prévia. Autorize a instalação pelo Android se solicitado. O armazenamento da prévia é separado; notas da 3.1 não aparecerão nela automaticamente.
@@ -63,4 +115,4 @@ python3 scripts/prepare_voice_a.py
 
 Para emulador debug, não fixe jarvisAbis: o padrão inclui arm64-v8a e x86_64. O workflow desta branch publica dois artifacts separados, fontes GPL e demonstração/métricas, e baixa novamente os APKs para conferir seus hashes/assinaturas. Pelo celular use Actions → Android - APK de teste → Run workflow → **jarvis-4-fase1**. Login no GitHub é necessário; cada artifact é um ZIP com um APK. Use o par da mesma execução e instale o motor da prévia antes do assistente se quiser a voz A.
 
-A rodada 58bc2ec passou em 93 testes de unidade e 48 instrumentados, mas as amostras de renderização mostraram custo maior em repouso: 74,96% de um núcleo e frame p95 de 202,71 ms no emulador SwiftShader. Esses resultados motivaram o cache de geometria e o agrupamento de marcadores. A primeira tentativa da rodada otimizada 9fe2eeb passou nos 93 testes de unidade e em 47 dos 48 testes Android. A segunda resposta do teste do modelo opcional local excedeu o limite de 100 segundos; não houve crash Java ou nativo do JARVIS. A captura jarvis-cinema.png dessa tentativa mostra um diálogo de ANR do Pixel Launcher, um problema do emulador; a imagem não será apresentada como demonstração limpa do app. Foi solicitada uma única repetição do job Android com o mesmo código, preservando o registro da falha. A repetição também excedeu o prazo, desta vez na primeira resposta, e os outros 47 testes Android passaram. Por isso o teste de geração passou a configurar explicitamente o modo Silencioso, a aguardar o término real do trabalho antes de verificar o conteúdo e a exportar diagnóstico da fixture pública em caso de falha; voz real e retomada de sessão continuam em testes próprios. O limite de 100 segundos e a exigência de preservar o nome Rafael nos dois turnos não foram relaxados. A política do modo Assistente reduz o relógio em repouso/processamento para reservar recursos; Cinema conserva a apresentação completa. O script de testes recusa aparelhos físicos antes de qualquer instalação e encerra o Pixel Launcher no emulador antes dos testes. A nova rodada e suas métricas serão registradas após o CI; não se infere fluidez física do Galaxy a partir de emulador. Não há teste físico concluído no Galaxy S25 FE nesta fase.
+Fonte compilada e resultados efetivos registrados acima. Não há teste físico concluído no Galaxy S25 FE nesta fase.
