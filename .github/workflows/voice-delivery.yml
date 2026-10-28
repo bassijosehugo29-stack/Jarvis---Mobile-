@@ -1,0 +1,97 @@
+name: JARVIS - Transporte dos APKs de voz A
+on:
+  push:
+    branches: [voice-a-delivery-20261028]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Localizar compilação da revisão aprovada
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json,os,time,urllib.request
+          repo=os.environ['REPOSITORY']
+          sha='4741c53432415b9903081c281fd5b1bc059dd2f4'
+          def read(path):
+              request=urllib.request.Request('https://api.github.com/repos/'+repo+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(request,timeout=30) as response:return json.load(response)
+          for attempt in range(32):
+              runs=read('/actions/runs?head_sha='+sha+'&per_page=10')['workflow_runs']
+              matching=[run for run in runs if run['name']=='Android - APK de teste' and run['head_sha']==sha]
+              if matching:
+                  run=matching[0]
+                  artifacts=read('/actions/runs/'+str(run['id'])+'/artifacts')['artifacts']
+                  if any(a['name']=='JARVIS-Mobile-debug' for a in artifacts):
+                      with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('run='+str(run['id'])+'\n')
+                      print('Binary source run:',run['id']);break
+                  if run['conclusion'] in ['failure','cancelled']:raise SystemExit('Source did not produce APKs')
+              time.sleep(15)
+          else:raise SystemExit('Timed out waiting for binary artifact')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: JARVIS-Mobile-debug
+          run-id: ${{ steps.source.outputs.run }}
+          github-token: ${{ github.token }}
+          path: original
+      - name: Dividir transporte sem alterar os APKs assinados
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          files=list(Path('original').rglob('*.apk'));assert len(files)==2
+          out=Path('transport');out.mkdir()
+          app=next(p for p in files if 'Mobile' in p.name);voice=next(p for p in files if 'Voz-A' in p.name)
+          (out/'JARVIS-Mobile.apk').write_bytes(app.read_bytes())
+          data=voice.read_bytes();parts=[]
+          for index,offset in enumerate(range(0,len(data),24*1024*1024)):
+              body=data[offset:offset+24*1024*1024];name=f'voice-{index:02d}.part';(out/name).write_bytes(body);parts.append({'name':name,'bytes':len(body),'sha256':hashlib.sha256(body).hexdigest()})
+          assert len(parts)==6
+          manifest={'app':{'name':app.name,'bytes':app.stat().st_size,'sha256':hashlib.sha256(app.read_bytes()).hexdigest()},'engine':{'name':voice.name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()},'parts':parts}
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-transporte-app
+          path: |
+            transport/JARVIS-Mobile.apk
+            transport/manifest.json
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-transporte-voz-00
+          path: transport/voice-00.part
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-transporte-voz-01
+          path: transport/voice-01.part
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-transporte-voz-02
+          path: transport/voice-02.part
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-transporte-voz-03
+          path: transport/voice-03.part
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-transporte-voz-04
+          path: transport/voice-04.part
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-transporte-voz-05
+          path: transport/voice-05.part
+          retention-days: 7
