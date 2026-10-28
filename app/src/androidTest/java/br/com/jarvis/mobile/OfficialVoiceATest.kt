@@ -76,14 +76,16 @@ class OfficialVoiceATest {
     }
     @Test fun mainSpeechOutputSelectsApprovedEngineAndReceivesRealPlaybackPcm(){
         val inst=InstrumentationRegistry.getInstrumentation();val done=CountDownLatch(1)
+        val peak=AtomicReference(0f)
         val result=AtomicReference<SpeechResult>();val status=AtomicReference<VoiceStatus>();lateinit var output:SpeechOutput
         inst.runOnMainSync{
-            output=SpeechOutput(compose.activity,{if(it.ready)status.set(it)})
+            output=SpeechOutput(compose.activity,{if(it.ready)status.set(it)},onLevel={v->if(v!=null&&v>peak.get())peak.set(v)})
             output.configure(ExperienceSettings())
             output.speak("Às suas ordens, senhor.",true){result.set(it);done.countDown()}
         }
         try{assertTrue(done.await(40,TimeUnit.SECONDS));assertTrue(result.get().toString(),result.get() is SpeechResult.Completed)
             assertTrue((result.get() as SpeechResult.Completed).audioBytes>22050)
+            assertTrue("Real PCM envelope must reach the core callback",peak.get()>0f)
             assertEquals(OfficialVoiceA.PACKAGE,status.get().engine);assertEquals("pt-BR",status.get().locale)
         }finally{inst.runOnMainSync{output.close()}}
     }

@@ -52,7 +52,7 @@ for index, item in enumerate(verified, 1):
     lines.append(f"| {index}. [Baixar {item['title']}]({item['url']}) | {item['file']} | {item['bytes']} bytes |")
 lines += ['', 'Em Meus Arquivos → Downloads, extraia os dois ZIPs. Instale a voz A primeiro e depois o assistente. Autorize a origem de instalação somente se o Android pedir.', '',
           'Prévia instalada ao lado da 3.1: não desinstale a versão atual nem o motor atual. Notas/configurações antigas ficam intactas na 3.1; a prévia usa armazenamento separado. Importar backup é opcional e manual.', '',
-          'Os artifacts permanecem após o término da execução, com retenção solicitada de 90 dias, sujeita ao limite do repositório. A API informa a expiração efetiva. Após expirar, use Actions → Android - APK de teste → Run workflow → main.', '',
+          'Os artifacts permanecem após o término da execução, com retenção solicitada de 90 dias, sujeita ao limite do repositório. A API informa a expiração efetiva. Após expirar, use Actions → Android - APK de teste → Run workflow → jarvis-4-fase1.', '',
           'JARVIS 4.0 fase 1, na branch jarvis-4-fase1. O motor de voz A mantém o modelo e o pitch natural aprovados. O aplicativo tem novo núcleo e integração ACTION_ASSIST; consulte o relatório da fase.', '',
           f"[Fontes correspondentes do motor GPL]({os.environ.get('JARVIS_VOICE_SOURCES_URL', '')})", '']
 guide = '\n'.join(lines)

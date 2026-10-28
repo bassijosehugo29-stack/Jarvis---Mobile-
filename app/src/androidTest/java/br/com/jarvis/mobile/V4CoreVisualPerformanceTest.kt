@@ -42,7 +42,7 @@ class V4CoreVisualPerformanceTest {
                 val memory=Debug.MemoryInfo();Debug.getMemoryInfo(memory)
                 results.put(JSONObject().put("phase",phase.name).put("mode","CINEMATIC").put("elapsed_ms",elapsed)
                     .put("cpu_ms",usedCpu).put("cpu_one_core_percent",usedCpu*100.0/elapsed).put("pss_kb",memory.totalPss)
-                    .put("frames",values.size).put("total_frame_p50_ms",percentile(.5)).put("total_frame_p95_ms",percentile(.95))
+                    .put("frames",values.size).put("total_frame_p50_ms",percentile(.5)).put("total_frame_p95_ms",percentile(.95)))
                 assertTrue("Expected actual rendered frames",values.isNotEmpty())
             }
             compose.runOnUiThread{compose.activity.phase=CorePhase.IDLE;compose.activity.mode=OperationMode.SILENT}

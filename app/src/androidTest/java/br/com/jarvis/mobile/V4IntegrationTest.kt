@@ -33,7 +33,8 @@ class V4IntegrationTest {
     }
     @Test fun continuousSessionResumesAfterTwoRealTtsRepliesAndStopsOnBackground() {
         val inst=InstrumentationRegistry.getInstrumentation();val target=inst.targetContext
-        inst.uiAutomation.executeShellCommand("pm grant ${target.packageName} android.permission.RECORD_AUDIO").close()
+        android.os.ParcelFileDescriptor.AutoCloseInputStream(inst.uiAutomation.executeShellCommand(
+            "pm grant ${target.packageName} android.permission.RECORD_AUDIO")).use { it.readBytes() }
         target.contentResolver.call(Uri.parse("content://br.com.jarvis.mobile.test.tts-fixture"),"local",null,null)
         lateinit var model:JarvisViewModel; lateinit var input:Input;val store=ViewModelStore()
         inst.runOnMainSync {
