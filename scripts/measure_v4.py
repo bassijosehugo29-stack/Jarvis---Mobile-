@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CI/emulator only. Fresh fixtures, real am-start/proc/meminfo/gfxinfo. Never run against a user's phone."""
 from pathlib import Path
-import json,re,subprocess,time
+import json,re,subprocess,time,os
 
 out=Path('app/build/reports/performance');out.mkdir(parents=True,exist_ok=True)
 package='br.com.jarvis.mobile'
@@ -10,6 +10,12 @@ def adb(*args,check=True):
  if check and r.returncode:raise RuntimeError('adb failed: '+r.stderr[:200])
  return r.stdout
 def install(apk):adb('install','-r',str(apk))
+# Never allow the fresh-install benchmark to remove apps from a physical/personal device.
+if os.environ.get('GITHUB_ACTIONS') != 'true':
+ print('Medição comparativa ignorada: exclusiva do CI, sem remover qualquer aplicativo.')
+ raise SystemExit(0)
+if adb('shell','getprop','ro.kernel.qemu').strip() != '1':
+ raise SystemExit('Refusing destructive fixture setup: target is not an Android emulator.')
 def sample(label,app,voice):
  # Only the ephemeral CI emulator: remove synthetic fixtures to compare fresh installs.
  adb('uninstall',package,check=False);adb('uninstall','br.com.jarvis.voicea',check=False)
