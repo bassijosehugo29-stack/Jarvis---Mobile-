@@ -21,6 +21,40 @@ import java.util.concurrent.atomic.AtomicReference
 class SpeechOutputTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
+    @Test fun personalTextCannotUseOnlineVoiceEvenAfterEngineHasBeenWarmed() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation()
+        val marker=java.io.File(instrumentation.context.filesDir,"tts-network-only")
+        marker.writeText("CI only")
+        lateinit var output:SpeechOutput
+        var created=false
+        val publicDone=CountDownLatch(1);val privateDone=CountDownLatch(1)
+        val publicResult=AtomicReference<SpeechResult>();val privateResult=AtomicReference<SpeechResult>()
+        try{
+            instrumentation.runOnMainSync{
+                output=SpeechOutput(compose.activity,{},listOf(instrumentation.context.packageName))
+                created=true
+                output.speak("Frase pública de teste"){publicResult.set(it);publicDone.countDown()}
+            }
+            assertTrue(publicDone.await(25,TimeUnit.SECONDS));assertTrue(publicResult.get() is SpeechResult.Completed)
+            instrumentation.runOnMainSync{output.speak("Dado pessoal de teste",true){privateResult.set(it);privateDone.countDown()}}
+            assertTrue(privateDone.await(10,TimeUnit.SECONDS));assertTrue(privateResult.get().toString(),privateResult.get() is SpeechResult.TextOnly)
+        }finally{marker.delete();if(created)instrumentation.runOnMainSync{output.close()}}
+    }
+
+    @Test fun personalTextUsesInstalledLocalVoiceAndProducesRealPcm() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation()
+        java.io.File(instrumentation.context.filesDir,"tts-network-only").delete()
+        val done=CountDownLatch(1);val result=AtomicReference<SpeechResult>()
+        lateinit var output:SpeechOutput
+        instrumentation.runOnMainSync{
+            output=SpeechOutput(compose.activity,{},listOf(instrumentation.context.packageName))
+            output.speak("Relatório pessoal de teste",true){result.set(it);done.countDown()}
+        }
+        try{assertTrue(done.await(25,TimeUnit.SECONDS));assertTrue(result.get() is SpeechResult.Completed)
+            assertTrue((result.get() as SpeechResult.Completed).audioBytes>0)
+        }finally{instrumentation.runOnMainSync{output.close()}}
+    }
+
     @Test fun selectedVoiceRatePitchAndPlaybackCallbacksReachRealAndroidTts() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val result = AtomicReference<SpeechResult>()

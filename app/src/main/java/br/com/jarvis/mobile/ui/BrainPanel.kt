@@ -39,7 +39,9 @@ fun BrainPanel(state:BrainState,mode:OperationMode,onUnlock:()->Unit,onEdit:(Not
     }
     val draft=state.draft
     if(draft!=null){NoteEditor(draft,state.notes,state.busy,state.error,onSave,onDelete,onClose,onDictate);return}
-    val selected=searchNotes(state.notes,query,category)
+    val selected=remember(state.notes,query,category){searchNotes(state.notes,query,category)}
+    var page by remember(query,category,state.notes){mutableIntStateOf(0)}
+    val pages=((selected.size+49)/50).coerceAtLeast(1)
     Text("${state.notes.size} notas · ${state.notes.map{it.category}.distinct().size}/8 áreas em uso",color=Gold,fontFamily=FontFamily.Monospace)
     Text("Vínculos manuais e tags em comum. Toque em uma nota; use dois dedos para mover e ampliar.",color=Muted,fontSize=12.sp,modifier=Modifier.padding(top=8.dp))
     NeuralGraph(selected.take(80),mode,{onEdit(it)},Modifier.fillMaxWidth().height(310.dp).testTag("brain-graph"))
@@ -57,7 +59,12 @@ fun BrainPanel(state:BrainState,mode:OperationMode,onUnlock:()->Unit,onEdit:(Not
     if(state.error.isNotBlank())Text(state.error,color=Gold,modifier=Modifier.padding(vertical=12.dp))
     if(state.busy)LinearProgressIndicator(Modifier.fillMaxWidth())
     if(selected.isEmpty())Text("Nenhuma nota nesta seleção. Crie uma nota para começar.",color=Muted,modifier=Modifier.padding(vertical=18.dp))
-    selected.forEach{note->
+    if(pages>1)Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
+        TextButton(onClick={page--},enabled=page>0){Text("Anterior")}
+        Text("${page+1}/$pages · 50 por página",color=Muted,fontSize=12.sp)
+        TextButton(onClick={page++},enabled=page<pages-1){Text("Próxima")}
+    }
+    selected.drop(page*50).take(50).forEach{note->
         HudPanel(Modifier.fillMaxWidth().padding(top=8.dp).clickable{onEdit(note)},accent=Color(note.category.color)){
             Column(Modifier.padding(14.dp)){
                 Text(note.category.title.uppercase(),fontSize=10.sp,color=Color(note.category.color))

@@ -38,6 +38,7 @@ class HubViewModel(application:Application):AndroidViewModel(application){
     private val _state=MutableStateFlow(HubState());val state=_state.asStateFlow()
     private val _events=MutableSharedFlow<HubEvent>(extraBufferCapacity=8);val events=_events.asSharedFlow()
     private var foreground=false;private var epoch=0L;private var job:Job?=null;private var ticker:Job?=null;private var agendaWatch:Job?=null
+    private var pendingPreferences:HubPreferences?=null
     private var observing=false
     private val observer=object:ContentObserver(Handler(Looper.getMainLooper())){override fun onChange(selfChange:Boolean){
         agendaWatch?.cancel();agendaWatch=viewModelScope.launch{delay(500);if(foreground&&data.agenda.hasPermission()){
@@ -45,7 +46,9 @@ class HubViewModel(application:Application):AndroidViewModel(application){
         }}
     }}
     init{
-        viewModelScope.launch{data.preferences.state.collect{value->_state.update{it.copy(preferences=value,preferencesReady=true)}}}
+        viewModelScope.launch{data.preferences.state.collect{value->
+            if(pendingPreferences==null||pendingPreferences==value){pendingPreferences=null;_state.update{it.copy(preferences=value,preferencesReady=true)}}
+        }}
     }
     fun onForeground(){
         foreground=true
@@ -57,7 +60,7 @@ class HubViewModel(application:Application):AndroidViewModel(application){
             val resolver=getApplication<Application>().contentResolver
             resolver.registerContentObserver(CalendarContract.Events.CONTENT_URI,true,observer)
             resolver.registerContentObserver(CalendarContract.Calendars.CONTENT_URI,true,observer);observing=true
-        }catch(_:RuntimeException){/* Provider may be absent; requesting the panel still reports availability. */}
+        }catch(_:RuntimeException){getApplication<Application>().contentResolver.unregisterContentObserver(observer);observing=false}
         val current=epoch
         viewModelScope.launch{try{
             val mail=data.gmail.cached();val news=data.news.cached()
@@ -74,7 +77,14 @@ class HubViewModel(application:Application):AndroidViewModel(application){
     }
     fun notice(value:String){_state.update{it.copy(notice=value)}}
     fun cancelWork(){epoch++;job?.cancel();_state.update{it.copy(busy=false)}}
-    fun updatePreferences(value:HubPreferences){_state.update{it.copy(preferences=value)};viewModelScope.launch{data.preferences.update(value)}}
+    fun updatePreferences(value:HubPreferences){
+        val bounded=value.copy(topics=value.topics.map{it.trim().take(80)}.filter{it.isNotBlank()}.take(20).toSet())
+        pendingPreferences=bounded;_state.update{it.copy(preferences=bounded)}
+        viewModelScope.launch{try{data.preferences.update(bounded)}catch(e:CancellationException){throw e}catch(_:Exception){
+            if(pendingPreferences==bounded)pendingPreferences=null
+            notice("Não foi possível salvar esta preferência. Confira o armazenamento do aparelho.")
+        }}
+    }
     fun shouldAutoDigest():Boolean{
         val current=_state.value
         val date=LocalDate.now().toString()
@@ -145,22 +155,26 @@ class HubViewModel(application:Application):AndroidViewModel(application){
     private suspend fun generateDigest(){
         val current=epoch
         val values=supervisorScope{
-            val a=async{data.agenda.load()};val n=async{try{withTimeout(12000){data.news.refresh()}}catch(e:CancellationException){if(e !is TimeoutCancellationException)throw e;data.news.cached()}}
-            val m=async{data.gmail.cached()};val w=async{try{withTimeout(12000){data.weather.refresh()}}catch(e:CancellationException){if(e !is TimeoutCancellationException)throw e;WeatherSnapshot(info=SourceInfo(SourceStatus.ERROR,"Clima indisponível"))}}
+            val a=async{source(AgendaSnapshot(info=SourceInfo(SourceStatus.ERROR,"Agenda indisponível"))){data.agenda.load()}}
+            val n=async{source(NewsSnapshot(info=SourceInfo(SourceStatus.ERROR,"Notícias indisponíveis"))){data.news.refresh()}}
+            val m=async{source(MailSnapshot(info=SourceInfo(SourceStatus.ERROR,"E-mails indisponíveis"))){data.gmail.cached()}}
+            val w=async{source(WeatherSnapshot(info=SourceInfo(SourceStatus.ERROR,"Clima indisponível"))){data.weather.refresh()}}
             listOf(a.await(),n.await(),m.await(),w.await())
         }
         if(!foreground||current!=epoch)return
         val agenda=values[0] as AgendaSnapshot;val news=values[1] as NewsSnapshot;val mail=values[2] as MailSnapshot;val weather=values[3] as WeatherSnapshot
-        val notes=if(data.brain.isUnlocked())data.brain.notes()else null
+        val notes=if(data.brain.isUnlocked())source<List<br.com.jarvis.mobile.brain.Note>?>(null){data.brain.notes()}else null
         val visible=news.copy(items=data.news.select(news.items,_state.value.preferences.topics))
         val digest=DigestBuilder.build(Instant.now(),ZoneId.systemDefault(),agenda,mail,visible,weather,notes,_state.value.preferences.mediumDigest)
         _state.update{it.copy(agenda=agenda,news=news,mail=mail,weather=weather,digest=digest)}
         _events.emit(HubEvent.Speak(digest.text))
     }
+    private suspend fun <T> source(fallback:T,block:suspend()->T):T=try{withTimeout(12000){block()}}
+        catch(_:TimeoutCancellationException){fallback}catch(e:CancellationException){throw e}catch(_:Exception){fallback}
     fun erasePersonalData()=run{
         MailRefreshWorker.cancel(getApplication())
         val revoked=withTimeoutOrNull(5000){data.gmail.disconnect()}?:false
-        data.brain.erase();data.storage.eraseAll();data.preferences.clear()
+        data.brain.erase();data.storage.eraseAll();pendingPreferences=null;data.preferences.clear()
         getApplication<Application>().getSharedPreferences("jarvis-calendar",Application.MODE_PRIVATE).edit().clear().apply()
         _state.value=HubState(panel=HubPanel.PRIVACY,notice="Dados pessoais locais e chaves removidos. Agendas, e-mails originais e backups externos não foram apagados."+
             if(revoked)"" else " Revogação Google pendente: confira a Conta Google quando houver rede.")

@@ -51,7 +51,7 @@ class BrainStore(context: Context) {
         requireOpen(); imported
     }
     suspend fun importConfirmed(imported: List<Note>) = withContext(Dispatchers.IO) { mutex.withLock {
-        requireOpen(); val merged=mergeNotes(notes(),imported)
+        requireOpen(); imported.forEach(::validate);val merged=mergeNotes(notes(),imported)
         val records=merged.map(::record); requireOpen()
         db.withTransaction { db.records().putAll(records) }
     } }

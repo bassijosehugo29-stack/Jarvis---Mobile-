@@ -150,16 +150,17 @@ class MainActivity : FragmentActivity() {
         }
     }
     private fun connectGmail(){
-        model.stop();authEpoch=hub.data.storage.epoch()
+        model.stop();val requestEpoch=hub.data.storage.epoch();authEpoch=requestEpoch
         lifecycleScope.launch{
             try{
                 val request=hub.data.gmail.request(hub.data.gmail.connectedAccount())
                 Identity.getAuthorizationClient(this@MainActivity).authorize(request)
-                    .addOnSuccessListener { result -> if(result.hasResolution()) {
+                    .addOnSuccessListener { result -> if(hub.data.storage.epoch()!=requestEpoch)return@addOnSuccessListener
+                        if(result.hasResolution()) {
                         val intent=result.pendingIntent
                         if(intent!=null)gmailAuthorization.launch(IntentSenderRequest.Builder(intent.intentSender).build())
                         else hub.notice("O Google não forneceu a autorização necessária.")
-                    }else hub.acceptAuthorization(result,authEpoch) }
+                    }else hub.acceptAuthorization(result,requestEpoch) }
                     .addOnFailureListener { hub.notice("Gmail ainda não autorizado. Registre o cliente OAuth com o pacote e SHA-1 deste APK; consulte o guia no repositório. Não é necessário informar sua senha ao JARVIS.") }
             }catch(_:Exception){hub.notice("Serviços Google indisponíveis ou configuração OAuth pendente.")}
         }
@@ -172,7 +173,7 @@ class MainActivity : FragmentActivity() {
         if(Build.VERSION.SDK_INT>=30){
             val prompt=BiometricPrompt(this,ContextCompat.getMainExecutor(this),object:BiometricPrompt.AuthenticationCallback(){
                 override fun onAuthenticationSucceeded(result:BiometricPrompt.AuthenticationResult){resumed{authenticationSucceeded()}}
-                override fun onAuthenticationError(errorCode:Int,errString:CharSequence){authenticationCancelled()}
+                override fun onAuthenticationError(errorCode:Int,errString:CharSequence){resumed{authenticationCancelled()}}
             })
             prompt.authenticate(BiometricPrompt.PromptInfo.Builder().setTitle("Desbloquear dados do JARVIS")
                 .setSubtitle("Use sua biometria ou a credencial do celular")

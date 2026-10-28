@@ -53,7 +53,7 @@ object DigestBuilder {
         weather: WeatherSnapshot, notes: List<Note>?, medium: Boolean): DigestSnapshot {
         val local=now.atZone(zone); val limit=if(medium)220 else 100
         val greeting=when(local.hour){in 5..11->"Bom dia";in 12..17->"Boa tarde";else->"Boa noite"}
-        val parts=mutableListOf("$greeting, senhor. Hoje é ${local.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM",Locale.forLanguageTag("pt-BR")))}.")
+        val parts=mutableListOf("Às suas ordens, senhor. $greeting. Hoje é ${local.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM",Locale.forLanguageTag("pt-BR")))}.")
         val events=todayEntries(agenda.entries,local.toLocalDate(),zone)
         if(agenda.info.status==SourceStatus.READY) {
             parts+=if(events.isEmpty()) "Não há compromissos no calendário para hoje." else "Agenda de hoje: "+events.take(if(medium)4 else 2).joinToString("; ") {

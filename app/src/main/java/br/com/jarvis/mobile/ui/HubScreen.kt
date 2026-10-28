@@ -155,7 +155,7 @@ private fun MailPanel(state:HubState,model:HubViewModel,connect:()->Unit){
             Text(mail.subject,color=Cyan,fontSize=16.sp);Text(mail.sender,color=Muted,fontSize=12.sp)
             Text(mail.preview,color=Muted,fontSize=13.sp,modifier=Modifier.padding(vertical=8.dp));Text(dateText(mail.receivedAt),color=Muted,fontSize=11.sp)
             TextButton(onClick={model.mailDetail(mail.id)}){Text("Ler texto da mensagem")}
-            Row(Modifier.horizontalScroll(rememberScrollState())){EmailCategory.entries.forEach{c->TextButton(onClick={model.classifyMail(mail.id,c)}){Text(c.title,fontSize=11.sp)}}
+            Row(Modifier.horizontalScroll(rememberScrollState())){EmailCategory.entries.forEach{c->TextButton(onClick={model.classifyMail(mail.id,c)}){Text(c.title,fontSize=11.sp)}}}
         }
     }}
     if(state.mailDetail.isNotBlank())AlertDialog(onDismissRequest=model::closeMailDetail,title={Text("Mensagem · somente leitura")},

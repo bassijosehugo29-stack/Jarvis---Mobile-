@@ -25,12 +25,8 @@ class GmailRepository(private val context:Context,private val storage:HubStorage
         val token=result.accessToken?:throw GmailConsentRequired()
         val epoch=expectedEpoch;val profile=http.get("https://gmail.googleapis.com/gmail/v1/users/me/profile",bearer=token)
         check(profile.code==200);val email=JSONObject(profile.body).getString("emailAddress")
-        val previous=connectedAccount()
-        check(epoch==storage.epoch())
-        if(previous!=null&&previous!=email)storage.disconnectMail()
-        storage.put("gmail-account",JSONObject().put("email",email),storage.epoch())
-        check(epoch==storage.epoch()||previous!=email)
-        return refresh(token)
+        val connectedEpoch=storage.connectMail(email,epoch)
+        return refresh(token,connectedEpoch)
     }
     suspend fun cached():MailSnapshot{
         val email=connectedAccount()?:return MailSnapshot()
@@ -46,9 +42,10 @@ class GmailRepository(private val context:Context,private val storage:HubStorage
         if(result.hasResolution())throw GmailConsentRequired()
         return result.accessToken?:throw GmailConsentRequired()
     }
-    suspend fun refresh(accessToken:String?=null):MailSnapshot=coroutineScope{
-        val epoch=storage.epoch()
+    suspend fun refresh(accessToken:String?=null,expectedEpoch:Long=storage.epoch()):MailSnapshot=coroutineScope{
+        val epoch=expectedEpoch
         try{
+            check(epoch==storage.epoch())
             val email=connectedAccount()?:return@coroutineScope MailSnapshot()
             val auth=accessToken?:token()
             val listing=http.get("https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX&maxResults=100&q=newer_than%3A7d",bearer=auth)
@@ -89,7 +86,8 @@ class GmailRepository(private val context:Context,private val storage:HubStorage
         return body(JSONObject(reply.body).getJSONObject("payload")).take(60000).ifBlank{"Sem conteúdo textual disponível. Anexos e imagens externas não são carregados."}
     }
     suspend fun classify(id:String,category:EmailCategory){
-        val data=storage.get("mail-overrides")?:JSONObject();data.put(id,category.name);storage.put("mail-overrides",data,storage.epoch())
+        val epoch=storage.epoch()
+        val data=storage.get("mail-overrides")?:JSONObject();data.put(id,category.name);storage.put("mail-overrides",data,epoch)
     }
     suspend fun disconnect():Boolean{
         val email=connectedAccount();var revoked=true

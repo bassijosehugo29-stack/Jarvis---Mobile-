@@ -20,8 +20,9 @@ public class FixtureTtsService extends TextToSpeechService {
     @Override public String[] onGetLanguage() { return new String[]{"por", "PRT", ""}; }
     @Override public int onLoadLanguage(String language, String country, String variant) { return onIsLanguageAvailable(language, country, variant); }
     @Override public List<Voice> onGetVoices() {
+        boolean networkOnly = new java.io.File(getFilesDir(), "tts-network-only").exists();
         return Collections.singletonList(new Voice("jarvis-fixture-pt-PT", Locale.forLanguageTag("pt-PT"),
-            Voice.QUALITY_NORMAL, Voice.LATENCY_NORMAL, false, Collections.<String>emptySet()));
+            Voice.QUALITY_NORMAL, Voice.LATENCY_NORMAL, networkOnly, Collections.<String>emptySet()));
     }
     @Override public int onIsValidVoiceName(String voiceName) { return voiceName.equals("jarvis-fixture-pt-PT") ? TextToSpeech.SUCCESS : TextToSpeech.ERROR; }
     @Override public int onLoadVoice(String voiceName) { return onIsValidVoiceName(voiceName); }
