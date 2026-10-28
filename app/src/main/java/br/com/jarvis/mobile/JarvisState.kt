@@ -14,6 +14,9 @@ data class JarvisState(
     val voiceInfo: String = "Microfone desligado • escuta apenas com o app visível",
     val notice: String = "",
     val audioLevel: Float = 0f,
+    val speechLevel: Float? = null,
+    val interruptListening: Boolean = false,
+    val interruptionInfo: String = "Interrupção por voz opcional nos ajustes",
     val thinking: Boolean = false,
     val working: Boolean = false,
     val speechInfo: String = "Use Testar voz nos ajustes para conferir o som.",
@@ -42,6 +45,7 @@ data class JarvisState(
         else -> CorePhase.IDLE
     }
     val soundPhase get() = when {
+        interruptListening -> CorePhase.LISTENING
         listening -> CorePhase.LISTENING
         speaking -> CorePhase.RESPONDING
         thinking || working -> CorePhase.PROCESSING

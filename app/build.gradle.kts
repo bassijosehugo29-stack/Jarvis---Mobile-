@@ -12,8 +12,11 @@ android {
         applicationId = "br.com.jarvis.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "3.1.0"
+        versionCode = 9
+        versionName = "4.0.0"
+        buildConfigField("String", "VOICE_ENGINE_PACKAGE", "\"br.com.jarvis.voicea\"")
+        manifestPlaceholders["voiceEnginePackage"] = "br.com.jarvis.voicea"
+        manifestPlaceholders["jarvisLabel"] = "@string/app_name"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         externalNativeBuild {
@@ -32,6 +35,16 @@ android {
                 keyPassword = System.getenv("JARVIS_KEY_PASSWORD")
             }
             getByName("debug") { signingConfig = fixed }
+        }
+        create("preview") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".v4preview"
+            versionNameSuffix = "-fase1"
+            matchingFallbacks += listOf("debug")
+            buildConfigField("String", "VOICE_ENGINE_PACKAGE", "\"br.com.jarvis.voicea.v4preview\"")
+            manifestPlaceholders["voiceEnginePackage"] = "br.com.jarvis.voicea.v4preview"
+            manifestPlaceholders["jarvisLabel"] = "JARVIS 4 · Prévia"
+            ndk { abiFilters.clear(); abiFilters += "arm64-v8a" }
         }
         release {
             isMinifyEnabled = false

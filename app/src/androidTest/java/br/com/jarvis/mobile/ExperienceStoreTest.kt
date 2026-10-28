@@ -41,7 +41,7 @@ class ExperienceStoreTest {
             val first = ExperienceStore(context, PreferenceDataStoreFactory.create(scope = scope, produceFile = { file }))
             assertEquals(OperationMode.ASSISTANT, first.settings.first().mode)
             first.update { it.copy(voiceProfile=VoiceProfile.ANDROID,mode = OperationMode.CINEMATIC, voiceVolume = 0.72f, musicVolume = 0.08f,
-                effectsEnabled = false, pitch = 0.81f, speechRate = 0.92f, enginePackage = "teste.motor", voiceName = "teste.voz") }
+                effectsEnabled = false, voiceInterruption = true, pitch = 0.81f, speechRate = 0.92f, enginePackage = "teste.motor", voiceName = "teste.voz") }
             first.update { it.copy(mode = OperationMode.SILENT) }
             job.cancelAndJoin()
             assertTrue(file.length() > 0)
@@ -50,7 +50,7 @@ class ExperienceStoreTest {
             assertEquals(OperationMode.SILENT, restored.mode)
             assertFalse(restored.voiceAllowed)
             assertEquals(0.72f, restored.voiceVolume, 0f); assertEquals(0.08f, restored.musicVolume, 0f)
-            assertFalse(restored.effectsEnabled); assertEquals(0.81f, restored.pitch, 0f)
+            assertTrue(restored.voiceInterruption); assertFalse(restored.effectsEnabled); assertEquals(0.81f, restored.pitch, 0f)
             assertEquals("teste.motor", restored.enginePackage); assertEquals("teste.voz", restored.voiceName)
         } finally { job.cancelAndJoin(); file.delete() }
     }

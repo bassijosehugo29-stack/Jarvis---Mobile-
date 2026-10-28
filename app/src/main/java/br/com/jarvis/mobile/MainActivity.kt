@@ -33,6 +33,7 @@ import br.com.jarvis.mobile.actions.AndroidActions
 import br.com.jarvis.mobile.actions.AppAction
 import br.com.jarvis.mobile.brain.BrainViewModel
 import br.com.jarvis.mobile.domain.Command
+import br.com.jarvis.mobile.assistant.SystemAssistant
 import br.com.jarvis.mobile.hub.*
 import br.com.jarvis.mobile.ui.*
 import com.google.android.gms.auth.api.identity.Identity
@@ -51,6 +52,10 @@ class MainActivity : FragmentActivity() {
     private var unlockCancelled: (() -> Unit)? = null
     private var authEpoch = -1L
     private var encryptedExport: ByteArray? = null
+    private val assistantSelection = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        resumed { model.report(if (SystemAssistant.selected(this)) "JARVIS selecionado como assistente. Use o gesto do sistema e toque no núcleo."
+            else "Seleção de assistente mantida pelo Android. O JARVIS continua disponível pelo aplicativo.") }
+    }
     private val requestMicrophone = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) resumed { if (noteMicrophone) model.dictateNote() else model.start() } else model.permissionDenied()
     }
@@ -124,7 +129,8 @@ class MainActivity : FragmentActivity() {
                 val back={model.stop();hub.cancelWork();if(memory.draft!=null)brain.closeEditor()else hub.navigate(HubPanel.HOME)}
                 BackHandler(central.panel!=HubPanel.HOME,onBack=back)
                 val toggle={
-                    if(state.enabled||state.thinking||state.speaking||state.working){model.stop();hub.cancelWork()}
+                    if (state.speaking && state.enabled) model.interruptResponse()
+                    else if(state.enabled||state.thinking||state.speaking||state.working){model.stop();hub.cancelWork()}
                     else {noteMicrophone=false;if(ContextCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED)model.start()else requestMicrophone.launch(Manifest.permission.RECORD_AUDIO)}
                 }
                 val modeChange: (br.com.jarvis.mobile.experience.ExperienceSettings)->Unit={value->
@@ -137,7 +143,8 @@ class MainActivity : FragmentActivity() {
                     onVoiceTest=model::testVoice,onVoiceSettings=model::voiceSettings,onDownloadModel=model::downloadConversation,
                     onImportModel={importConversation.launch(arrayOf("*/*"))},onSendMessage=model::sendMessage,onCancelModel=model::cancelModelPreparation,
                     onExperienceChange=modeChange,onLoadVoices=model::loadVoices,
-                    onOpenHub={model.stop();hub.navigate(HubPanel.MENU)}
+                    onOpenHub={model.stop();hub.navigate(HubPanel.MENU)},
+                    onSystemAssistant={model.stop();try{assistantSelection.launch(SystemAssistant.selection(this))}catch(_:RuntimeException){model.report("O fabricante não disponibilizou a seleção de assistente. Abra Aplicativos padrão nas configurações do Android.")}}
                 ) else HubScreen(central,state,memory,hub,
                     BrainActions(
                         unlock={unlock({brain.unlocked()})},edit=brain::edit,save=brain::save,delete=brain::delete,close=brain::closeEditor,
@@ -147,6 +154,13 @@ class MainActivity : FragmentActivity() {
                     onGmail=::connectGmail,onArticle={url->model.stop();try{val uri=Uri.parse(url);require(uri.scheme=="https"&&uri.host!=null);startActivity(Intent(Intent.ACTION_VIEW,uri))}catch(_:Exception){hub.notice("Não foi possível abrir a matéria original.")}},
                     onErase={model.stop();unlock({hub.erasePersonalData()},force=true)})
             }
+        }
+    }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent); setIntent(intent)
+        if (intent.action == Intent.ACTION_ASSIST) {
+            model.stop("Assistente Android aberto · toque no núcleo")
+            hub.navigate(HubPanel.HOME)
         }
     }
     private fun connectGmail(){

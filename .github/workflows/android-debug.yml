@@ -3,12 +3,13 @@ name: Android - APK de teste
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches: [main, master, jarvis-4-fase1]
     paths-ignore: ['docs/**', '**/*.md']
   pull_request:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: android-${{ github.workflow }}-${{ github.ref }}
@@ -64,14 +65,16 @@ jobs:
         run: |
           gradle wrapper --gradle-version 8.11.1 --distribution-type bin --no-daemon
           chmod +x gradlew
-          ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :voice-engine:lintDebug :app:assembleDebug :voice-engine:assembleDebug :app:assembleDebugAndroidTest
+          ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :voice-engine:lintDebug :app:lintPreview :voice-engine:lintPreview :app:assemblePreview :voice-engine:assemblePreview :app:assembleDebugAndroidTest
       - name: Verificar APK, assinatura e bibliotecas de 16 KB
+        env:
+          JARVIS_BUILD_VARIANT: preview
         run: python3 scripts/verify_apk.py
       - name: Preparar entrega dos dois APKs
         run: |
           mkdir -p build/apk
-          cp app/build/outputs/apk/debug/app-debug.apk build/apk/JARVIS-Mobile-3.1.0-debug.apk
-          cp voice-engine/build/outputs/apk/debug/voice-engine-debug.apk build/apk/JARVIS-Voz-A-1.0.0-debug.apk
+          cp app/build/outputs/apk/preview/app-preview.apk build/apk/JARVIS-Mobile-4.0.0-fase1-preview.apk
+          cp voice-engine/build/outputs/apk/preview/voice-engine-preview.apk build/apk/JARVIS-Voz-A-4-preview.apk
           cp docs/INSTALAR-VOZ-A.txt build/apk/LEIA-ME.txt
       - name: Fontes correspondentes do motor de voz
         run: python3 scripts/bundle_voice_a_source.py
@@ -87,16 +90,16 @@ jobs:
         id: voice_apk
         uses: actions/upload-artifact@v4
         with:
-          name: JARVIS-Voz-A-APK
-          path: build/apk/JARVIS-Voz-A-1.0.0-debug.apk
+          name: JARVIS-Voz-A-4-Preview-APK
+          path: build/apk/JARVIS-Voz-A-4-preview.apk
           if-no-files-found: error
           retention-days: 90
-      - name: Publicar APK JARVIS Mobile 3.1 para download
+      - name: Publicar APK JARVIS 4 Fase 1 para download
         id: mobile_apk
         uses: actions/upload-artifact@v4
         with:
-          name: JARVIS-Mobile-3.1-APK
-          path: build/apk/JARVIS-Mobile-3.1.0-debug.apk
+          name: JARVIS-4-Fase1-APK
+          path: build/apk/JARVIS-Mobile-4.0.0-fase1-preview.apk
           if-no-files-found: error
           retention-days: 90
       - name: Guardar relatórios
@@ -142,6 +145,22 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: SDK e NDK para conversa local
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
+      - name: APK 3.1 de referência para medição comparável
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40717061024
+          name: JARVIS-Mobile-3.1-APK
+          path: baseline
+      - name: Motor 3.1 de referência para medição comparável
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          github-token: ${{ github.token }}
+          run-id: 40717061024
+          name: JARVIS-Voz-A-APK
+          path: baseline-voice
       - name: Modelo gratuito para o teste real de conversa
         run: python3 scripts/fetch_test_model.py /tmp/jarvis-conversation-model.gguf
       - uses: gradle/actions/setup-gradle@v4
@@ -184,6 +203,17 @@ jobs:
             voice-engine/build/reports/conversation/
           if-no-files-found: ignore
           retention-days: 90
+      - name: Guardar demonstração e métricas da fase 1
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-4-Visual-Performance
+          path: |
+            app/build/reports/screenshots/
+            app/build/reports/performance/
+            app/build/reports/conversation/jarvis-v4-render-metrics.json
+          if-no-files-found: ignore
+          retention-days: 90
 
   verify-downloads:
     name: Verificar downloads publicados
@@ -195,12 +225,12 @@ jobs:
       - name: Baixar o artifact publicado da voz A
         uses: actions/download-artifact@v4
         with:
-          name: JARVIS-Voz-A-APK
+          name: JARVIS-Voz-A-4-Preview-APK
           path: downloaded/voice
       - name: Baixar o artifact publicado do assistente
         uses: actions/download-artifact@v4
         with:
-          name: JARVIS-Mobile-3.1-APK
+          name: JARVIS-4-Fase1-APK
           path: downloaded/mobile
       - name: Baixar os comprovantes da compilação
         uses: actions/download-artifact@v4

@@ -11,6 +11,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
+        manifestPlaceholders["voiceLabel"] = "JARVIS Voz A"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         externalNativeBuild { cmake { arguments += listOf("-DANDROID_STL=c++_static", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON") } }
     }
@@ -26,6 +27,14 @@ android {
                 keyPassword = System.getenv("JARVIS_KEY_PASSWORD")
             }
             getByName("debug") { signingConfig = fixed }
+        }
+        create("preview") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".v4preview"
+            versionNameSuffix = "-fase1"
+            matchingFallbacks += listOf("debug")
+            manifestPlaceholders["voiceLabel"] = "JARVIS Voz A · Prévia 4"
+            ndk { abiFilters.clear(); abiFilters += "arm64-v8a" }
         }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
