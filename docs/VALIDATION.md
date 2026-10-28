@@ -1,5 +1,7 @@
 # Validação — JARVIS Mobile 3.1 / Voz A · Executivo clássico
 
+**Histórico da primeira integração de voz A.** Para os APKs atuais, links separados, assinaturas/hashes e a execução aprovada da correção de entrega, consulte [DOWNLOADS-APK.md](DOWNLOADS-APK.md). A recompilação da entrega preservou o código dos aplicativos e usa outro certificado de teste; os hashes abaixo pertencem à primeira entrega.
+
 ## Resultado confirmado em 28/10/2026
 
 [Execução 40711202098](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40711202098): **debug-apk** e **Testes instrumentados Android 35** concluídos com success. Fonte testada: `9806fec2cbebf1f54cd2456d5a54484bf2421164`. Alterações posteriores somente em Markdown documentam o resultado sem mudar os APKs. [Validação histórica da 3.0](VALIDATION-3.0.md).
