@@ -2,7 +2,9 @@
 
 Assistente Android nativo em Kotlin/Jetpack Compose para uso pessoal, inicialmente no Samsung Galaxy S25 FE. Evolui o projeto existente: HUD preto/azul/ciano/dourado, núcleo holográfico, voz, trilha original e três modos permanecem integrados às novas centrais.
 
-**Estado desta revisão:** código da Missão 2 em compilação e testes. Ainda não há APK 3.0 confirmado. Os resultados históricos da [Missão 1](docs/MISSAO-1.md) não validam os módulos novos.
+**APK 3.0 compilado e validado no CI:** [baixar APK de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12812505712) · [execução aprovada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106). **80 testes de unidade + 40 Android = 120 aprovados**, Lint com zero erros e 29 avisos não impeditivos. Fonte `5b4a37e193fce7411017b8aa37e490ffc95ce425`. Alterações posteriores apenas na documentação não mudam o APK.
+
+Arquivo de 21044164 bytes (cerca de 21 MB), SHA-256 `d82c0b6b2f65bae54ae2d44ecaf0a0c3e5fe2614e3968f62f827d721699772c4`. [Relatórios](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12812350825) · [testes Android, capturas e vídeo](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12811757747), disponíveis por sete dias. O APK usa assinatura debug temporária; veja a seção de assinatura antes de atualizar. Voz/biometria físicas no Galaxy e OAuth Gmail real ainda precisam de validação no aparelho.
 
 ## O que está no código
 

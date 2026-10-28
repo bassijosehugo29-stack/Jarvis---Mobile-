@@ -1,6 +1,6 @@
 # Missão 2 — implementação 3.0
 
-Estado: compilação/testes em andamento. Esta documentação descreve o código implementado, sem afirmar validação em aparelho físico. Os resultados finais ficam em [VALIDATION.md](VALIDATION.md).
+Compilação e testes confirmados em [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106): 80 de unidade e 40 Android, zero falhas; Lint zero erros e 29 avisos. Código `5b4a37e193fce7411017b8aa37e490ffc95ce425`. Não houve teste físico no Galaxy nem autorização de conta Gmail real. [Evidência, hash e limites](VALIDATION.md).
 
 ## Memória escolhida pelo usuário
 

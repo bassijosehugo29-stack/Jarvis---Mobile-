@@ -1,6 +1,6 @@
 # Gerar e instalar o APK pelo celular
 
-A versão 3.0 está em validação. O link do APK final e os testes comprovados serão registrados em [VALIDATION.md](VALIDATION.md).
+[Baixar APK 3.0 de teste](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106/artifacts/12812505712) · [120 testes e compilação aprovados](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40678656106). Extraia o ZIP e instale app-debug.apk, ou instale o APK direto fornecido na conversa. [Hash e relatório](VALIDATION.md).
 
 ## Gerar no GitHub, sem Android Studio no celular
 
