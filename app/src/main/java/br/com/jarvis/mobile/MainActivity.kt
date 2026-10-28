@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
                 JarvisScreen(
                     state = state,
                     onToggle = {
-                        if (state.enabled || state.thinking || state.speaking) model.stop()
+                        if (state.enabled || state.thinking || state.speaking || state.working) model.stop()
                         else if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) model.start()
                         else requestMicrophone.launch(Manifest.permission.RECORD_AUDIO)
                     },

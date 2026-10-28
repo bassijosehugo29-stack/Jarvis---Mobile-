@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performImeAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import br.com.jarvis.mobile.conversation.ModelStore
@@ -46,7 +47,8 @@ class LocalConversationTest {
     private fun ask(question: String): String {
         compose.waitUntil(35_000) { runCatching { compose.onNodeWithTag("jarvis-message").assertIsEnabled() }.isSuccess }
         compose.onNodeWithTag("jarvis-message").performScrollTo().performTextInput(question)
-        compose.onNodeWithContentDescription("Enviar mensagem").performScrollTo().performClick()
+        // Use the keyboard Send action so IME/inset transitions cannot move a touch target.
+        compose.onNodeWithTag("jarvis-message").performImeAction()
         compose.waitUntil(5_000) { runCatching {
             compose.onNodeWithTag("jarvis-heard").fetchSemanticsNode().config[SemanticsProperties.Text].joinToString { it.text }.contains(question)
         }.getOrDefault(false) }

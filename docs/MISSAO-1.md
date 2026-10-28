@@ -39,3 +39,11 @@ Conversa local Qwen (download opcional gratuito de 491 MB), pt-BR, comando Jarvi
 ## Aceite no Galaxy S25 FE
 
 Após instalar o APK validado: confira mídia/Bluetooth, Testar voz, seleção de voz portuguesa; alterne os três modos e reabra para conferir persistência. No Cinema, habilite música/efeitos, teste cada volume, fale e confira redução da trilha; no Silencioso, confirme ausência de áudio do JARVIS e uma escuta por toque. Saia/bloqueie a tela e confira indicador de microfone apagado e áudio parado. Teste comandos preservados no app oficial. A voz humana real, hardware Samsung, autonomia térmica/bateria e beleza sonora exigem aceite físico; o emulador não os comprova.
+
+## Referências técnicas
+
+- [Foco de áudio Android](https://developer.android.com/media/optimize/audio-focus).
+- [Estado e carga do AudioTrack estático](https://developer.android.com/reference/android/media/AudioTrack#STATE_NO_STATIC_DATA).
+- [Marcadores de palavras durante reprodução TTS](https://developer.android.com/reference/android/speech/tts/UtteranceProgressListener).
+- [Vozes disponíveis e seus metadados](https://developer.android.com/reference/android/speech/tts/Voice).
+- [Preferences DataStore](https://developer.android.com/topic/libraries/architecture/datastore).

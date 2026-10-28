@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import android.os.SystemClock
 import br.com.jarvis.mobile.experience.*
 import org.junit.Assert.*
 import org.junit.After
@@ -36,10 +37,15 @@ class ExperienceModesTest {
             }
             if (mode == OperationMode.CINEMATIC) {
                 compose.waitUntil(5_000) { !model().state.value.initializing }
+                compose.waitForIdle()
+                SystemClock.sleep(400) // Let RenderThread latch the composed window before capture.
                 saveUiScreenshot("jarvis-cinema.png", requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()))
             }
-            if (mode == OperationMode.SILENT) saveUiScreenshot("jarvis-silencioso.png",
-                requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()))
+            if (mode == OperationMode.SILENT) {
+                compose.waitForIdle()
+                SystemClock.sleep(400)
+                saveUiScreenshot("jarvis-silencioso.png", requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()))
+            }
         }
         compose.onNodeWithTag("jarvis-message").performScrollTo().performTextInput("Jarvis")
         compose.onNodeWithText("Converse com o JARVIS").assertExists()

@@ -49,6 +49,7 @@ class ExperiencePolicyTest {
         assertEquals(CorePhase.IDLE, base.corePhase)
         assertEquals(CorePhase.LISTENING, base.copy(listening = true).corePhase)
         assertEquals(CorePhase.PROCESSING, base.copy(thinking = true).corePhase)
+        assertEquals(CorePhase.PROCESSING, base.copy(working = true).corePhase)
         assertEquals(CorePhase.PROCESSING, base.copy(speaking = true).corePhase)
         assertEquals(CorePhase.RESPONDING, base.copy(speaking = true, voicePlaying = true).corePhase)
         assertEquals(CorePhase.ERROR, base.copy(visualError = true, voicePlaying = true).corePhase)

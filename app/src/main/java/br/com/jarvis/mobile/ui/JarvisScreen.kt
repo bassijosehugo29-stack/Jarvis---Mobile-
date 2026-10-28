@@ -60,7 +60,7 @@ fun JarvisScreen(
     val device = rememberHudDeviceState()
     var message by rememberSaveable { mutableStateOf("") }
     val send = {
-        if (message.isNotBlank() && !state.thinking && !state.speaking) {
+        if (message.isNotBlank() && !state.thinking && !state.speaking && !state.working) {
             onSendMessage(message.trim()); message = ""
         }
     }
@@ -106,11 +106,11 @@ fun JarvisScreen(
                                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("jarvis-message"),
                                 label = { Text("Converse com o JARVIS") },
                                 placeholder = { Text("Fale ou escreva sua mensagem") },
-                                minLines = 1, maxLines = 3, enabled = !state.thinking && !state.speaking,
+                                minLines = 1, maxLines = 3, enabled = !state.thinking && !state.speaking && !state.working,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                                 keyboardActions = KeyboardActions(onSend = { send() }),
                                 trailingIcon = {
-                                    IconButton(onClick = { send() }, enabled = message.isNotBlank() && !state.thinking && !state.speaking) {
+                                    IconButton(onClick = { send() }, enabled = message.isNotBlank() && !state.thinking && !state.speaking && !state.working) {
                                         Icon(Symbols.External, "Enviar mensagem", tint = Cyan)
                                     }
                                 })
@@ -260,7 +260,7 @@ private fun HudLabel(text: String, modifier: Modifier = Modifier, color: Color =
 @Composable
 private fun VoiceControl(state: JarvisState, visible: Boolean, diameter: Dp, onToggle: () -> Unit) {
     val label = when {
-        state.thinking -> "Parar resposta"
+        state.thinking || state.working -> "Parar resposta"
         state.speaking && !state.enabled -> "Interromper fala"
         state.enabled -> "Pausar escuta"
         else -> "Ativar JARVIS"

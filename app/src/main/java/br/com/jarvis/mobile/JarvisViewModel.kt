@@ -59,6 +59,7 @@ data class JarvisState(
     val notice: String = "",
     val audioLevel: Float = 0f,
     val thinking: Boolean = false,
+    val working: Boolean = false,
     val speechInfo: String = "Use Testar voz nos ajustes para conferir o som.",
     val voiceIssue: String = "",
     val modelReady: Boolean = false,
@@ -79,13 +80,13 @@ data class JarvisState(
         initializing -> CorePhase.INITIALIZING
         listening -> CorePhase.LISTENING
         voicePlaying -> CorePhase.RESPONDING
-        thinking || speaking -> CorePhase.PROCESSING
+        thinking || speaking || working -> CorePhase.PROCESSING
         else -> CorePhase.IDLE
     }
     val soundPhase get() = when {
         listening -> CorePhase.LISTENING
         speaking -> CorePhase.RESPONDING
-        thinking -> CorePhase.PROCESSING
+        thinking || working -> CorePhase.PROCESSING
         else -> corePhase
     }
 }
@@ -311,7 +312,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         output.stop()
         gate.reset()
         _state.update { it.copy(enabled = false, listening = false, speaking = false, voicePlaying = false,
-            speechProgress = 0f, audioLevel = 0f, thinking = false, status = message) }
+            speechProgress = 0f, audioLevel = 0f, thinking = false, working = false, status = message) }
     }
     fun permissionDenied() {
         stop("Permissão de microfone necessária")
@@ -502,13 +503,14 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         handler.removeCallbacks(restart)
         handler.removeCallbacks(prepareListening)
         input?.stop()
-        _state.update { it.copy(listening = false, audioLevel = 0f, status = status, reply = "$status…") }
+        _state.update { it.copy(listening = false, audioLevel = 0f, working = true, status = status, reply = "$status…") }
         val current = session
         work = viewModelScope.launch {
             try { if (foreground && current == session) block() }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (_: SecurityException) { if (foreground && current == session) respond("O Android bloqueou o acesso. Confira as permissões nas configurações, senhor.") }
             catch (_: RuntimeException) { if (foreground && current == session) respond("Não consegui confirmar a ação. Confira o aplicativo de destino antes de repetir, senhor.") }
+            finally { if (current == session) _state.update { it.copy(working = false) } }
         }
     }
 
