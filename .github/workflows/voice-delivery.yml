@@ -19,7 +19,7 @@ jobs:
           python3 - <<'PY'
           import json,os,time,urllib.request
           repo=os.environ['REPOSITORY']
-          sha='4741c53432415b9903081c281fd5b1bc059dd2f4'
+          sha='9806fec2cbebf1f54cd2456d5a54484bf2421164'
           def read(path):
               request=urllib.request.Request('https://api.github.com/repos/'+repo+path,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
               with urllib.request.urlopen(request,timeout=30) as response:return json.load(response)
