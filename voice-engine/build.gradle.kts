@@ -34,10 +34,10 @@ android {
         }
         create("preview") {
             initWith(getByName("debug"))
-            applicationIdSuffix = ".v4preview"
-            versionNameSuffix = "-fase1"
+            applicationIdSuffix = ".escutapreview"
+            versionNameSuffix = "-escuta"
             matchingFallbacks += listOf("debug")
-            manifestPlaceholders["voiceLabel"] = "JARVIS Voz A · Prévia 4"
+            manifestPlaceholders["voiceLabel"] = "JARVIS Voz A · Escuta"
             ndk { abiFilters.clear(); abiFilters += "arm64-v8a" }
         }
     }

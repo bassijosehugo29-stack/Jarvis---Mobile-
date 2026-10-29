@@ -52,7 +52,7 @@ class VoiceInterruption(private val context: Context, private val onActive: (Boo
                     if (error in setOf(android.speech.SpeechRecognizer.ERROR_NO_MATCH, android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT)) {
                         if (active) handler.postDelayed(restart, 400L)
                     } else { stop(); onActive(false, "O reconhecedor local não permitiu interrupção nesta saída. Use o núcleo.") }
-                }, requireOnDevice = true)
+                }, requireOnDevice = true, naturalPauses = false)
             if (input?.available != true || input?.onDevice != true) { stop(); onActive(false, "Reconhecimento local pt-BR indisponível para interrupção. Use o núcleo."); return }
             active = true; input?.start(); handler.postDelayed(watchRoute, 300L)
         } catch (_: RuntimeException) { stop(); onActive(false, "Interrupção por toque disponível neste aparelho.") }

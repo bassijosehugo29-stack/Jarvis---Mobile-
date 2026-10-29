@@ -18,10 +18,11 @@ internal object LlamaBridge {
     external fun release()
 }
 
-class LocalConversation(private val models: ModelStore) {
+class LocalConversation(private val models: ModelStore) : ConversationClient {
+    override val ready get() = models.readyFile() != null
     private val history = ChatHistory()
     @Volatile private var initialized = false
-    suspend fun answer(message: String): String {
+    override suspend fun answer(message: String): String {
         val file = models.readyFile() ?: throw IllegalStateException("MODEL_NOT_READY")
         val id = LlamaBridge.sequence.incrementAndGet()
         LlamaBridge.activate(id)
@@ -42,7 +43,7 @@ class LocalConversation(private val models: ModelStore) {
             reply
         }
     }
-    fun cancel() { if (initialized) LlamaBridge.cancel() }
-    fun clear() { cancel(); if (initialized) LlamaBridge.executor.execute { history.clear() } else history.clear() }
-    fun release() { if (initialized) { LlamaBridge.cancel(); LlamaBridge.executor.execute { LlamaBridge.release() } } }
+    override fun cancel() { if (initialized) LlamaBridge.cancel() }
+    override fun clear() { cancel(); if (initialized) LlamaBridge.executor.execute { history.clear() } else history.clear() }
+    override fun release() { if (initialized) { LlamaBridge.cancel(); LlamaBridge.executor.execute { LlamaBridge.release() } } }
 }

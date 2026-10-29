@@ -74,8 +74,8 @@ jobs:
       - name: Preparar entrega dos dois APKs
         run: |
           mkdir -p build/apk
-          cp app/build/outputs/apk/preview/app-preview.apk build/apk/JARVIS-Mobile-4.0.0-fase1-preview.apk
-          cp voice-engine/build/outputs/apk/preview/voice-engine-preview.apk build/apk/JARVIS-Voz-A-4-preview.apk
+          cp app/build/outputs/apk/preview/app-preview.apk build/apk/JARVIS-Mobile-4.0.1-escuta-preview.apk
+          cp voice-engine/build/outputs/apk/preview/voice-engine-preview.apk build/apk/JARVIS-Voz-A-escuta-preview.apk
           cp docs/INSTALAR-VOZ-A.txt build/apk/LEIA-ME.txt
       - name: Fontes correspondentes do motor de voz
         run: python3 scripts/bundle_voice_a_source.py
@@ -91,16 +91,16 @@ jobs:
         id: voice_apk
         uses: actions/upload-artifact@v4
         with:
-          name: JARVIS-Voz-A-4-Preview-APK
-          path: build/apk/JARVIS-Voz-A-4-preview.apk
+          name: JARVIS-Voz-A-Escuta-APK
+          path: build/apk/JARVIS-Voz-A-escuta-preview.apk
           if-no-files-found: error
           retention-days: 90
-      - name: Publicar APK JARVIS 4 Fase 1 para download
+      - name: Publicar APK JARVIS Escuta para download
         id: mobile_apk
         uses: actions/upload-artifact@v4
         with:
-          name: JARVIS-4-Fase1-APK
-          path: build/apk/JARVIS-Mobile-4.0.0-fase1-preview.apk
+          name: JARVIS-Escuta-APK
+          path: build/apk/JARVIS-Mobile-4.0.1-escuta-preview.apk
           if-no-files-found: error
           retention-days: 90
       - name: Guardar relatórios
@@ -208,7 +208,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: JARVIS-4-Visual-Performance
+          name: JARVIS-Escuta-Visual-Performance
           path: |
             app/build/reports/screenshots/
             app/build/reports/performance/
@@ -226,12 +226,12 @@ jobs:
       - name: Baixar o artifact publicado da voz A
         uses: actions/download-artifact@v4
         with:
-          name: JARVIS-Voz-A-4-Preview-APK
+          name: JARVIS-Voz-A-Escuta-APK
           path: downloaded/voice
       - name: Baixar o artifact publicado do assistente
         uses: actions/download-artifact@v4
         with:
-          name: JARVIS-4-Fase1-APK
+          name: JARVIS-Escuta-APK
           path: downloaded/mobile
       - name: Baixar os comprovantes da compilação
         uses: actions/download-artifact@v4

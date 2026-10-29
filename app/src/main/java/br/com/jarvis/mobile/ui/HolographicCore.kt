@@ -179,13 +179,10 @@ internal fun HolographicCore(
             ticks[if (major) 1 else 0].apply { moveTo(from.x, from.y); lineTo(to.x, to.y) }
         }
         val tickStrokes = arrayOf(Stroke(0.55.dp.toPx()), Stroke(1.dp.toPx()))
-        fun arc(radius: Float, start: Float, sweep: Float) = Path().apply {
-            arcTo(Rect(c - Offset(radius, radius), Size(radius * 2f, radius * 2f)), start, sweep, true)
-        }
         fun strokes(width: Float) = arrayOf(Stroke(width * 6f), Stroke(width * 2.8f), Stroke(width))
         val rings = Array(6) { ring ->
             val r = d * (0.215f + ring * 0.046f)
-            CoreRing(r, arc(r, 0f, if (ring % 2 == 0) 112f else 188f), arc(r, 187f, 48f),
+            CoreRing(r, if (ring % 2 == 0) 112f else 188f,
                 strokes((if (ring == 2) 1.8f else 1.05f).dp.toPx()), strokes(0.65.dp.toPx()))
         }
         // Reuse the two organic contours and transform them; don't rebuild 192 vertices per frame.
@@ -224,10 +221,11 @@ internal fun HolographicCore(
                 val angle = direction * t * (11f + ring * 2.6f) + ring * 41f
                 scale(0.85f + formed * 0.15f, pivot = c) {
                     drawCircle(accent.copy(alpha = (0.10f + ring * 0.018f) * formed), geometry.radius, c, style = guideStroke)
-                    rotate(angle, pivot = c) {
-                        drawCachedArc(geometry.primary, accent, geometry.primaryStrokes, formed, v.mode == OperationMode.CINEMATIC)
-                        drawCachedArc(geometry.secondary, ice, geometry.secondaryStrokes, formed * (0.82f + signal * 0.18f), v.mode == OperationMode.CINEMATIC)
-                    }
+                    // Native arc primitives avoid rebuilding software path masks for every angle.
+                    drawPrimitiveArc(geometry.radius, angle, geometry.primarySweep, accent,
+                        geometry.primaryStrokes, formed, v.mode == OperationMode.CINEMATIC)
+                    drawPrimitiveArc(geometry.radius, angle + 187f, 48f, ice,
+                        geometry.secondaryStrokes, formed * (0.82f + signal * 0.18f), v.mode == OperationMode.CINEMATIC)
                 }
             }
             // Two stable paths replace 96 independent line commands on every frame.
@@ -265,12 +263,14 @@ internal fun HolographicCore(
     })
 }
 private data class CoreVisual(val phase: CorePhase, val mode: OperationMode, val input: Float, val output: Float?, val progress: Float)
-private data class CoreRing(val radius: Float, val primary: Path, val secondary: Path,
+private data class CoreRing(val radius: Float, val primarySweep: Float,
     val primaryStrokes: Array<Stroke>, val secondaryStrokes: Array<Stroke>)
-private fun DrawScope.drawCachedArc(path: Path, color: Color, strokes: Array<Stroke>, opacity: Float, cinematic: Boolean) {
-    if (cinematic) drawPath(path, color.copy(alpha = color.alpha * 0.055f * opacity), style = strokes[0])
-    drawPath(path, color.copy(alpha = color.alpha * 0.18f * opacity), style = strokes[1])
-    drawPath(path, color.copy(alpha = color.alpha * 0.90f * opacity), style = strokes[2])
+private fun DrawScope.drawPrimitiveArc(radius: Float, start: Float, sweep: Float, color: Color,
+    strokes: Array<Stroke>, opacity: Float, cinematic: Boolean) {
+    val origin = center - Offset(radius, radius); val bounds = Size(radius * 2f, radius * 2f)
+    if (cinematic) drawArc(color.copy(alpha = color.alpha * 0.055f * opacity), start, sweep, false, origin, bounds, style = strokes[0])
+    drawArc(color.copy(alpha = color.alpha * 0.18f * opacity), start, sweep, false, origin, bounds, style = strokes[1])
+    drawArc(color.copy(alpha = color.alpha * 0.90f * opacity), start, sweep, false, origin, bounds, style = strokes[2])
 }
 private fun DrawScope.drawGlowRing(radius: Float, start: Float, sweep: Float, color: Color, width: Float) {
     val origin = center - Offset(radius, radius)

@@ -36,11 +36,11 @@ main_path=Path(f'app/build/outputs/apk/{variant}/app-{variant}.apk')
 main=verify(main_path)
 engine_path=Path(f'voice-engine/build/outputs/apk/{variant}/voice-engine-{variant}.apk');engine=verify(engine_path)
 if variant=='preview':
- assert "name='br.com.jarvis.mobile.v4preview'" in main['package']
- assert "name='br.com.jarvis.voicea.v4preview'" in engine['package']
+ assert "name='br.com.jarvis.mobile.escutapreview'" in main['package']
+ assert "name='br.com.jarvis.voicea.escutapreview'" in engine['package']
  assert all('/arm64-v8a/' in lib['path'] for p in [main,engine] for lib in p['libraries'])
  with zipfile.ZipFile(main_path) as apk:
-  assert all(b'CoreShowcaseActivity' not in apk.read(n) and b'FixtureTtsService' not in apk.read(n) for n in apk.namelist() if n.endswith('.dex'))
+  assert all(all(marker not in apk.read(n) for marker in [b'CoreShowcaseActivity', b'FixtureTtsService', b'NaturalListeningTest', b'ResponseCancellationTest']) for n in apk.namelist() if n.endswith('.dex'))
  main['safe_parallel_preview']=True
  engine['safe_parallel_preview']=True
 assert main['certificate_sha256']==engine['certificate_sha256'],'Both APKs must share the same signing identity'

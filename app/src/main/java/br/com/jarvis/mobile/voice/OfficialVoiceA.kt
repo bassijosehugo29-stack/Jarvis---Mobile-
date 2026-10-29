@@ -12,7 +12,7 @@ object OfficialVoiceA {
     const val VOICE="jarvis-faber-pt-BR"
     const val PROFILE="executive-a-v1"
     const val MODEL_SHA256="858555e3a064209c57088fe6bd70c4c3dc54d03eaa00c45d5ecaf43a33f95aa7"
-    const val GUIDE="https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/blob/jarvis-4-fase1/docs/JARVIS-4-FASE-1.md"
+    const val GUIDE="https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/blob/fix/escuta-inteligente-20261029/docs/ESCUTA-INTELIGENTE.md"
     @Suppress("DEPRECATION")
     fun installation(context:Context):VoiceAInstallation=try{
         val pm=context.packageManager

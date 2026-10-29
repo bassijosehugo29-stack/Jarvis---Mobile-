@@ -4,6 +4,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -25,6 +26,20 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class JarvisScreenTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test fun anUnconfirmedTranscriptRequiresExplicitReviewAndSend() {
+        val draft = "Jarvis alarme para sete e trinta"; var sent = ""
+        compose.setContent { JarvisTheme {
+            JarvisScreen(JarvisState(partialHeard = draft, unconfirmedDraft = true), {}, {}, onSendMessage = { sent = it })
+        } }
+        compose.onNodeWithTag("jarvis-partial").assertTextContains(draft)
+        compose.runOnIdle { assertEquals("", sent) }
+        compose.onNodeWithTag("review-transcript").performScrollTo().performClick()
+        compose.onNodeWithTag("jarvis-message").assertTextContains(draft)
+        compose.runOnIdle { assertEquals("", sent) }
+        compose.onNodeWithContentDescription("Enviar mensagem").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(draft, sent) }
+    }
 
     @Test fun homeUsesVoiceCoreWithoutAppShortcutButtons() {
         var activations = 0

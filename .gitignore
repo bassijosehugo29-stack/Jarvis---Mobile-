@@ -16,3 +16,8 @@ jarvis-test.base64
 
 .voice-a-cache/
 voice-engine/src/main/generated/
+__pycache__/
+.env
+.env.*
+!.env.example
+.secrets/

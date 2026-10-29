@@ -39,6 +39,7 @@ import br.com.jarvis.mobile.JarvisState
 import br.com.jarvis.mobile.experience.ExperienceSettings
 import br.com.jarvis.mobile.experience.OperationMode
 import br.com.jarvis.mobile.experience.CorePhase
+import br.com.jarvis.mobile.voice.ListeningPhase
 import kotlin.math.abs
 import kotlin.math.sin
 
@@ -99,13 +100,13 @@ fun JarvisScreen(
                             }
                         }
                         Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
-                            CommunicationPanel(state)
+                            CommunicationPanel(state, onReviewDraft = { message = state.partialHeard })
                             if (state.voiceIssue.isNotBlank()) {
                                 Text(state.voiceIssue, color = Gold, fontSize = 13.sp, lineHeight = 20.sp,
                                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
                                 TextButton(onClick = { showSettings = true }) { Text("Ajustar a voz", color = Cyan) }
                             }
-                            OutlinedTextField(value = message, onValueChange = { message = it.take(480) },
+                            OutlinedTextField(value = message, onValueChange = { message = it.take(20_000) },
                                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("jarvis-message"),
                                 label = { Text("Converse com o JARVIS") },
                                 placeholder = { Text("Fale ou escreva sua mensagem") },
@@ -162,7 +163,7 @@ fun JarvisScreen(
                     color = Muted, fontSize = 12.sp, lineHeight = 19.sp)
                 HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
                 Text("Como falar", fontSize = 15.sp, color = Gold, fontWeight = FontWeight.Medium)
-                Text("Nos modos Assistente e Cinema, ative o núcleo para conversar. O JARVIS responde e volta a ouvir sem você precisar repetir o nome em cada frase. No modo Silencioso, cada toque autoriza uma escuta. Para parar, toque no núcleo ou diga parar.",
+                Text("Nos modos Assistente e Cinema, ative o núcleo para conversar. Pode fazer pausas naturais: o texto permanece enquanto você continua. O JARVIS espera sua fala terminar, responde e volta a ouvir. No modo Silencioso, cada toque autoriza uma escuta. Para parar, toque no núcleo ou diga parar.",
                     color = Muted, fontSize = 14.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
                 Text("“Jarvis, abrir WhatsApp”\n“Jarvis, agende dentista amanhã às 15 horas”\n“Jarvis, alarme para sete e trinta”", color = Cyan,
                     fontSize = 14.sp, lineHeight = 25.sp, modifier = Modifier.padding(top = 12.dp))
@@ -211,7 +212,7 @@ fun JarvisScreen(
                     Spacer(Modifier.width(10.dp))
                     Text("Abrir permissões do aplicativo")
                 }
-                Text("JARVIS Mobile · 4.0 · Fase 1", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
+                Text("JARVIS Mobile · Escuta natural", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 18.dp))
             }
         }
@@ -309,7 +310,7 @@ private fun VoiceSignal(state: JarvisState, modifier: Modifier) {
 }
 
 @Composable
-private fun CommunicationPanel(state: JarvisState) {
+private fun CommunicationPanel(state: JarvisState, onReviewDraft: () -> Unit) {
     var expanded by rememberSaveable(state.reply) { mutableStateOf(false) }
     val spokenMode = state.experience.voiceAllowed && state.experience.mode != OperationMode.SILENT
     HudPanel(Modifier.fillMaxWidth()) {
@@ -320,6 +321,18 @@ private fun CommunicationPanel(state: JarvisState) {
                 Box(Modifier.size(4.dp).background(if (state.enabled) Cyan else Muted, CircleShape))
             }
             HorizontalDivider(Modifier.padding(top = 10.dp, bottom = 11.dp), color = Cyan.copy(alpha = 0.13f))
+            if (state.partialHeard.isNotBlank()) {
+                Text(state.partialHeard, fontSize = 13.sp, lineHeight = 20.sp,
+                    maxLines = 3, overflow = TextOverflow.Ellipsis,
+                    color = if (state.unconfirmedDraft) Gold else Cyan,
+                    modifier = Modifier.testTag("jarvis-partial"))
+                Text(if (state.unconfirmedDraft) "Não confirmei toda a fala. Revise antes de enviar."
+                    else "Estou ouvindo. Pode continuar.", color = Muted, fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp).testTag("listening-guidance"))
+                if (state.unconfirmedDraft) TextButton(onClick = onReviewDraft, modifier = Modifier.testTag("review-transcript")) {
+                    Text("Revisar transcrição", color = Cyan)
+                }
+            }
             if (state.heard.isNotBlank()) {
                 Text("> " + state.heard, fontSize = 12.sp, lineHeight = 19.sp,
                     fontFamily = FontFamily.Monospace, color = Muted, modifier = Modifier.testTag("jarvis-heard"))
@@ -345,6 +358,7 @@ private fun PrivacyLine(state: JarvisState) {
         Icon(Symbols.Shield, null, Modifier.size(12.dp), tint = Muted)
         Text(when {
             state.interruptListening -> "Microfone ativo · diga Jarvis, pare"
+            state.listening && state.listeningPhase == ListeningPhase.CONTINUATION -> "Escuta ativa · pausas naturais permitidas"
             state.listening -> "Microfone em uso nesta tela"
             state.thinking -> "Microfone pausado enquanto penso"
             state.speaking -> "Microfone pausado durante a resposta"

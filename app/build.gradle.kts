@@ -16,8 +16,8 @@ android {
         applicationId = "br.com.jarvis.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "4.0.0"
+        versionCode = 10
+        versionName = "4.0.1"
         buildConfigField("String", "VOICE_ENGINE_PACKAGE", "\"br.com.jarvis.voicea\"")
         manifestPlaceholders["voiceEnginePackage"] = "br.com.jarvis.voicea"
         manifestPlaceholders["jarvisLabel"] = "@string/app_name"
@@ -42,12 +42,12 @@ android {
         }
         create("preview") {
             initWith(getByName("debug"))
-            applicationIdSuffix = ".v4preview"
-            versionNameSuffix = "-fase1"
+            applicationIdSuffix = ".escutapreview"
+            versionNameSuffix = "-escuta"
             matchingFallbacks += listOf("debug")
-            buildConfigField("String", "VOICE_ENGINE_PACKAGE", "\"br.com.jarvis.voicea.v4preview\"")
-            manifestPlaceholders["voiceEnginePackage"] = "br.com.jarvis.voicea.v4preview"
-            manifestPlaceholders["jarvisLabel"] = "JARVIS 4 · Prévia"
+            buildConfigField("String", "VOICE_ENGINE_PACKAGE", "\"br.com.jarvis.voicea.escutapreview\"")
+            manifestPlaceholders["voiceEnginePackage"] = "br.com.jarvis.voicea.escutapreview"
+            manifestPlaceholders["jarvisLabel"] = "JARVIS Escuta · Prévia"
             ndk { abiFilters.clear(); abiFilters += "arm64-v8a" }
         }
         release {
