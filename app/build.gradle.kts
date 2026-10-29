@@ -33,6 +33,13 @@ android {
             }
             getByName("debug") { signingConfig = fixed }
         }
+        // Isolated technical preview. This is NOT a verified CyberBot build.
+        create("preservation") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".preservacaopreview"
+            versionNameSuffix = "-preservacao"
+            matchingFallbacks += listOf("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

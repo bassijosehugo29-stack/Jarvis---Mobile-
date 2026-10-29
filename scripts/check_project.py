@@ -67,7 +67,7 @@ check('compileSdk = 35' in build and 'targetSdk = 35' in build and 'minSdk = 26'
       'SDKs coerentes com documentação')
 workflow = (ROOT / '.github/workflows/android-debug.yml').read_text()
 check(all(task in workflow for task in [':app:testDebugUnitTest', ':voice-engine:testDebugUnitTest', ':app:lintDebug', ':voice-engine:lintDebug', ':app:assembleDebug', ':voice-engine:assembleDebug']) and
-      'app/build/outputs/apk/debug/app-debug.apk' in workflow and 'actions/upload-artifact@v4' in workflow,
+      'app/build/outputs/apk/preservation/app-preservation.apk' in workflow and ':app:assemblePreservation' in workflow and 'actions/upload-artifact@v4' in workflow,
       'Workflow inclui testes, lint, montagem e artefato APK')
 check('contents: read' in workflow and 'workflow_dispatch:' in workflow,
       'Workflow manual e sem permissão de escrita no repositório')

@@ -1,3 +1,17 @@
+# JARVIS — alterações limitadas na base disponível
+
+**Este branch NÃO é uma entrega verificada do CyberBot comprado.** O arquivo `JARVIS-CyberBot-Codigo-Sanitizado-v1.0.36.zip`, a interface Android original e sua voz/sons não estão acessíveis. Não houve comparação visual com CyberBot nem reprodução presumida da sua interface.
+
+Partimos exatamente da `main` 50abb6e (JARVIS Mobile 3.1), sem merge do PR #1 e sem importar suas mudanças visuais. Mudanças de produto: nome visível **JARVIS**, ícone adaptativo azul e controle de fim de fala. A tela existente só troca o nome no cabeçalho e rodapé; voz, sons, layouts, comandos, integrações e dados permanecem iguais à base disponível. Um verificador de hashes impede mudanças fora desse escopo.
+
+O APK publicado por este workflow é **somente teste técnico do repositório**, pacote separado `br.com.jarvis.mobile.preservacaopreview`, sem migração automática de dados. Não desinstale o CyberBot nem outras versões. Não se apresenta esse APK como o produto final solicitado nem como substituto do CyberBot para a viagem.
+
+[Escopo, limites, teste de pausa e passos de continuidade](docs/PRESERVAR-CYBERBOT.md). Nos artifacts desta execução, use `JARVIS-teste-tecnico-base-disponivel`; o ZIP contém o APK e um aviso explícito. Requer login no GitHub. A voz da base disponível usa o motor já existente e sua assinatura correspondente; a voz do CyberBot continua sem referência verificável. Não foi distribuído um novo motor de voz nesta missão.
+
+---
+
+O conteúdo abaixo documenta a base histórica 3.1. Links, números e instruções dessa versão são históricos, não o resultado desta missão.
+
 # JARVIS Mobile 3.1 — Voz A · Executivo clássico
 
 Assistente Android nativo em Kotlin/Jetpack Compose para uso pessoal, inicialmente no Samsung Galaxy S25 FE. Evolui o projeto existente: HUD preto/azul/ciano/dourado, núcleo holográfico, voz, trilha original e três modos permanecem integrados às novas centrais.

@@ -19,8 +19,12 @@ import br.com.jarvis.mobile.actions.WritableCalendar
 import br.com.jarvis.mobile.domain.*
 import br.com.jarvis.mobile.conversation.LocalConversation
 import br.com.jarvis.mobile.conversation.ModelStore
-import br.com.jarvis.mobile.voice.AndroidSpeechInput
+import br.com.jarvis.mobile.voice.AndroidSpeechInputFactory
+import br.com.jarvis.mobile.voice.SpeechInputFactory
+import br.com.jarvis.mobile.voice.SpeechCallbacks
 import br.com.jarvis.mobile.voice.SpeechInput
+import br.com.jarvis.mobile.voice.ListeningDraft
+import br.com.jarvis.mobile.voice.ListeningPhase
 import br.com.jarvis.mobile.voice.SpeechOutput
 import br.com.jarvis.mobile.voice.SpeechResult
 import br.com.jarvis.mobile.voice.speechChunks
@@ -57,7 +61,9 @@ private sealed interface PendingVoice {
     data class CalendarChoice(val event: CalendarEvent, val options: List<WritableCalendar>) : PendingVoice
 }
 
-class JarvisViewModel(application: Application) : AndroidViewModel(application) {
+class JarvisViewModel @JvmOverloads constructor(application: Application,
+    private val speechInputFactory: SpeechInputFactory = AndroidSpeechInputFactory
+) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(JarvisState())
     val state = _state.asStateFlow()
     private val _actions = MutableSharedFlow<AppAction>(extraBufferCapacity = 4)
@@ -83,6 +89,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private var permissionResumeVoice = false
     private val gate = ConversationGate(SystemClock::elapsedRealtime)
     private var input: SpeechInput? = null
+    private var listeningDraft: ListeningDraft? = null
     private var foreground = false
     private var failures = 0
     private var pending: PendingVoice? = null
@@ -192,12 +199,17 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         stop()
         if (ContextCompat.checkSelfPermission(getApplication(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) { permissionDenied(); return }
         try {
-            input = AndroidSpeechInput(getApplication(),
+            input = speechInputFactory.create(getApplication(), SpeechCallbacks(
                 onReady = { _state.update { it.copy(listening = true, status = "Ditado local · uma nota", audioLevel = 0f) } },
                 onResult = { text -> stop(); _noteDrafts.tryEmit(text.take(20000)) },
-                onFailure = { stop(); report("Ditado local indisponível. Digite a nota ou instale o reconhecimento pt-BR no dispositivo.") },
+                onFailure = {
+                    val retained = listeningDraft?.text.orEmpty()
+                    stop()
+                    if (retained.isNotBlank()) _noteDrafts.tryEmit(retained.take(20000))
+                    report("Ditado local indisponível. Digite a nota ou instale o reconhecimento pt-BR no dispositivo.")
+                },
                 onLevel = { value -> _state.update { it.copy(audioLevel = ((value + 2f) / 12f).coerceIn(0f, 1f)) } },
-                requireOnDevice = true)
+                onDraft = { listeningDraft = it }), true)
             if (input?.available != true) { stop(); report("Não há reconhecimento pt-BR no dispositivo disponível para este ditado. Use o editor de texto."); return }
             _state.update { it.copy(enabled = true, privateDictation = true, status = "Preparando ditado local", notice = "") }
             soundscape.update(_state.value.experience, CorePhase.LISTENING, foreground); input?.start()
@@ -273,8 +285,8 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         failures = 0
         if (_state.value.experience.mode != OperationMode.SILENT || !gate.isOpen()) { gate.reset(); pending = null }
         try {
-            input?.close()
-            input = AndroidSpeechInput(getApplication(),
+            input?.close(); listeningDraft = null
+            input = speechInputFactory.create(getApplication(), SpeechCallbacks(
                 onReady = { _state.update { it.copy(listening = true, audioLevel = 0f, status = "Ouvindo • diga Jarvis") } },
                 onResult = ::onRecognized,
                 onFailure = ::onRecognitionError,
@@ -283,8 +295,9 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
                         val level = if (rms.isFinite()) ((rms + 2f) / 12f).coerceIn(0f, 1f) else 0f
                         _state.update { it.copy(audioLevel = level) }
                     }
-                }
-            )
+                },
+                onDraft = { listeningDraft = it }
+            ), false)
         } catch (_: RuntimeException) {
             stop("Falha ao iniciar o serviço de voz")
             report("Verifique o serviço de reconhecimento de voz nas configurações do Android.")
@@ -316,7 +329,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         permissionEvent = null
         handler.removeCallbacks(restart)
         handler.removeCallbacks(prepareListening)
-        input?.close(); input = null
+        input?.close(); input = null; listeningDraft = null
         output.stop()
         gate.reset()
         _state.update { it.copy(enabled = false, listening = false, speaking = false, voicePlaying = false,
@@ -579,6 +592,13 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         if (!foreground || !_state.value.enabled) return
         _state.update { it.copy(listening = false, audioLevel = 0f) }
         if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) { permissionDenied(); return }
+        val retained = listeningDraft
+        if (retained?.phase == ListeningPhase.UNCONFIRMED && retained.text.isNotBlank()) {
+            stop("Escuta interrompida")
+            _state.update { it.copy(heard = retained.text) }
+            report("Não confirmei a solicitação completa. A transcrição foi preservada nesta sessão; revise o texto antes de pedir a ação novamente.")
+            return
+        }
         if (_state.value.experience.mode == OperationMode.SILENT) {
             input?.close(); input = null
             _state.update { it.copy(enabled = false, status = "Escuta concluída") }

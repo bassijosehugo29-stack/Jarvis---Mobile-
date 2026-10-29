@@ -45,7 +45,7 @@ class AndroidActions {
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 
     internal fun alarmIntent(action: AppAction.SetAlarm): Intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
-        putExtra(AlarmClock.EXTRA_MESSAGE, "JARVIS Mobile")
+        putExtra(AlarmClock.EXTRA_MESSAGE, "JARVIS")
         // Clock providers may still show their own confirmation. Android gives no save result.
         putExtra(AlarmClock.EXTRA_SKIP_UI, action.hour != null && action.minute != null)
         if (action.hour != null && action.minute != null) {

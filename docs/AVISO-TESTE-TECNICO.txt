@@ -1,0 +1,25 @@
+JARVIS — TESTE TÉCNICO DA BASE DISPONÍVEL
+
+ESTE APK NÃO É UMA REPRODUÇÃO VERIFICADA DO CYBERBOT COMPRADO.
+
+JARVIS-CyberBot-Codigo-Sanitizado-v1.0.36.zip não está acessível.
+Não foi possível comparar telas, voz, sons, integrações ou o package original.
+A base utilizada é a main 50abb6e do repositório JARVIS Mobile 3.1.
+
+Mudanças: nome visível JARVIS, ícone adaptativo azul e controle de fim de fala.
+Layout, núcleo interno, voz, efeitos e funções da base foram preservados.
+A equivalência desses recursos com CyberBot permanece sem validação.
+
+Pacote de teste: br.com.jarvis.mobile.preservacaopreview
+Separado dos pacotes conhecidos JARVIS, .v4preview e .escutapreview.
+Não desinstale o CyberBot ou versões anteriores. Não há migração automática.
+Nenhum novo motor de voz foi distribuído. O original CyberBot está indisponível.
+A voz A da base exige o motor existente com certificado compatível, ou escolha
+explícita da voz Android já oferecida nos ajustes. Não se promete a voz CyberBot.
+
+Chrome: entrar no GitHub, baixar ZIP, extrair em Meus Arquivos.
+Se optar por avaliar esta base técnica, abrir o APK e permitir a origem quando
+o Android solicitar. Não confirmar substituição da instalação original.
+
+O produto final depende do código Android original e seus recursos verificáveis.
+Não se pede o APK original.
