@@ -1,4 +1,4 @@
-name: Android - APK de teste
+name: JARVIS - nome, icone e escuta (base disponivel)
 
 on:
   workflow_dispatch:
@@ -21,8 +21,6 @@ jobs:
     timeout-minutes: 30
     outputs:
       mobile_url: ${{ steps.mobile_apk.outputs.artifact-url }}
-      voice_url: ${{ steps.voice_apk.outputs.artifact-url }}
-      sources_url: ${{ steps.voice_sources.outputs.artifact-url }}
     env:
       JARVIS_KEYSTORE_B64: ${{ secrets.JARVIS_KEYSTORE_B64 }}
       JARVIS_KEYSTORE_PASSWORD: ${{ secrets.JARVIS_KEYSTORE_PASSWORD }}
@@ -41,8 +39,8 @@ jobs:
           python scripts/prepare_voice_a.py
       - name: Verificar estrutura
         run: python3 scripts/check_project.py
-      - name: Verificar disponibilidade das fontes públicas
-        run: python3 scripts/probe_public_sources.py
+      - name: Verificar escopo e preservação da base disponível
+        run: python3 scripts/check_preservation.py
       - name: Java 17
         uses: actions/setup-java@v4
         with:
@@ -64,39 +62,23 @@ jobs:
         run: |
           gradle wrapper --gradle-version 8.11.1 --distribution-type bin --no-daemon
           chmod +x gradlew
-          ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :voice-engine:lintDebug :app:assembleDebug :voice-engine:assembleDebug :app:assembleDebugAndroidTest
-      - name: Verificar APK, assinatura e bibliotecas de 16 KB
+          ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :app:lintPreservation :voice-engine:lintDebug :app:assemblePreservation :app:assembleDebug :voice-engine:assembleDebug :app:assembleDebugAndroidTest
+      - name: Verificar APK isolado, nome, assinatura e bibliotecas de 16 KB
+        env:
+          JARVIS_MAIN_APK: app/build/outputs/apk/preservation/app-preservation.apk
+          JARVIS_EXPECTED_PACKAGE: br.com.jarvis.mobile.preservacaopreview
         run: python3 scripts/verify_apk.py
-      - name: Preparar entrega dos dois APKs
+      - name: Preparar APK técnico e aviso de referência ausente
         run: |
           mkdir -p build/apk
-          cp app/build/outputs/apk/debug/app-debug.apk build/apk/JARVIS-Mobile-3.1.0-debug.apk
-          cp voice-engine/build/outputs/apk/debug/voice-engine-debug.apk build/apk/JARVIS-Voz-A-1.0.0-debug.apk
-          cp docs/INSTALAR-VOZ-A.txt build/apk/LEIA-ME.txt
-      - name: Fontes correspondentes do motor de voz
-        run: python3 scripts/bundle_voice_a_source.py
-      - name: Guardar fontes correspondentes da voz A
-        id: voice_sources
-        uses: actions/upload-artifact@v4
-        with:
-          name: JARVIS-Voz-A-fontes
-          path: build/voice-source/JARVIS-Voz-A-fontes.zip
-          retention-days: 90
-          if-no-files-found: error
-      - name: Publicar APK JARVIS Voz A para download
-        id: voice_apk
-        uses: actions/upload-artifact@v4
-        with:
-          name: JARVIS-Voz-A-APK
-          path: build/apk/JARVIS-Voz-A-1.0.0-debug.apk
-          if-no-files-found: error
-          retention-days: 90
-      - name: Publicar APK JARVIS Mobile 3.1 para download
+          cp app/build/outputs/apk/preservation/app-preservation.apk build/apk/JARVIS-teste-base-disponivel.apk
+          cp docs/AVISO-TESTE-TECNICO.txt build/apk/LEIA-ANTES-DE-INSTALAR.txt
+      - name: Guardar APK técnico da base disponível (não é CyberBot verificado)
         id: mobile_apk
         uses: actions/upload-artifact@v4
         with:
-          name: JARVIS-Mobile-3.1-APK
-          path: build/apk/JARVIS-Mobile-3.1.0-debug.apk
+          name: JARVIS-teste-tecnico-base-disponivel
+          path: build/apk/
           if-no-files-found: error
           retention-days: 90
       - name: Guardar relatórios
@@ -178,10 +160,6 @@ jobs:
           path: |
             app/build/reports/
             voice-engine/build/reports/androidTests/
-            app/build/reports/
-            voice-engine/build/reports/screenshots/
-            app/build/reports/
-            voice-engine/build/reports/conversation/
           if-no-files-found: ignore
           retention-days: 90
 
@@ -192,15 +170,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Baixar o artifact publicado da voz A
+      - name: Baixar o artifact publicado do teste técnico
         uses: actions/download-artifact@v4
         with:
-          name: JARVIS-Voz-A-APK
-          path: downloaded/voice
-      - name: Baixar o artifact publicado do assistente
-        uses: actions/download-artifact@v4
-        with:
-          name: JARVIS-Mobile-3.1-APK
+          name: JARVIS-teste-tecnico-base-disponivel
           path: downloaded/mobile
       - name: Baixar os comprovantes da compilação
         uses: actions/download-artifact@v4
@@ -210,8 +183,6 @@ jobs:
       - name: Conferir APKs realmente baixados e gerar links
         env:
           JARVIS_MOBILE_ARTIFACT_URL: ${{ needs['debug-apk'].outputs.mobile_url }}
-          JARVIS_VOICE_ARTIFACT_URL: ${{ needs['debug-apk'].outputs.voice_url }}
-          JARVIS_VOICE_SOURCES_URL: ${{ needs['debug-apk'].outputs.sources_url }}
         run: python3 scripts/verify_apk_downloads.py
       - name: Guardar comprovante e instruções de download
         uses: actions/upload-artifact@v4

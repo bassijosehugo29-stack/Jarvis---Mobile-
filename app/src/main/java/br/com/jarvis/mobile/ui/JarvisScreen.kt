@@ -204,7 +204,7 @@ fun JarvisScreen(
                     Spacer(Modifier.width(10.dp))
                     Text("Abrir permissões do aplicativo")
                 }
-                Text("JARVIS Mobile · 3.1.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
+                Text("JARVIS", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 18.dp))
             }
         }
@@ -219,7 +219,7 @@ private fun Header(onSettings: () -> Unit, onHub: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically) {
         Icon(Symbols.Brand, null, Modifier.size(26.dp), tint = Cyan)
         Column(Modifier.weight(1f).padding(start = 10.dp)) {
-            Text("J.A.R.V.I.S.", fontSize = if (large) 18.sp else 21.sp,
+            Text("JARVIS", fontSize = if (large) 18.sp else 21.sp,
                 letterSpacing = 1.sp, fontWeight = FontWeight.Medium, fontFamily = FontFamily.Monospace,
                 color = Color(0xFFE7FCFF), style = TextStyle(shadow = Shadow(Cyan.copy(alpha = 0.55f), blurRadius = 12f)))
             Text("ASSISTENTE DE VOZ", color = Muted, fontSize = 8.sp, letterSpacing = 1.8.sp,

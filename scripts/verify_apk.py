@@ -31,7 +31,20 @@ def verify(apk):
   'signing':'fixed_private_secret' if os.environ.get('JARVIS_KEYSTORE_PATH') else 'temporary_debug_key',
   'signature_verified':True,'zipalign_16k':True,'libraries':libraries,'permissions':permissions.splitlines()}
 
-main=verify(Path('app/build/outputs/apk/debug/app-debug.apk'))
+main=verify(Path(os.environ.get('JARVIS_MAIN_APK', 'app/build/outputs/apk/debug/app-debug.apk')))
+if os.environ.get('JARVIS_EXPECTED_PACKAGE'):
+ assert f"name='{os.environ['JARVIS_EXPECTED_PACKAGE']}'" in main['package']
+ badging=subprocess.check_output([str(tools/'aapt'),'dump','badging',main['apk']],text=True)
+ assert "application-label:'JARVIS'" in badging
+ assert "launchable-activity:" in badging and "label='JARVIS'" in badging
+ main['application_label']='JARVIS'
+ main['isolated_test_package']=os.environ['JARVIS_EXPECTED_PACKAGE']
+ main['cyberbot_original_verified']=False
+ with zipfile.ZipFile(main['apk']) as archive:
+  for name in archive.namelist():
+   if name.endswith('.dex'):
+    dex=archive.read(name)
+    assert all(fixture not in dex for fixture in (b'FixtureTtsService',b'PreservedListeningTest',b'LauncherIdentityTest'))
 engine_path=Path('voice-engine/build/outputs/apk/debug/voice-engine-debug.apk');engine=verify(engine_path)
 assert main['certificate_sha256']==engine['certificate_sha256'],'Both APKs must share the same signing identity'
 assert not any('uses-permission:' in line for line in engine['permissions']),'The voice engine must have no requested permissions'
