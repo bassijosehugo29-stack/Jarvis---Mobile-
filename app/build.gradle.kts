@@ -5,6 +5,10 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// CI distribution targets Galaxy ARM64; emulator jobs keep both ABIs by default.
+val jarvisAbis = providers.gradleProperty("jarvisAbis").orElse("arm64-v8a,x86_64").get().split(",")
+require(jarvisAbis.all { it in setOf("arm64-v8a", "x86_64") })
+
 android {
     namespace = "br.com.jarvis.mobile"
     compileSdk = 35
@@ -12,10 +16,13 @@ android {
         applicationId = "br.com.jarvis.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "3.1.0"
+        versionCode = 10
+        versionName = "4.0.1"
+        buildConfigField("String", "VOICE_ENGINE_PACKAGE", "\"br.com.jarvis.voicea\"")
+        manifestPlaceholders["voiceEnginePackage"] = "br.com.jarvis.voicea"
+        manifestPlaceholders["jarvisLabel"] = "@string/app_name"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        ndk { abiFilters += jarvisAbis }
         externalNativeBuild {
             cmake { arguments += listOf("-DANDROID_STL=c++_static", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON") }
         }
@@ -32,6 +39,16 @@ android {
                 keyPassword = System.getenv("JARVIS_KEY_PASSWORD")
             }
             getByName("debug") { signingConfig = fixed }
+        }
+        create("preview") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".escutapreview"
+            versionNameSuffix = "-escuta"
+            matchingFallbacks += listOf("debug")
+            buildConfigField("String", "VOICE_ENGINE_PACKAGE", "\"br.com.jarvis.voicea.escutapreview\"")
+            manifestPlaceholders["voiceEnginePackage"] = "br.com.jarvis.voicea.escutapreview"
+            manifestPlaceholders["jarvisLabel"] = "JARVIS Escuta · Prévia"
+            ndk { abiFilters.clear(); abiFilters += "arm64-v8a" }
         }
         release {
             isMinifyEnabled = false

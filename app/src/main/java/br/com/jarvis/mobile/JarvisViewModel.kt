@@ -17,7 +17,8 @@ import br.com.jarvis.mobile.actions.CalendarStore
 import br.com.jarvis.mobile.actions.InstalledApps
 import br.com.jarvis.mobile.actions.WritableCalendar
 import br.com.jarvis.mobile.domain.*
-import br.com.jarvis.mobile.conversation.LocalConversation
+import br.com.jarvis.mobile.conversation.ConversationFactory
+import br.com.jarvis.mobile.conversation.LocalConversationFactory
 import br.com.jarvis.mobile.conversation.ModelStore
 import br.com.jarvis.mobile.voice.AndroidSpeechInput
 import br.com.jarvis.mobile.voice.SpeechInput
@@ -26,11 +27,19 @@ import br.com.jarvis.mobile.voice.SpeechResult
 import br.com.jarvis.mobile.voice.speechChunks
 import br.com.jarvis.mobile.voice.VoiceEngine
 import br.com.jarvis.mobile.voice.VoiceOption
+import br.com.jarvis.mobile.voice.VoiceInterruption
+import br.com.jarvis.mobile.voice.SpeechInputFactory
+import br.com.jarvis.mobile.voice.AndroidSpeechInputFactory
+import br.com.jarvis.mobile.voice.SpeechCallbacks
+import br.com.jarvis.mobile.voice.ListeningDraft
+import br.com.jarvis.mobile.voice.ListeningPhase
 import br.com.jarvis.mobile.audio.AssistantAudioFocus
 import br.com.jarvis.mobile.audio.Soundscape
 import br.com.jarvis.mobile.audio.SoundCue
 import br.com.jarvis.mobile.experience.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -44,6 +53,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.collectLatest
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -57,7 +67,9 @@ private sealed interface PendingVoice {
     data class CalendarChoice(val event: CalendarEvent, val options: List<WritableCalendar>) : PendingVoice
 }
 
-class JarvisViewModel(application: Application) : AndroidViewModel(application) {
+class JarvisViewModel @JvmOverloads constructor(application: Application,
+    private val inputFactory: SpeechInputFactory = AndroidSpeechInputFactory,
+    conversationFactory: ConversationFactory = LocalConversationFactory) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(JarvisState())
     val state = _state.asStateFlow()
     private val _actions = MutableSharedFlow<AppAction>(extraBufferCapacity = 4)
@@ -77,12 +89,13 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private val installedApps = InstalledApps(application)
     private val calendar = CalendarStore(application)
     private val models = ModelStore(application)
-    private val conversation = LocalConversation(models)
+    private val conversation = conversationFactory.create(models)
     private var modelMonitor: Job? = null
     private var preparation: Job? = null
     private var permissionResumeVoice = false
     private val gate = ConversationGate(SystemClock::elapsedRealtime)
     private var input: SpeechInput? = null
+    private var inputEpoch = 0L
     private var foreground = false
     private var failures = 0
     private var pending: PendingVoice? = null
@@ -90,6 +103,21 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     private var permissionUntil = 0L
     private var work: Job? = null
     private var session = 0L
+    private var lastConversation = 0L
+    private val idleWatch = object : Runnable {
+        override fun run() {
+            val s = _state.value
+            if (!foreground || !s.enabled) return
+            if (!s.speaking && !s.thinking && !s.working && SystemClock.elapsedRealtime() - lastConversation > 90_000L) {
+                stop("Sessão pausada por inatividade"); return
+            }
+            handler.postDelayed(this, 1000L)
+        }
+    }
+    private val interruption = VoiceInterruption(application,
+        onActive = { active, info -> _state.update { it.copy(interruptListening = active,
+            interruptionInfo = info.ifBlank { it.interruptionInfo }) } },
+        onInterrupt = { interruptResponse() })
     private val preferences = ExperienceStore(application)
     private var pendingPreferenceWrites = 0
     private val audioFocus: AssistantAudioFocus = AssistantAudioFocus(application) {
@@ -105,9 +133,15 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         if (status.failure) signalError()
     }, audioSession = audioFocus,
         onVoices = { options -> _state.update { it.copy(voices = options) } },
-        onPlayback = { playing -> _state.update { it.copy(voicePlaying = playing) } },
+        onPlayback = { playing ->
+            _state.update { it.copy(voicePlaying = playing) }
+            if (playing && foreground && _state.value.enabled && _state.value.experience.voiceAllowed && _state.value.experience.voiceInterruption)
+                interruption.start(_state.value.reply)
+            else interruption.stop()
+        },
         onRange = { _, end, length -> _state.update { it.copy(speechPulse = it.speechPulse + 1,
-            speechProgress = if (speechTotal > 0) ((speechOffset + end).toFloat() / speechTotal).coerceIn(0f, 1f) else if (length > 0) end.toFloat() / length else 0f) } })
+            speechProgress = if (speechTotal > 0) ((speechOffset + end).toFloat() / speechTotal).coerceIn(0f, 1f) else if (length > 0) end.toFloat() / length else 0f) } },
+        onLevel = { level -> _state.update { it.copy(speechLevel = level) } })
     init {
         viewModelScope.launch {
             preferences.settings.collect { value ->
@@ -136,6 +170,9 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     }
     private val restart = Runnable {
         if (foreground && _state.value.enabled && !_state.value.speaking && !_state.value.thinking) {
+            if (SystemClock.elapsedRealtime() - lastConversation > 90_000L) {
+                stop("Sessão pausada por inatividade"); return@Runnable
+            }
             _state.update { it.copy(status = "Preparando microfone", listening = false) }
             // This cue ends before recognition starts; never play effects into an active microphone.
             soundscape.update(_state.value.experience, CorePhase.LISTENING, foreground)
@@ -156,12 +193,16 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         syncSoundscape()
         modelMonitor?.cancel()
         modelMonitor = viewModelScope.launch {
-            while (isActive && foreground) {
-                try { models.refresh() }
-                catch (cancelled: CancellationException) { throw cancelled }
-                catch (_: RuntimeException) { models.reportFailure("Não foi possível conferir o modelo. Verifique armazenamento e Wi-Fi.") }
-                delay(1_500L)
+            try {
+                models.refresh()
+                // Idle has no 1.5-second filesystem/DownloadManager poll. Import and download
+                // actions update this store; only an actual ongoing download needs progress ticks.
+                models.state.map { it.downloading }.distinctUntilChanged().collectLatest { downloading ->
+                    while (downloading && isActive && foreground) { delay(1_500L); models.refresh() }
+                }
             }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: RuntimeException) { models.reportFailure("Não foi possível conferir o modelo. Verifique armazenamento e Wi-Fi.") }
         }
     }
     fun onBackground() { foreground = false; modelMonitor?.cancel(); stop(); soundscape.stop()
@@ -192,12 +233,18 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         stop()
         if (ContextCompat.checkSelfPermission(getApplication(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) { permissionDenied(); return }
         try {
-            input = AndroidSpeechInput(getApplication(),
-                onReady = { _state.update { it.copy(listening = true, status = "Ditado local · uma nota", audioLevel = 0f) } },
-                onResult = { text -> stop(); _noteDrafts.tryEmit(text.take(20000)) },
-                onFailure = { stop(); report("Ditado local indisponível. Digite a nota ou instale o reconhecimento pt-BR no dispositivo.") },
-                onLevel = { value -> _state.update { it.copy(audioLevel = ((value + 2f) / 12f).coerceIn(0f, 1f)) } },
-                requireOnDevice = true)
+            val generation = ++inputEpoch
+            input = inputFactory.create(getApplication(), SpeechCallbacks(
+                onReady = { if (inputCurrent(generation)) _state.update { it.copy(listening = true, status = "Ditado local · pode fazer pausas", audioLevel = 0f) } },
+                onResult = { text -> if (inputCurrent(generation)) { stop(); _noteDrafts.tryEmit(text.take(20000)) } },
+                onFailure = { if (inputCurrent(generation)) {
+                    val draft = _state.value.partialHeard
+                    stop()
+                    if (draft.isNotBlank()) _noteDrafts.tryEmit(draft.take(20000))
+                    report("Ditado não confirmado. Revise o rascunho antes de salvar; use o editor se o reconhecimento local estiver indisponível.")
+                } },
+                onLevel = { value -> if (inputCurrent(generation)) _state.update { it.copy(audioLevel = if (value.isFinite()) ((value + 2f) / 12f).coerceIn(0f, 1f) else 0f) } },
+                onDraft = { if (inputCurrent(generation)) listeningDraft(it) }), true)
             if (input?.available != true) { stop(); report("Não há reconhecimento pt-BR no dispositivo disponível para este ditado. Use o editor de texto."); return }
             _state.update { it.copy(enabled = true, privateDictation = true, status = "Preparando ditado local", notice = "") }
             soundscape.update(_state.value.experience, CorePhase.LISTENING, foreground); input?.start()
@@ -242,7 +289,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         respond("Teste de voz do JARVIS. Às suas ordens, senhor.")
     }
     fun voiceSettings() { requestAction(AppAction.OpenVoiceSettings) }
-    fun sendMessage(message: String) { audioFocus.allowAfterUserAction(); handleText(message.take(480), fromVoice = false) }
+    fun sendMessage(message: String) { audioFocus.allowAfterUserAction(); handleText(message.take(20_000), fromVoice = false) }
     fun downloadConversation() {
         if (!foreground || preparation?.isActive == true) return
         preparation = viewModelScope.launch {
@@ -271,20 +318,23 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             permissionDenied(); return
         }
         failures = 0
+        lastConversation = SystemClock.elapsedRealtime()
         if (_state.value.experience.mode != OperationMode.SILENT || !gate.isOpen()) { gate.reset(); pending = null }
         try {
             input?.close()
-            input = AndroidSpeechInput(getApplication(),
-                onReady = { _state.update { it.copy(listening = true, audioLevel = 0f, status = "Ouvindo • diga Jarvis") } },
-                onResult = ::onRecognized,
-                onFailure = ::onRecognitionError,
+            val generation = ++inputEpoch
+            input = inputFactory.create(getApplication(), SpeechCallbacks(
+                onReady = { if (inputCurrent(generation)) _state.update { it.copy(listening = true, audioLevel = 0f, status = "Ouvindo • pode continuar") } },
+                onResult = { if (inputCurrent(generation)) onRecognized(it) },
+                onFailure = { if (inputCurrent(generation)) onRecognitionError(it) },
                 onLevel = { rms ->
-                    if (foreground && _state.value.enabled && _state.value.listening && !_state.value.speaking) {
+                    if (inputCurrent(generation) && _state.value.listening && !_state.value.speaking) {
                         val level = if (rms.isFinite()) ((rms + 2f) / 12f).coerceIn(0f, 1f) else 0f
                         _state.update { it.copy(audioLevel = level) }
                     }
-                }
-            )
+                },
+                onDraft = { if (inputCurrent(generation)) listeningDraft(it) }
+            ), false)
         } catch (_: RuntimeException) {
             stop("Falha ao iniciar o serviço de voz")
             report("Verifique o serviço de reconhecimento de voz nas configurações do Android.")
@@ -298,6 +348,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         _state.update { it.copy(enabled = true, notice = "", voiceInfo =
             if (input?.onDevice == true) "Reconhecimento no dispositivo • pt-BR depende do modelo instalado"
             else "Serviço do Android • offline preferencial; o provedor pode usar internet") }
+        handler.removeCallbacks(idleWatch); handler.postDelayed(idleWatch, 1000L)
         gate.extend()
         if (_state.value.experience.mode == OperationMode.SILENT) {
             if (digestPolicy?.invoke() == true) { moduleStarted(); _modules.tryEmit(Command.Digest(automatic = true)); return }
@@ -308,6 +359,9 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun stop(message: String = "Microfone desligado") {
+        inputEpoch++
+        handler.removeCallbacks(idleWatch)
+        interruption.stop()
         moduleWorking = false
         session++
         work?.cancel(); work = null
@@ -320,7 +374,8 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         output.stop()
         gate.reset()
         _state.update { it.copy(enabled = false, listening = false, speaking = false, voicePlaying = false,
-            speechProgress = 0f, audioLevel = 0f, thinking = false, working = false, privateDictation = false, status = message) }
+            speechProgress = 0f, audioLevel = 0f, thinking = false, working = false, privateDictation = false,
+            partialHeard = "", unconfirmedDraft = false, listeningPhase = ListeningPhase.IDLE, status = message) }
     }
     fun permissionDenied() {
         stop("Permissão de microfone necessária")
@@ -337,15 +392,45 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         if (!_actions.tryEmit(action)) report("Não consegui iniciar a ação. Peça novamente, senhor.")
     }
 
-    private fun onRecognized(text: String) { handleText(text, fromVoice = true) }
+    fun interruptResponse() {
+        if (!foreground || !_state.value.speaking) return
+        session++; interruption.stop(); output.stop()
+        handler.removeCallbacks(restart); handler.removeCallbacks(prepareListening)
+        _state.update { it.copy(speaking = false, voicePlaying = false, speechLevel = null,
+            status = if (it.enabled) "Ouvindo sua próxima solicitação" else "Fala interrompida") }
+        lastConversation = SystemClock.elapsedRealtime()
+        if (_state.value.enabled) { gate.extend(); scheduleListening(350L) }
+    }
+    private fun inputCurrent(generation: Long) = foreground && generation == inputEpoch && _state.value.enabled &&
+        !_state.value.speaking && !_state.value.thinking && !_state.value.working
+    private fun listeningDraft(draft: ListeningDraft) {
+        if (!foreground || !_state.value.enabled || _state.value.speaking || _state.value.thinking || _state.value.working) return
+        if (draft.text.isNotBlank()) lastConversation = SystemClock.elapsedRealtime()
+        _state.update { it.copy(
+            partialHeard = if (draft.text.isNotBlank()) draft.text else it.partialHeard,
+            unconfirmedDraft = draft.phase == ListeningPhase.UNCONFIRMED,
+            listeningPhase = draft.phase,
+            status = when (draft.phase) {
+                ListeningPhase.CONTINUATION -> "Pode continuar • aguardando sua próxima palavra"
+                ListeningPhase.WAITING_FINAL -> "Ouvindo • confirmando a transcrição"
+                ListeningPhase.UNCONFIRMED -> "Transcrição preservada • revise o rascunho"
+                else -> "Ouvindo • pode fazer pausas"
+            }
+        ) }
+    }
+    private fun onRecognized(text: String) {
+        _state.update { it.copy(partialHeard = "", unconfirmedDraft = false, listeningPhase = ListeningPhase.COMMITTED) }
+        lastConversation = SystemClock.elapsedRealtime(); handleText(text, fromVoice = true)
+    }
     private fun handleText(text: String, fromVoice: Boolean) {
         if (!foreground || text.isBlank() || (fromVoice && !_state.value.enabled) || _state.value.speaking || work?.isActive == true) return
         failures = 0
         if (_state.value.experience.mode == OperationMode.SILENT && _state.value.enabled) {
+            inputEpoch++
             input?.close(); input = null
             _state.update { it.copy(enabled = false) }
         }
-        _state.update { it.copy(heard = text, listening = false, audioLevel = 0f) }
+        _state.update { it.copy(heard = text, listening = false, audioLevel = 0f, partialHeard = "", unconfirmedDraft = false) }
         val parsed = parser.parse(text)
         val continuing = gate.isOpen()
         gate.extend()
@@ -371,24 +456,30 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun converse(message: String) {
-        if (models.readyFile() == null) {
+        if (!conversation.ready) {
             respond(if (_state.value.modelBusy) "O modelo de conversa ainda está sendo preparado. Acompanhe o progresso pelos ajustes, senhor."
                 else "Para conversarmos sobre outros assuntos, prepare a conversa offline nos ajustes. O modelo é gratuito e ocupa 491 megabytes, senhor.")
             return
         }
         runWork("Pensando") {
+            val requestSession = session
             _state.update { it.copy(thinking = true) }
-            val deadline = Runnable { conversation.cancel() }
+            val deadline = Runnable { if (foreground && requestSession == session) conversation.cancel() }
             handler.postDelayed(deadline, 120_000L)
             try {
                 val answer = conversation.answer(message)
-                if (foreground) { _state.update { it.copy(thinking = false) }; respond(answer, privateData = true) }
+                currentCoroutineContext().ensureActive()
+                if (foreground && requestSession == session) {
+                    _state.update { it.copy(thinking = false) }; respond(answer, privateData = true)
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: LinkageError) {
-                if (foreground) { _state.update { it.copy(thinking = false) }; respond("Não foi possível iniciar o motor de conversa nesta instalação. Instale o APK completo compatível com seu aparelho, senhor.") }
+                if (foreground && requestSession == session && currentCoroutineContext().isActive) {
+                    _state.update { it.copy(thinking = false) }; respond("Não foi possível iniciar o motor de conversa nesta instalação. Instale o APK completo compatível com seu aparelho, senhor.")
+                }
             }
             catch (error: Exception) {
-                if (foreground) {
+                if (foreground && requestSession == session && currentCoroutineContext().isActive) {
                     _state.update { it.copy(thinking = false) }
                     respond(if (error.message == "NOT_ENOUGH_MEMORY") "Faltou memória para conversar. Feche outros aplicativos e tente novamente, senhor."
                         else "Não consegui gerar a resposta local. Confira o modelo nos ajustes e tente uma pergunta curta, senhor.")
@@ -536,6 +627,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         val chunks = speechChunks(text)
         speechOffset = 0; speechTotal = text.length
         fun finish(result: SpeechResult) {
+            interruption.stop(); lastConversation = SystemClock.elapsedRealtime()
             _state.update { it.copy(speaking = false, status = when {
                 result is SpeechResult.Failed -> "Falha na saída de voz"
                 result is SpeechResult.TextOnly -> "Dados pessoais em texto"
@@ -566,7 +658,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         next(0)
     }
 
-    private fun scheduleListening(delayMillis: Long = 800L) {
+    private fun scheduleListening(delayMillis: Long = 450L) {
         handler.removeCallbacks(restart)
         handler.removeCallbacks(prepareListening)
         if (foreground && _state.value.enabled && _state.value.experience.mode != OperationMode.SILENT) {
@@ -579,7 +671,16 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         if (!foreground || !_state.value.enabled) return
         _state.update { it.copy(listening = false, audioLevel = 0f) }
         if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) { permissionDenied(); return }
+        if (_state.value.unconfirmedDraft && _state.value.partialHeard.isNotBlank()) {
+            val draft = _state.value.partialHeard
+            stop("Fala não confirmada")
+            _state.update { it.copy(partialHeard = draft, unconfirmedDraft = true,
+                listeningPhase = ListeningPhase.UNCONFIRMED,
+                notice = "Sua transcrição foi preservada. Revise o texto antes de enviar ou ative a escuta novamente.") }
+            signalError(); return
+        }
         if (_state.value.experience.mode == OperationMode.SILENT) {
+            inputEpoch++
             input?.close(); input = null
             _state.update { it.copy(enabled = false, status = "Escuta concluída") }
             report("Não captei a solicitação. Toque no núcleo para tentar de novo ou escreva a mensagem.")
@@ -590,7 +691,6 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             _state.update { it.copy(status = "Aguardando voz • diga Jarvis") }
             scheduleListening(1_000L); return
         }
-        if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) { permissionDenied(); return }
         val explanation = when (error) {
             SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED, SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE ->
                 "O serviço não tem o modelo pt-BR. Baixe o idioma português nas configurações de voz ou selecione outro serviço."

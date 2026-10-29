@@ -66,8 +66,8 @@ build = (ROOT / 'app/build.gradle.kts').read_text()
 check('compileSdk = 35' in build and 'targetSdk = 35' in build and 'minSdk = 26' in build,
       'SDKs coerentes com documentação')
 workflow = (ROOT / '.github/workflows/android-debug.yml').read_text()
-check(all(task in workflow for task in [':app:testDebugUnitTest', ':voice-engine:testDebugUnitTest', ':app:lintDebug', ':voice-engine:lintDebug', ':app:assembleDebug', ':voice-engine:assembleDebug']) and
-      'app/build/outputs/apk/debug/app-debug.apk' in workflow and 'actions/upload-artifact@v4' in workflow,
+check(all(task in workflow for task in [':app:testDebugUnitTest', ':voice-engine:testDebugUnitTest', ':app:lintDebug', ':voice-engine:lintDebug', ':app:assemblePreview', ':voice-engine:assemblePreview']) and
+      'app/build/outputs/apk/preview/app-preview.apk' in workflow and 'actions/upload-artifact@v4' in workflow,
       'Workflow inclui testes, lint, montagem e artefato APK')
 check('contents: read' in workflow and 'workflow_dispatch:' in workflow,
       'Workflow manual e sem permissão de escrita no repositório')

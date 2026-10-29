@@ -11,8 +11,8 @@ root = Path('downloaded')
 out = Path('build/download-verification')
 out.mkdir(parents=True, exist_ok=True)
 specs = [
-    ('voice', 'JARVIS Voz A', 'JARVIS-Voz-A-1.0.0-debug.apk', 'voice-engine-apk.json', 'JARVIS_VOICE_ARTIFACT_URL'),
-    ('mobile', 'JARVIS Mobile 3.1', 'JARVIS-Mobile-3.1.0-debug.apk', 'apk.json', 'JARVIS_MOBILE_ARTIFACT_URL'),
+    ('voice', 'JARVIS Voz A', 'JARVIS-Voz-A-escuta-preview.apk', 'voice-engine-apk.json', 'JARVIS_VOICE_ARTIFACT_URL'),
+    ('mobile', 'JARVIS Mobile · Escuta', 'JARVIS-Mobile-4.0.1-escuta-preview.apk', 'apk.json', 'JARVIS_MOBILE_ARTIFACT_URL'),
 ]
 verified = []
 for folder, title, name, proof_name, url_var in specs:
@@ -51,9 +51,9 @@ lines = ['# Baixar e instalar JARVIS no Samsung', '',
 for index, item in enumerate(verified, 1):
     lines.append(f"| {index}. [Baixar {item['title']}]({item['url']}) | {item['file']} | {item['bytes']} bytes |")
 lines += ['', 'Em Meus Arquivos → Downloads, extraia os dois ZIPs. Instale a voz A primeiro e depois o assistente. Autorize a origem de instalação somente se o Android pedir.', '',
-          'Use sempre os dois APKs desta mesma execução. Se houver conflito de assinatura com uma versão antiga, exporte as notas antes de desinstalar: desinstalar apaga os dados locais.', '',
-          'Os artifacts permanecem após o término da execução, com retenção solicitada de 90 dias, sujeita ao limite do repositório. A API informa a expiração efetiva. Após expirar, use Actions → Android - APK de teste → Run workflow → main.', '',
-          'A voz, a interface e as funções do aplicativo não foram alteradas nesta correção de entrega.', '',
+          'Prévia instalada ao lado das versões anteriores: não desinstale a versão atual nem o motor atual. Notas/configurações antigas ficam intactas nas versões anteriores; a prévia usa armazenamento separado. Importar backup é opcional e manual.', '',
+          'Os artifacts permanecem após o término da execução, com retenção solicitada de 90 dias, sujeita ao limite do repositório. A API informa a expiração efetiva. Após expirar, use Actions → Android - APK de teste → Run workflow → fix/escuta-inteligente-20261029.', '',
+          'Escuta inteligente, na branch fix/escuta-inteligente-20261029. O motor de voz A mantém o modelo e o pitch natural aprovados. O aplicativo preserva o núcleo azul e reúne fala entre pausas naturais; consulte docs/ESCUTA-INTELIGENTE.md.', '',
           f"[Fontes correspondentes do motor GPL]({os.environ.get('JARVIS_VOICE_SOURCES_URL', '')})", '']
 guide = '\n'.join(lines)
 (out / 'DOWNLOADS.md').write_text(guide)

@@ -27,7 +27,8 @@ data class ExperienceSettings(
     val pitch: Float = 1.0f,
     val enginePackage: String = "",
     val voiceName: String = "",
-    val voiceProfile: VoiceProfile = VoiceProfile.OFFICIAL_A
+    val voiceProfile: VoiceProfile = VoiceProfile.OFFICIAL_A,
+    val voiceInterruption: Boolean = false
 ) {
     val voiceAllowed get() = mode != OperationMode.SILENT && voiceEnabled && voiceVolume > 0f
     val musicEnabled get() = when (mode) {

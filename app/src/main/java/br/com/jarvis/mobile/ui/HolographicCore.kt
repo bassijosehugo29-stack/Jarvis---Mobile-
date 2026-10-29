@@ -14,6 +14,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import br.com.jarvis.mobile.experience.CinematicMotion
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -22,6 +24,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -92,17 +95,17 @@ internal fun HudPanel(
 @Composable
 internal fun HolographicBackground(modifier: Modifier = Modifier) {
     Canvas(modifier) {
-        drawRect(Brush.radialGradient(listOf(Color(0xFF00425D).copy(alpha = 0.32f), Color.Transparent),
+        drawRect(Brush.radialGradient(listOf(Color(0xFF031334).copy(alpha = 0.28f), Color.Transparent),
             center = Offset(size.width * 0.5f, size.height * 0.36f), radius = size.width * 0.85f))
         val grid = 28.dp.toPx()
         var x = 0f
         while (x < size.width) {
-            drawLine(Cyan.copy(alpha = 0.025f), Offset(x, 0f), Offset(x, size.height), 0.6.dp.toPx())
+            drawLine(Cyan.copy(alpha = 0.014f), Offset(x, 0f), Offset(x, size.height), 0.6.dp.toPx())
             x += grid
         }
         var y = 0f
         while (y < size.height) {
-            drawLine(Cyan.copy(alpha = 0.025f), Offset(0f, y), Offset(size.width, y), 0.6.dp.toPx())
+            drawLine(Cyan.copy(alpha = 0.014f), Offset(0f, y), Offset(size.width, y), 0.6.dp.toPx())
             y += grid
         }
         val horizon = size.height * 0.67f
@@ -125,181 +128,154 @@ internal fun HolographicBackground(modifier: Modifier = Modifier) {
     }
 }
 
-private data class Vertex(val x: Float, val y: Float, val z: Float)
-private data class Projected(val position: Offset, val depth: Float)
-private val Phi = ((1f + sqrt(5f)) / 2f)
-private val MeshVertices = listOf(
-    Vertex(-1f, Phi, 0f), Vertex(1f, Phi, 0f), Vertex(-1f, -Phi, 0f), Vertex(1f, -Phi, 0f),
-    Vertex(0f, -1f, Phi), Vertex(0f, 1f, Phi), Vertex(0f, -1f, -Phi), Vertex(0f, 1f, -Phi),
-    Vertex(Phi, 0f, -1f), Vertex(Phi, 0f, 1f), Vertex(-Phi, 0f, -1f), Vertex(-Phi, 0f, 1f)
-)
-private val MeshEdges = buildList {
-    for (i in MeshVertices.indices) for (j in i + 1 until MeshVertices.size) {
-        val a = MeshVertices[i]; val b = MeshVertices[j]
-        val distance = (a.x - b.x).pow(2) + (a.y - b.y).pow(2) + (a.z - b.z).pow(2)
-        if (abs(distance - 4f) < 0.01f) add(i to j)
-    }
-}
-private val MeshFaces = buildList {
-    for (i in MeshVertices.indices) for (j in i + 1 until MeshVertices.size) for (k in j + 1 until MeshVertices.size) {
-        if ((i to j) in MeshEdges && (i to k) in MeshEdges && (j to k) in MeshEdges) add(Triple(i, j, k))
-    }
-}
-
-/** Native vector HUD: rotating arcs, a projected wire polyhedron and a voice envelope. */
+/** Electric-blue plasma core: cached geometry/brushes, independent orbital rings, no video/blur filter. */
 @Composable
 internal fun HolographicCore(
     visible: Boolean, phase: CorePhase, mode: OperationMode, audioLevel: Float,
-    speechProgress: Float, speechPulse: Int, modifier: Modifier = Modifier
+    speechProgress: Float, speechPulse: Int, modifier: Modifier = Modifier,
+    outputAudioLevel: Float? = null
 ) {
-    val rotation = remember { mutableFloatStateOf(0f) }
-    val formation = remember { Animatable(0f) }
-    val wordEnvelope = remember { Animatable(0.15f) }
+    val time = remember { mutableFloatStateOf(0f) }
+    val formation = remember { Animatable(1f) }
+    val params = rememberUpdatedState(CoreVisual(phase, mode, audioLevel, outputAudioLevel, speechProgress))
     LaunchedEffect(visible, phase) {
-        if (visible && phase == CorePhase.INITIALIZING) {
-            formation.snapTo(0.05f); formation.animateTo(1f, tween(1_100))
+        if (visible && phase == CorePhase.INITIALIZING && ValueAnimator.areAnimatorsEnabled()) {
+            formation.snapTo(0.08f); formation.animateTo(1f, tween(1_000, easing = FastOutSlowInEasing))
         } else formation.snapTo(1f)
     }
-    LaunchedEffect(speechPulse, phase) {
-        if (phase == CorePhase.RESPONDING) {
-            wordEnvelope.snapTo(0.95f); wordEnvelope.animateTo(0.15f, tween(260))
-        } else wordEnvelope.snapTo(0f)
-    }
-    // Bounded redraw rate. Idle silent is static; Android's animation setting is respected.
     LaunchedEffect(visible, phase, mode) {
-        if (!visible || !ValueAnimator.areAnimatorsEnabled() || (mode == OperationMode.SILENT && phase == CorePhase.IDLE)) return@LaunchedEffect
-        val interval = when {
-            mode == OperationMode.SILENT -> 250L
-            phase == CorePhase.IDLE && mode == OperationMode.ASSISTANT -> 200L
-            phase == CorePhase.IDLE -> 66L
-            mode == OperationMode.CINEMATIC -> 33L
-            else -> 66L
-        }
-        val speed = when (phase) { CorePhase.PROCESSING -> 32f; CorePhase.INITIALIZING -> 25f
-            CorePhase.RESPONDING -> 18f; CorePhase.LISTENING -> 10f; else -> 5f }
+        val interval = CinematicMotion.interval(visible, ValueAnimator.areAnimatorsEnabled(), phase, mode)
+        if (interval == 0L) return@LaunchedEffect
         var previous = SystemClock.uptimeMillis()
         while (isActive) {
             delay(interval)
             val now = SystemClock.uptimeMillis()
-            rotation.floatValue = (rotation.floatValue + (now - previous).coerceAtMost(300) * speed / 1000f) % 360f
+            time.floatValue += (now - previous).coerceIn(0, 200) / 1000f * CinematicMotion.speed(phase)
+            // Bound phase precision without observable jumps in the long periodic motions.
+            if (time.floatValue > 20_000f) time.floatValue = 0f
             previous = now
         }
     }
-    Canvas(modifier) {
-        val accent = if (phase == CorePhase.ERROR) Color(0xFFFF997C) else Cyan
+    // Isolate draw invalidation from the static HUD; geometry stays stable for the render cache.
+    Box(modifier.graphicsLayer().drawWithCache {
         val d = size.minDimension
-        val turn = rotation.floatValue
-        val level = if (phase == CorePhase.LISTENING && audioLevel.isFinite()) audioLevel.coerceIn(0f, 1f) else 0f
-        val pulse = when (phase) {
-            CorePhase.RESPONDING -> max(wordEnvelope.value, 0.20f + 0.12f * abs(sin(turn * PI.toFloat() / 10f)))
-            CorePhase.PROCESSING -> 0.45f + 0.18f * sin(turn * PI.toFloat() / 12f)
-            CorePhase.IDLE -> 0.08f + 0.04f * sin(turn * PI.toFloat() / 15f)
-            else -> level
+        val c = Offset(size.width / 2f, size.height / 2f)
+        val blue = Color(0xFF238CFF)
+        val ice = Color(0xFF7CE6FF)
+        val halo = Brush.radialGradient(0f to Color(0xFF237DFF).copy(alpha = 0.34f),
+            0.48f to blue.copy(alpha = 0.12f), 1f to Color.Transparent, center = c, radius = d * 0.49f)
+        val plasma = Brush.radialGradient(0f to Color.White, 0.22f to Color(0xFFF2FCFF),
+            0.43f to Color(0xFFB6EFFF), 0.63f to Color(0xFF208BFF).copy(alpha = 0.75f),
+            1f to Color.Transparent, center = c, radius = d * 0.185f)
+        val vectors = Array(96) { i -> val a = i * 2f * PI.toFloat() / 96f; Offset(cos(a), sin(a)) }
+        val orbitBounds = Size(d * 0.79f, d * 0.24f)
+        val guideStroke = Stroke(0.6.dp.toPx())
+        val ticks = Array(2) { Path() }
+        vectors.forEachIndexed { i, vector ->
+            val major = i % 8 == 0
+            val outer = d * 0.478f
+            val from = c + vector * (outer - (if (major) 5.dp.toPx() else 2.dp.toPx()))
+            val to = c + vector * outer
+            ticks[if (major) 1 else 0].apply { moveTo(from.x, from.y); lineTo(to.x, to.y) }
         }
-        val formed = formation.value
-        val outer = d * 0.46f
-        drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = 0.13f + pulse * 0.08f), Color.Transparent),
-            center = center, radius = d * 0.5f), radius = d * 0.5f)
-        drawCircle(accent.copy(alpha = 0.12f), radius = outer, style = Stroke(0.6.dp.toPx()))
-        rotate(turn * 0.28f) {
-            repeat(96) { index ->
-                val radians = index * (2f * PI.toFloat() / 96f)
-                val major = index % 8 == 0
-                val length = if (major) 7.dp.toPx() else 3.dp.toPx()
-                val inner = outer - length
-                val vector = Offset(cos(radians), sin(radians))
-                drawLine(accent.copy(alpha = if (major) 0.7f else 0.25f), center + vector * inner,
-                    center + vector * outer, if (major) 1.2.dp.toPx() else 0.7.dp.toPx())
+        val tickStrokes = arrayOf(Stroke(0.55.dp.toPx()), Stroke(1.dp.toPx()))
+        fun strokes(width: Float) = arrayOf(Stroke(width * 6f), Stroke(width * 2.8f), Stroke(width))
+        val rings = Array(6) { ring ->
+            val r = d * (0.215f + ring * 0.046f)
+            CoreRing(r, if (ring % 2 == 0) 112f else 188f,
+                strokes((if (ring == 2) 1.8f else 1.05f).dp.toPx()), strokes(0.65.dp.toPx()))
+        }
+        // Reuse the two organic contours and transform them; don't rebuild 192 vertices per frame.
+        val coronas = Array(2) { band -> Path().apply {
+            vectors.forEachIndexed { i, vector ->
+                val noise = sin(i * 0.53f + band) * 0.014f + sin(i * 0.91f) * 0.009f
+                val point = c + vector * (d * (0.13f + band * 0.028f + noise * 0.8f))
+                if (i == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
             }
-        }
-        rotate(-turn * 0.65f) {
-            for (index in 0..3) glowArc(d * 0.405f, index * 90f + 5f, 64f * formed, accent, 1.7.dp.toPx())
-        }
-        rotate(turn * 0.85f) {
-            glowArc(d * 0.365f, 18f, 205f * formed, Color(0xFF2FAEFF), 2.dp.toPx())
-            glowArc(d * 0.365f, 246f, 48f * formed, Gold, 1.1.dp.toPx())
-        }
-        drawCircle(accent.copy(alpha = 0.25f), radius = d * 0.335f, style = Stroke(0.6.dp.toPx()))
-        val globe = Path().apply { addOval(Rect(center - Offset(d * 0.30f, d * 0.30f), Size(d * 0.60f, d * 0.60f))) }
-        clipPath(globe) {
-            rotate(-18f) {
-                for (fraction in listOf(0.3f, 0.65f, 1f)) {
-                    drawOval(accent.copy(alpha = 0.07f), topLeft = Offset(center.x - d * 0.3f * fraction, center.y - d * 0.3f),
-                        size = Size(d * 0.6f * fraction, d * 0.6f), style = Stroke(0.7.dp.toPx()))
+            close()
+        } }
+        val coronaStrokes = arrayOf(Stroke(1.2.dp.toPx()), Stroke(0.8.dp.toPx()))
+        onDrawBehind {
+            val v = params.value
+            val t = time.floatValue
+            val error = v.phase == CorePhase.ERROR
+            val accent = if (error) Color(0xFFFF735E) else blue
+            val signal = when (v.phase) {
+                CorePhase.LISTENING -> CinematicMotion.level(v.input) ?: 0f
+                CorePhase.RESPONDING -> CinematicMotion.level(v.output) ?: (0.24f + 0.12f * sin(t * 4f))
+                CorePhase.PROCESSING -> 0.38f + 0.10f * sin(t * 5f)
+                CorePhase.ERROR -> 0.28f + 0.10f * sin(t * 4f)
+                else -> 0.12f
+            }
+            val breath = 1f + 0.028f * sin(t * 2.1f) + 0.012f * sin(t * 3.7f + 0.9f)
+            val formed = formation.value
+            drawCircle(halo, d * 0.49f, c, alpha = 0.82f + signal * 0.18f)
+            // An oblique back orbit establishes depth, without a rotating polygon or bitmap.
+            rotate(-24f + 7f * sin(t * 0.2f)) {
+                drawOval(accent.copy(alpha = 0.12f), c - Offset(orbitBounds.width/2, orbitBounds.height/2), orbitBounds,
+                    style = Stroke(1.dp.toPx()))
+            }
+            for (ring in rings.indices) {
+                val geometry = rings[ring]
+                val direction = if (ring % 2 == 0) 1f else -1f
+                val angle = direction * t * (11f + ring * 2.6f) + ring * 41f
+                scale(0.85f + formed * 0.15f, pivot = c) {
+                    drawCircle(accent.copy(alpha = (0.10f + ring * 0.018f) * formed), geometry.radius, c, style = guideStroke)
+                    // Native arc primitives avoid rebuilding software path masks for every angle.
+                    drawPrimitiveArc(geometry.radius, angle, geometry.primarySweep, accent,
+                        geometry.primaryStrokes, formed, v.mode == OperationMode.CINEMATIC)
+                    drawPrimitiveArc(geometry.radius, angle + 187f, 48f, ice,
+                        geometry.secondaryStrokes, formed * (0.82f + signal * 0.18f), v.mode == OperationMode.CINEMATIC)
                 }
-                for (offset in listOf(-0.17f, 0f, 0.17f)) {
-                    drawOval(accent.copy(alpha = 0.08f), topLeft = Offset(center.x - d * 0.3f, center.y - d * 0.065f + d * offset),
-                        size = Size(d * 0.6f, d * 0.13f), style = Stroke(0.6.dp.toPx()))
+            }
+            // Two stable paths replace 96 independent line commands on every frame.
+            drawPath(ticks[0], accent.copy(alpha = 0.17f), style = tickStrokes[0])
+            drawPath(ticks[1], accent.copy(alpha = 0.62f), style = tickStrokes[1])
+            val energy = (breath + signal * 0.12f) * formed.coerceAtLeast(0.1f)
+            // White luminous centre with blue falloff. Scale is geometry, not expensive layer blur.
+            drawCircle(plasma, d * 0.185f * energy, c)
+            for (band in 0..1) {
+                scale(energy * (1f + 0.018f * sin(t * (2f + band))), pivot = c) {
+                    rotate(t * (if (band == 0) 8f else -5f), pivot = c) {
+                        drawPath(coronas[band], (if (error) accent else ice).copy(alpha = 0.23f + signal * 0.25f), style = coronaStrokes[band])
+                    }
                 }
             }
-        }
-        drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = 0.12f), Color.Transparent)), radius = d * 0.29f)
-        drawMesh(turn, d * (0.65f + 0.35f * formed), accent)
-        rotate(-turn * 0.4f) {
-            repeat(60) { index ->
-                val radians = index * (2f * PI.toFloat() / 60f)
-                val extension = pulse * (3f + 8f * abs(sin(index * 0.72f))) * density
-                val vector = Offset(cos(radians), sin(radians))
-                drawLine(accent.copy(alpha = 0.2f + pulse * 0.7f), center + vector * (d * 0.315f),
-                    center + vector * (d * 0.315f + extension), 1.1.dp.toPx())
+            drawCircle(if (error) Color(0xFFFFDFD9) else Color(0xFFF6FDFF), d * 0.056f * energy, c)
+            drawCircle(Color.White, d * 0.032f * energy, c)
+            // Thin front orbit, highlights and small gold reference marks retain a full HUD.
+            rotate(26f + t * 2.5f) {
+                drawArc(ice.copy(alpha = 0.42f), 12f, 145f, false, c - Offset(d * 0.395f, d * 0.12f), orbitBounds,
+                    style = Stroke(0.8.dp.toPx()))
+            }
+            if (v.mode == OperationMode.CINEMATIC) repeat(14) { i ->
+                val angle = t * (0.15f + (i % 3) * 0.08f) + i * 2.39996f
+                val distance = d * (0.23f + (i % 6) * 0.037f)
+                drawCircle(ice.copy(alpha = 0.20f + 0.30f * abs(sin(angle))), (if (i % 4 == 0) 1.1f else 0.6f).dp.toPx(), c + Offset(cos(angle), sin(angle)) * distance)
+            }
+            if (v.phase == CorePhase.RESPONDING) drawGlowRing(d * 0.46f, -90f,
+                360f * (CinematicMotion.level(v.progress) ?: 0f), Gold.copy(alpha = 0.6f), 0.65.dp.toPx())
+            for (side in intArrayOf(-1, 1)) {
+                drawLine(Gold.copy(alpha = 0.6f), c + Offset(side * d * 0.43f, -d * 0.22f),
+                    c + Offset(side * d * 0.48f, -d * 0.22f), 0.7.dp.toPx())
             }
         }
-        if (mode == OperationMode.CINEMATIC && visible) {
-            repeat(18) { index ->
-                val a = (turn * (0.3f + index % 3 * 0.1f) + index * 137.5f) * PI.toFloat() / 180f
-                val distance = d * (0.22f + (index % 7) * 0.035f)
-                val position = center + Offset(cos(a), sin(a)) * distance
-                drawCircle(accent.copy(alpha = 0.15f + 0.35f * abs(sin(a * 2))),
-                    radius = if (index % 4 == 0) 1.2.dp.toPx() else 0.65.dp.toPx(), center = position)
-            }
-        }
-        if (phase == CorePhase.RESPONDING && speechProgress.isFinite()) {
-            glowArc(d * 0.285f, -90f, 360f * speechProgress.coerceIn(0f, 1f), Gold, 0.8.dp.toPx())
-        }
-        val strut = d * 0.15f
-        for (side in listOf(-1f, 1f)) {
-            drawLine(accent.copy(alpha = 0.6f), Offset(center.x + side * d * 0.43f, center.y - strut),
-                Offset(center.x + side * d * 0.49f, center.y - strut), 1.dp.toPx())
-            drawLine(accent.copy(alpha = 0.4f), Offset(center.x + side * d * 0.43f, center.y + strut),
-                Offset(center.x + side * d * 0.49f, center.y + strut), 1.dp.toPx())
-        }
-    }
+    })
 }
-
-private fun DrawScope.glowArc(radius: Float, start: Float, sweep: Float, color: Color, width: Float) {
+private data class CoreVisual(val phase: CorePhase, val mode: OperationMode, val input: Float, val output: Float?, val progress: Float)
+private data class CoreRing(val radius: Float, val primarySweep: Float,
+    val primaryStrokes: Array<Stroke>, val secondaryStrokes: Array<Stroke>)
+private fun DrawScope.drawPrimitiveArc(radius: Float, start: Float, sweep: Float, color: Color,
+    strokes: Array<Stroke>, opacity: Float, cinematic: Boolean) {
+    val origin = center - Offset(radius, radius); val bounds = Size(radius * 2f, radius * 2f)
+    if (cinematic) drawArc(color.copy(alpha = color.alpha * 0.055f * opacity), start, sweep, false, origin, bounds, style = strokes[0])
+    drawArc(color.copy(alpha = color.alpha * 0.18f * opacity), start, sweep, false, origin, bounds, style = strokes[1])
+    drawArc(color.copy(alpha = color.alpha * 0.90f * opacity), start, sweep, false, origin, bounds, style = strokes[2])
+}
+private fun DrawScope.drawGlowRing(radius: Float, start: Float, sweep: Float, color: Color, width: Float) {
     val origin = center - Offset(radius, radius)
-    val bounds = Size(radius * 2, radius * 2)
-    for ((scale, alpha) in listOf(5f to 0.055f, 2.4f to 0.17f, 1f to 0.9f)) {
-        drawArc(color.copy(alpha = alpha), start, sweep, false, origin, bounds, style = Stroke(width * scale))
-    }
-}
-
-private fun DrawScope.drawMesh(turn: Float, diameter: Float, accent: Color) {
-    val yaw = (turn + 20f) * PI.toFloat() / 180f
-    val tilt = (turn * 0.42f + 28f) * PI.toFloat() / 180f
-    val vertices = MeshVertices.map { vertex ->
-        val x = vertex.x * cos(yaw) + vertex.z * sin(yaw)
-        val z = -vertex.x * sin(yaw) + vertex.z * cos(yaw)
-        val y = vertex.y * cos(tilt) - z * sin(tilt)
-        val depth = vertex.y * sin(tilt) + z * cos(tilt)
-        val scale = diameter * 0.11f * 5f / (5f - depth)
-        Projected(center + Offset(x * scale, -y * scale), depth)
-    }
-    for ((a, b, c) in MeshFaces.sortedBy { (vertices[it.first].depth + vertices[it.second].depth + vertices[it.third].depth) }) {
-        val path = Path().apply {
-            moveTo(vertices[a].position.x, vertices[a].position.y)
-            lineTo(vertices[b].position.x, vertices[b].position.y)
-            lineTo(vertices[c].position.x, vertices[c].position.y); close()
-        }
-        drawPath(path, accent.copy(alpha = 0.025f))
-    }
-    for ((a, b) in MeshEdges) {
-        val alpha = ((vertices[a].depth + vertices[b].depth) / 8f + 0.55f).coerceIn(0.2f, 0.95f)
-        drawLine(accent.copy(alpha = alpha * 0.16f), vertices[a].position, vertices[b].position, 4.dp.toPx())
-        drawLine(accent.copy(alpha = alpha), vertices[a].position, vertices[b].position, 0.9.dp.toPx())
-    }
-    vertices.forEachIndexed { index, vertex ->
-        drawCircle(if (index % 4 == 0) Gold.copy(alpha = 0.9f) else Color(0xFFD8FAFF),
-            radius = 1.3.dp.toPx(), center = vertex.position)
-    }
+    val bounds = Size(radius * 2f, radius * 2f)
+    drawArc(color.copy(alpha = color.alpha * 0.055f), start, sweep, false, origin, bounds, style = Stroke(width * 6f))
+    drawArc(color.copy(alpha = color.alpha * 0.18f), start, sweep, false, origin, bounds, style = Stroke(width * 2.8f))
+    drawArc(color.copy(alpha = color.alpha * 0.90f), start, sweep, false, origin, bounds, style = Stroke(width))
 }

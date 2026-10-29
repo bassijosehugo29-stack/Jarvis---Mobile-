@@ -52,8 +52,13 @@ internal fun ExperienceControls(state: JarvisState, onChange: (ExperienceSetting
     if (silent) Text("O JARVIS não reproduz voz, música ou efeitos. Cada toque autoriza uma única escuta; a resposta aparece em texto.",
         color = Cyan, fontSize = 13.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = 8.dp))
     AudioSwitch("Respostas faladas", s.voiceEnabled && !silent, !silent, "voice-toggle") { onChange(s.copy(voiceEnabled = it)) }
+    AudioSwitch("Interromper por voz com fones", s.voiceInterruption && !silent, !silent, "voice-interruption") {
+        onChange(s.copy(voiceInterruption = it))
+    }
+    Text(if (s.voiceInterruption) state.interruptionInfo else "Opcional: Android 13+, reconhecimento local pt-BR e fone com fio/USB. Durante a fala, diga Jarvis, pare. O núcleo interrompe por toque em qualquer saída.",
+        color = Muted, fontSize = 12.sp, lineHeight = 19.sp)
     AudioSlider("Volume da voz", s.voiceVolume, 0f..1f, !silent && s.voiceEnabled, "voice-volume") { onChange(s.copy(voiceVolume = it)) }
-    AudioSwitch("Música ambiente", s.musicEnabled, !silent, "music-toggle") { onChange(s.withMusic(it)) }
+    AudioSwitch("Ambiente experimental", s.musicEnabled, !silent, "music-toggle") { onChange(s.withMusic(it)) }
     AudioSlider("Volume da música", s.musicVolume, 0f..1f, !silent && s.musicEnabled, "music-volume") { onChange(s.copy(musicVolume = it)) }
     AudioSwitch("Efeitos sonoros", s.effectsEnabled && !silent, !silent, "effects-toggle") { onChange(s.copy(effectsEnabled = it)) }
     AudioSlider("Volume dos efeitos", s.effectsVolume, 0f..1f, !silent && s.effectsEnabled, "effects-volume") { onChange(s.copy(effectsVolume = it)) }

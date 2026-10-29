@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.AudioManager
+import android.media.AudioFormat
+import android.os.SystemClock
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -34,7 +36,8 @@ class SpeechOutput(
     audioSession: AssistantAudioFocus? = null,
     private val onVoices: (List<VoiceOption>) -> Unit = {},
     private val onPlayback: (Boolean) -> Unit = {},
-    private val onRange: (Int, Int, Int) -> Unit = { _, _, _ -> }
+    private val onRange: (Int, Int, Int) -> Unit = { _, _, _ -> },
+    private val onLevel: (Float?) -> Unit = {}
 ) {
     private val main = Handler(Looper.getMainLooper())
     private val audio = context.getSystemService(AudioManager::class.java)
@@ -56,7 +59,16 @@ class SpeechOutput(
     private var closed = false
     private var initializing = false
     private var generation = 0L
-    private var currentId: String? = null
+    @Volatile private var currentId: String? = null
+    private val envelope = PcmEnvelope()
+    private var playbackStart = 0L
+    private val levelTicker = object : Runnable {
+        override fun run() {
+            if (currentId == null || playbackStart == 0L) return
+            onLevel(envelope.levelAt(SystemClock.uptimeMillis() - playbackStart))
+            main.postDelayed(this, 50L)
+        }
+    }
     private var audioBytes = 0L
     private var text = ""
     private var completion: ((SpeechResult) -> Unit)? = null
@@ -212,6 +224,7 @@ class SpeechOutput(
         }
         onStatus(VoiceStatus(true, if(official)"Voz A pronta • Executivo clássico • pt-BR local" else "Voz pronta • $selectedLabel • $selectedLocale", selectedPackage, selectedLocale))
         currentId = "jarvis-${++generation}"
+        envelope.reset(); playbackStart = 0L
         audioBytes = 0L
         engine?.setSpeechRate(settings.speechRate)
         engine?.setPitch(if(official)1f else settings.pitch)
@@ -228,12 +241,20 @@ class SpeechOutput(
 
     private val listener = object : UtteranceProgressListener() {
         override fun onStart(utteranceId: String?) {
-            main.post { if (utteranceId != null && utteranceId == currentId) onPlayback(true) }
+            main.post { if (utteranceId != null && utteranceId == currentId) {
+                playbackStart = SystemClock.uptimeMillis(); onPlayback(true)
+                main.removeCallbacks(levelTicker); main.post(levelTicker)
+            } }
+        }
+        override fun onBeginSynthesis(utteranceId: String?, sampleRateInHz: Int, audioFormat: Int, channelCount: Int) {
+            if (utteranceId != null && utteranceId == currentId)
+                envelope.reset(sampleRateInHz, channelCount, audioFormat == AudioFormat.ENCODING_PCM_16BIT)
         }
         override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
             main.post { if (utteranceId != null && utteranceId == currentId) onRange(start, end, text.length) }
         }
         override fun onAudioAvailable(utteranceId: String?, audio: ByteArray?) {
+            if (utteranceId != null && utteranceId == currentId && audio != null) envelope.append(audio)
             val count = audio?.size?.toLong() ?: 0L
             main.post { if (utteranceId != null && utteranceId == currentId) audioBytes += count }
         }
@@ -253,6 +274,7 @@ class SpeechOutput(
         finish(SpeechResult.Failed(message))
     }
     private fun finish(result: SpeechResult) {
+        main.removeCallbacks(levelTicker); playbackStart = 0L; onLevel(null)
         main.removeCallbacks(speechTimeout)
         main.removeCallbacks(initTimeout)
         engine?.stop()
@@ -264,6 +286,7 @@ class SpeechOutput(
         callback?.invoke(result)
     }
     fun stop() {
+        main.removeCallbacks(levelTicker); playbackStart = 0L; onLevel(null)
         main.removeCallbacks(speechTimeout)
         main.removeCallbacks(initTimeout)
         currentId = null

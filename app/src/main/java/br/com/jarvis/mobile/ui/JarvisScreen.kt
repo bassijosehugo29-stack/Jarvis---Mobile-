@@ -30,6 +30,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,7 @@ import br.com.jarvis.mobile.JarvisState
 import br.com.jarvis.mobile.experience.ExperienceSettings
 import br.com.jarvis.mobile.experience.OperationMode
 import br.com.jarvis.mobile.experience.CorePhase
+import br.com.jarvis.mobile.voice.ListeningPhase
 import kotlin.math.abs
 import kotlin.math.sin
 
@@ -55,7 +57,8 @@ fun JarvisScreen(
     onCancelModel: () -> Unit = {},
     onExperienceChange: (ExperienceSettings) -> Unit = {},
     onLoadVoices: () -> Unit = {},
-    onOpenHub: () -> Unit = {}
+    onOpenHub: () -> Unit = {},
+    onSystemAssistant: () -> Unit = {}
 ) {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val device = rememberHudDeviceState()
@@ -74,7 +77,7 @@ fun JarvisScreen(
                 DeviceStrip(device)
                 ModeSelector(state.experience, onExperienceChange, Modifier.padding(horizontal = 22.dp).padding(bottom = 10.dp))
                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                    val diameter = (maxHeight * 0.60f).coerceIn(184.dp, 320.dp)
+                    val diameter = (maxHeight * 0.66f).coerceIn(210.dp, 360.dp)
                     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
                         .heightIn(min = maxHeight).testTag("jarvis-content")
                         .padding(horizontal = 22.dp).padding(top = 6.dp, bottom = 14.dp),
@@ -97,13 +100,13 @@ fun JarvisScreen(
                             }
                         }
                         Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
-                            CommunicationPanel(state)
+                            CommunicationPanel(state, onReviewDraft = { message = state.partialHeard })
                             if (state.voiceIssue.isNotBlank()) {
                                 Text(state.voiceIssue, color = Gold, fontSize = 13.sp, lineHeight = 20.sp,
                                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
                                 TextButton(onClick = { showSettings = true }) { Text("Ajustar a voz", color = Cyan) }
                             }
-                            OutlinedTextField(value = message, onValueChange = { message = it.take(480) },
+                            OutlinedTextField(value = message, onValueChange = { message = it.take(20_000) },
                                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("jarvis-message"),
                                 label = { Text("Converse com o JARVIS") },
                                 placeholder = { Text("Fale ou escreva sua mensagem") },
@@ -153,9 +156,14 @@ fun JarvisScreen(
                     fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.padding(top = 8.dp))
                 HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
                 ExperienceControls(state, onExperienceChange, onLoadVoices)
+                OutlinedButton(onClick = onSystemAssistant, modifier = Modifier.fillMaxWidth().padding(top = 16.dp).testTag("system-assistant")) {
+                    Text("Usar como assistente do Android")
+                }
+                Text("Seleção oficial pelo Android, quando disponível. O gesto do sistema abre o JARVIS; toque no núcleo para autorizar a escuta. Não ativa Ok Jarvis com o app fechado.",
+                    color = Muted, fontSize = 12.sp, lineHeight = 19.sp)
                 HorizontalDivider(Modifier.padding(vertical = 22.dp), color = Outline)
                 Text("Como falar", fontSize = 15.sp, color = Gold, fontWeight = FontWeight.Medium)
-                Text("Nos modos Assistente e Cinema, ative o núcleo para conversar. O JARVIS responde e volta a ouvir sem você precisar repetir o nome em cada frase. No modo Silencioso, cada toque autoriza uma escuta. Para parar, toque no núcleo ou diga parar.",
+                Text("Nos modos Assistente e Cinema, ative o núcleo para conversar. Pode fazer pausas naturais: o texto permanece enquanto você continua. O JARVIS espera sua fala terminar, responde e volta a ouvir. No modo Silencioso, cada toque autoriza uma escuta. Para parar, toque no núcleo ou diga parar.",
                     color = Muted, fontSize = 14.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
                 Text("“Jarvis, abrir WhatsApp”\n“Jarvis, agende dentista amanhã às 15 horas”\n“Jarvis, alarme para sete e trinta”", color = Cyan,
                     fontSize = 14.sp, lineHeight = 25.sp, modifier = Modifier.padding(top = 12.dp))
@@ -204,7 +212,7 @@ fun JarvisScreen(
                     Spacer(Modifier.width(10.dp))
                     Text("Abrir permissões do aplicativo")
                 }
-                Text("JARVIS Mobile · 3.1.0", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
+                Text("JARVIS Mobile · Escuta natural", color = Muted.copy(alpha = 0.65f), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 18.dp))
             }
         }
@@ -265,6 +273,7 @@ private fun HudLabel(text: String, modifier: Modifier = Modifier, color: Color =
 private fun VoiceControl(state: JarvisState, visible: Boolean, diameter: Dp, onToggle: () -> Unit) {
     val label = when {
         state.thinking || state.working -> "Parar resposta"
+        state.speaking && state.enabled -> "Interromper e ouvir"
         state.speaking && !state.enabled -> "Interromper fala"
         state.enabled -> "Pausar escuta"
         else -> "Ativar JARVIS"
@@ -274,7 +283,7 @@ private fun VoiceControl(state: JarvisState, visible: Boolean, diameter: Dp, onT
         stateDescription = state.corePhase.label + if (state.enabled) " · Escuta ativada" else " · Escuta desativada"
     }.clickable(role = Role.Button, onClick = onToggle), horizontalAlignment = Alignment.CenterHorizontally) {
         HolographicCore(visible, state.corePhase, state.experience.mode, state.audioLevel,
-            state.speechProgress, state.speechPulse, Modifier.size(diameter).testTag("jarvis-core"))
+            state.speechProgress, state.speechPulse, Modifier.size(diameter).testTag("jarvis-core"), state.speechLevel)
         HudPanel(Modifier.widthIn(min = 170.dp)) {
             Row(Modifier.padding(horizontal = 18.dp, vertical = 11.dp),
                 horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -301,7 +310,9 @@ private fun VoiceSignal(state: JarvisState, modifier: Modifier) {
 }
 
 @Composable
-private fun CommunicationPanel(state: JarvisState) {
+private fun CommunicationPanel(state: JarvisState, onReviewDraft: () -> Unit) {
+    var expanded by rememberSaveable(state.reply) { mutableStateOf(false) }
+    val spokenMode = state.experience.voiceAllowed && state.experience.mode != OperationMode.SILENT
     HudPanel(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(15.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -310,13 +321,32 @@ private fun CommunicationPanel(state: JarvisState) {
                 Box(Modifier.size(4.dp).background(if (state.enabled) Cyan else Muted, CircleShape))
             }
             HorizontalDivider(Modifier.padding(top = 10.dp, bottom = 11.dp), color = Cyan.copy(alpha = 0.13f))
+            if (state.partialHeard.isNotBlank()) {
+                Text(state.partialHeard, fontSize = 13.sp, lineHeight = 20.sp,
+                    maxLines = 3, overflow = TextOverflow.Ellipsis,
+                    color = if (state.unconfirmedDraft) Gold else Cyan,
+                    modifier = Modifier.testTag("jarvis-partial"))
+                Text(if (state.unconfirmedDraft) "Não confirmei toda a fala. Revise antes de enviar."
+                    else "Estou ouvindo. Pode continuar.", color = Muted, fontSize = 11.sp,
+                    modifier = Modifier.padding(top = 4.dp).testTag("listening-guidance"))
+                if (state.unconfirmedDraft) TextButton(onClick = onReviewDraft, modifier = Modifier.testTag("review-transcript")) {
+                    Text("Revisar transcrição", color = Cyan)
+                }
+            }
             if (state.heard.isNotBlank()) {
                 Text("> " + state.heard, fontSize = 12.sp, lineHeight = 19.sp,
                     fontFamily = FontFamily.Monospace, color = Muted, modifier = Modifier.testTag("jarvis-heard"))
             }
             Text(if (state.thinking) "Pensando na sua resposta…" else state.reply,
                 color = Color(0xFFD1F8FF), fontSize = 14.sp, lineHeight = 21.sp,
+                maxLines = if (expanded || !spokenMode) Int.MAX_VALUE else 3,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = if (state.heard.isBlank()) 0.dp else 8.dp).testTag("jarvis-reply"))
+            if (spokenMode && state.reply.length > 150) {
+                TextButton(onClick = { expanded = !expanded }, modifier = Modifier.testTag("reply-expand")) {
+                    Text(if (expanded) "Recolher texto" else "Ler resposta completa", color = Cyan, fontSize = 12.sp)
+                }
+            }
         }
     }
 }
@@ -327,6 +357,8 @@ private fun PrivacyLine(state: JarvisState) {
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         Icon(Symbols.Shield, null, Modifier.size(12.dp), tint = Muted)
         Text(when {
+            state.interruptListening -> "Microfone ativo · diga Jarvis, pare"
+            state.listening && state.listeningPhase == ListeningPhase.CONTINUATION -> "Escuta ativa · pausas naturais permitidas"
             state.listening -> "Microfone em uso nesta tela"
             state.thinking -> "Microfone pausado enquanto penso"
             state.speaking -> "Microfone pausado durante a resposta"

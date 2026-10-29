@@ -2,16 +2,17 @@ package br.com.jarvis.mobile.voice
 
 import android.content.Context
 import android.content.pm.PackageManager
+import br.com.jarvis.mobile.BuildConfig
 
 /** Identity of the user-approved model, not a replacement system voice with a lowered pitch. */
 enum class VoiceProfile(val title:String){OFFICIAL_A("A · Executivo clássico"),ANDROID("Voz do Android")}
 enum class VoiceAInstallation{READY,MISSING,INCOMPATIBLE}
 object OfficialVoiceA {
-    const val PACKAGE="br.com.jarvis.voicea"
+    const val PACKAGE=BuildConfig.VOICE_ENGINE_PACKAGE
     const val VOICE="jarvis-faber-pt-BR"
     const val PROFILE="executive-a-v1"
     const val MODEL_SHA256="858555e3a064209c57088fe6bd70c4c3dc54d03eaa00c45d5ecaf43a33f95aa7"
-    const val GUIDE="https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/blob/main/docs/VOZ-A.md"
+    const val GUIDE="https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/blob/fix/escuta-inteligente-20261029/docs/ESCUTA-INTELIGENTE.md"
     @Suppress("DEPRECATION")
     fun installation(context:Context):VoiceAInstallation=try{
         val pm=context.packageManager

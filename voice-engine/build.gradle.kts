@@ -2,6 +2,10 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+// CI distribution targets Galaxy ARM64; emulator jobs keep both ABIs by default.
+val jarvisAbis = providers.gradleProperty("jarvisAbis").orElse("arm64-v8a,x86_64").get().split(",")
+require(jarvisAbis.all { it in setOf("arm64-v8a", "x86_64") })
+
 android {
     namespace = "br.com.jarvis.voicea"
     compileSdk = 35
@@ -11,7 +15,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
-        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        manifestPlaceholders["voiceLabel"] = "JARVIS Voz A"
+        ndk { abiFilters += jarvisAbis }
         externalNativeBuild { cmake { arguments += listOf("-DANDROID_STL=c++_static", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON") } }
     }
     ndkVersion = "27.2.12479018"
@@ -26,6 +31,14 @@ android {
                 keyPassword = System.getenv("JARVIS_KEY_PASSWORD")
             }
             getByName("debug") { signingConfig = fixed }
+        }
+        create("preview") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".escutapreview"
+            versionNameSuffix = "-escuta"
+            matchingFallbacks += listOf("debug")
+            manifestPlaceholders["voiceLabel"] = "JARVIS Voz A · Escuta"
+            ndk { abiFilters.clear(); abiFilters += "arm64-v8a" }
         }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }

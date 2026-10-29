@@ -1,14 +1,14 @@
-# JARVIS Mobile 3.1 — Voz A · Executivo clássico
+# JARVIS Mobile — Escuta inteligente
 
-Assistente Android nativo em Kotlin/Jetpack Compose para uso pessoal, inicialmente no Samsung Galaxy S25 FE. Evolui o projeto existente: HUD preto/azul/ciano/dourado, núcleo holográfico, voz, trilha original e três modos permanecem integrados às novas centrais.
+Continuação do mesmo Android Kotlin/Compose, com o núcleo holográfico azul, voz A, três modos e centrais preservados. A branch `fix/escuta-inteligente-20261029` parte da revisão existente `14acd222` e corrige o encerramento precoce entre pausas: resultados parciais revisáveis, junção de segmentos, janela de continuação de 3,3 s e confirmação única antes de responder/executar. Temporizadores e respostas atrasadas são invalidados por geração.
 
-A voz A aprovada é agora o perfil padrão. A entrega contém **dois APKs da mesma execução**: o assistente e **JARVIS Voz A**, motor local com Faber pt-BR. O motor já traz o modelo, não solicita internet/microfone e usa a API TextToSpeech do Android. [Voz, instalação e licenças](docs/VOZ-A.md).
+[Implementação, auditoria, limites e instalação](docs/ESCUTA-INTELIGENTE.md). O ZIP CyberBot informado não está acessível nesta tarefa; não foi executado ou declarado auditado. A base Android acessível usa conversa local, não Gemini; nenhuma integração/credencial Gemini foi inventada. Há um contrato de provedor para futura integração segura, sem chaves no APK.
 
-**Baixar no celular:** [JARVIS Voz A — APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024/artifacts/12830015162) · [JARVIS Mobile 3.1 — APK](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024/artifacts/12829740920). **Exige login no GitHub pelo Chrome.** Cada link baixa um ZIP com um APK; extraia em Meus Arquivos e instale primeiro a voz A. Disponíveis até **26/01/2027, 15:32:53 UTC**.
+**Compilar e baixar:** acompanhe o pull request e seus checks ou Actions → Android - APK de teste → Run workflow → branch `fix/escuta-inteligente-20261029`. O workflow publica `JARVIS-Escuta-APK` e `JARVIS-Voz-A-Escuta-APK`, além de testes, Lint, fontes do motor e comprovante de downloads. Login GitHub necessário; cada artifact contém um ZIP com um APK. Resultados efetivos e links da execução ficam no PR e nos artifacts, sem presumir aprovação antes do CI.
 
-**Compilação e entrega confirmadas:** [execução aprovada](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024), com três jobs verdes e **131 testes aprovados** (87 de unidade + 44 Android), sem falhas/ignorados. Lint com zero erros e 39 avisos. A etapa final baixou os dois artifacts publicados e conferiu seus APKs contra os arquivos assinados; a API também entregou ambos após o workflow terminar. Nenhuma mudança de voz, interface ou funcionalidades.
+**Instale sem remover versões anteriores.** Os pacotes de teste `.escutapreview` ficam ao lado da 3.1/4 e usam armazenamento separado. Baixe o par da mesma execução, extraia em Meus Arquivos, instale primeiro a voz e depois o assistente. Notas/configurações antigas permanecem nas instalações anteriores e não são importadas automaticamente.
 
-[Links, tamanhos, hashes e instalação](docs/DOWNLOADS-APK.md) · [comprovante dos downloads](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024/artifacts/12828584225) · [fontes correspondentes do motor](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions/runs/40717061024/artifacts/12829950268). A [validação da primeira integração da voz](docs/VALIDATION.md) permanece como histórico; esta nova compilação usa outro certificado de teste. Use sempre os dois APKs desta mesma execução.
+Os relatórios [da fase 4 anterior](docs/JARVIS-4-FASE-1.md) e [da 3.1](docs/DOWNLOADS-APK.md) são históricos. Esta revisão não declara teste físico no Galaxy S25 FE nem melhora acústica/latência/bateria sem medição. A geração local opcional continua limitada pelo modelo pequeno. A voz A mantém pitch/modelo aprovados; respostas longas evitam cortes no meio de abreviações/títulos.
 
 ## O que está no código
 
@@ -23,7 +23,7 @@ A voz A aprovada é agora o perfil padrão. A entrega contém **dois APKs da mes
 
 ## Primeiro uso
 
-1. Instale primeiro o APK **JARVIS Voz A** e depois **JARVIS Mobile**, da mesma entrega, seguindo o [guia pelo celular](docs/APK-PELO-CELULAR.md). Use PIN, padrão ou senha do Android para poder abrir a memória.
+1. Instale primeiro o APK **JARVIS Voz A** e depois **JARVIS Mobile**, da mesma entrega, seguindo o [guia da prévia](docs/ESCUTA-INTELIGENTE.md). Use PIN, padrão ou senha do Android para poder abrir a memória.
 2. Escolha **Assistente → ajustes → A · Executivo clássico → Testar voz**. O modelo já está no APK do motor. Ajuste o volume de mídia; confira alto-falante/fones/Bluetooth. “Voz do Android” continua sendo uma alternativa explícita nos ajustes.
 3. Toque no núcleo e permita microfone durante o uso. A primeira ativação diária pode apresentar o digest. Para comandos, diga “Jarvis, minha agenda” ou “Jarvis, abrir ChatGPT”. A opção “Primeira ativação do dia” fica no DIGEST.
 4. Abra **⋮ → SECOND BRAIN**, autentique no Android e crie uma nota. Revise antes de salvar. Para ouvir dados pessoais é obrigatória uma voz local; sem ela, o texto permanece visível com orientação.
@@ -62,7 +62,7 @@ Nenhuma loja, release pública ou serviço pago foi ativado. Actions usa runners
 
 ## Compilar e verificar
 
-Pelo celular: [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → main**. Aguarde **os dois jobs verdes**, abra o run, baixe os artifacts separados **JARVIS-Voz-A-APK** e **JARVIS-Mobile-3.1-APK**, extraia os dois ZIPs e instale primeiro `JARVIS-Voz-A-1.0.0-debug.apk` e depois `JARVIS-Mobile-3.1.0-debug.apk`. Nas novas execuções, a retenção solicitada é de 90 dias, sujeita ao limite do repositório. É necessário login no GitHub. [Passos completos](docs/APK-PELO-CELULAR.md).
+Pelo celular: [GitHub Actions](https://github.com/bassijosehugo29-stack/Jarvis---Mobile-/actions) → **Android - APK de teste → Run workflow → fix/escuta-inteligente-20261029**. Aguarde os **três jobs verdes**, abra a execução e baixe os artifacts **JARVIS-Voz-A-Escuta-APK** e **JARVIS-Escuta-APK**. Login no GitHub é necessário. Extraia cada ZIP em Meus Arquivos e instale primeiro `JARVIS-Voz-A-escuta-preview.apk`, depois `JARVIS-Mobile-4.0.1-escuta-preview.apk`. Não desinstale a 3.1. Retenção solicitada de 90 dias, sujeita ao limite do repositório. [Detalhes da fase 1](docs/ESCUTA-INTELIGENTE.md).
 
 No computador: JDK 17, Platform/target/compile SDK 35, Build Tools 35.0.0, NDK 27.2.12479018, CMake 3.22.1; Gradle 8.11.1, AGP 8.9.2, Kotlin/Compose 2.1.20, KSP 2.1.20-2.0.1, Room 2.7.2. Android mínimo 26 no assistente e 30 no motor da voz A; ABIs arm64-v8a e x86_64. Configure ANDROID_HOME ou sdk.dir em local.properties. Não versione esse arquivo.
 
@@ -72,7 +72,7 @@ python3 scripts/prepare_voice_a.py
 ./gradlew :app:testDebugUnitTest :voice-engine:testDebugUnitTest :app:lintDebug :voice-engine:lintDebug :app:assembleDebug :voice-engine:assembleDebug :app:assembleDebugAndroidTest
 python3 scripts/verify_apk.py
 python3 scripts/bundle_voice_a_source.py
-# Testes Android exigem emulador/dispositivo; o teste de conversa usa o modelo real:
+# Testes Android automatizados exigem emulador descartável (o script recusa aparelho físico); o teste de conversa usa o modelo real:
 python3 scripts/fetch_test_model.py /tmp/jarvis-conversation-model.gguf
 adb push /tmp/jarvis-conversation-model.gguf /data/local/tmp/jarvis-conversation-model.gguf
 adb shell chmod 644 /data/local/tmp/jarvis-conversation-model.gguf
@@ -81,6 +81,6 @@ sh scripts/test_on_emulator.sh
 
 Windows: `.\gradlew.bat`. CMake obtém llama.cpp em commit fixado durante compilação; nenhum binário executável é baixado pelo app. [Arquitetura](docs/ARQUITETURA.md), [testes](docs/TESTES.md) e [validação real](docs/VALIDATION.md).
 
-**Assinatura:** sem os quatro Secrets opcionais de assinatura, o CI usa chave debug temporária. Os dois APKs precisam compartilhar o certificado; instale sempre o par da mesma execução. Uma atualização com chave diferente exige desinstalar a anterior, apagando dados locais: exporte notas antes. Para Gmail e atualizações estáveis, configure uma chave privada fixa conforme o [guia](docs/GMAIL-OAUTH.md). Nenhuma chave privada é guardada no repositório ou artefato.
+**Assinatura:** sem os quatro Secrets opcionais de assinatura, o CI usa chave debug temporária. Instale o par da mesma execução. A prévia 4 tem pacote separado para preservar a 3.1; não remova a instalação antiga para contornar conflito de certificado. Atualizações futuras sobre o mesmo pacote exigem a mesma chave privada. Para Gmail e atualizações estáveis, configure uma chave fixa conforme o [guia](docs/GMAIL-OAUTH.md). Nenhuma chave privada é guardada no repositório ou artefato.
 
 Projeto pessoal independente; marcas pertencem a seus titulares.

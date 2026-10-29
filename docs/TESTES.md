@@ -1,3 +1,5 @@
+Para a revisão de escuta, consulte também [estados, fixtures, cancelamento e limites](ESCUTA-INTELIGENTE.md). Os resultados da execução atual aparecem nos checks do PR.
+
 # Testes — JARVIS 3.1
 
 Resultados efetivamente executados ficam em [VALIDATION.md](VALIDATION.md); testes adicionados não devem ser contados como aprovados antes do CI concluir.

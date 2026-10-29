@@ -1,14 +1,18 @@
-JARVIS 3.1 — VOZ A APROVADA
+JARVIS 4.0 — FASE 1 / PRÉVIA ARM64 PARA GALAXY S25 FE
 
-1. Extraia este ZIP no celular.
-2. Instale JARVIS-Voz-A-1.0.0-debug.apk (o motor local da voz).
-3. Instale JARVIS-Mobile-3.1.0-debug.apk (o assistente).
-4. Abra JARVIS, escolha Assistente e use Testar voz nos ajustes.
+Não desinstale nem substitua sua instalação atual.
+Esta variante do mesmo projeto é instalada ao lado da 3.1, com dados separados.
+1. Extraia os ZIPs baixados no GitHub (login obrigatório).
+2. Instale JARVIS-Voz-A-4-preview.apk (opcional para usar a voz A).
+3. Instale JARVIS-Mobile-4.0.0-fase1-preview.apk.
+4. Abra JARVIS 4 · Prévia. Teste a voz em Assistente → ajustes → Testar voz.
 
-O motor requer Android 11 ou superior (o Galaxy S25 FE é compatível). O motor Faber pt-BR já contém o modelo. Não precisa baixar voz, criar conta ou mudar a voz global do Android. Nenhuma permissão de internet/microfone é solicitada pelo motor. O microfone do assistente continua sendo autorizado apenas durante o uso.
+A voz A conserva modelo e pitch naturais. O motor da prévia tem pacote diferente e não substitui o motor antigo. Voz do Android é uma alternativa nos ajustes.
+Notas, backups, agendas e configurações da instalação atual não são apagados. A prévia não importa dados privados automaticamente. Você pode importar manualmente um backup criptografado de notas se desejar.
 
-Os dois APKs precisam ser da mesma entrega/certificado. A assinatura é de teste; se a instalação informar conflito, exporte notas antes de desinstalar a versão anterior. A desinstalação apaga dados locais. Não apaga calendários/e-mails originais.
+O núcleo reage a RMS de escuta e à amplitude de PCM de fala quando disponível. Fora da tela, animação/escuta/fala param. Silencioso bloqueia o áudio do JARVIS.
+Nos ajustes é possível selecionar o assistente Android, quando o fabricante oferece a função. Não há Ok Jarvis com o app fechado.
+Interrupção por voz é opcional, com reconhecimento local e fones com fio/USB no Android 13+. Toque no núcleo também interrompe e retoma a sessão.
 
-A voz A é a escolhida por padrão. Em Silencioso não haverá fala/música/efeitos. As opções do Android continuam disponíveis nos ajustes como alternativa explícita; não são apresentadas como a voz A.
-
-Teste físico no Samsung Galaxy S25 FE ainda necessário. Não há garantia de timbre idêntico em todos os alto-falantes/roteamentos de áudio. Compilação e resultados reais estão em docs/VALIDATION.md no repositório.
+A trilha definitiva não foi integrada. O ambiente antigo é experimental e opcional.
+Teste físico no S25 FE ainda necessário; métricas de emulador não comprovam bateria ou desempenho no aparelho.

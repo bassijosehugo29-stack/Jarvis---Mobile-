@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- No INTERNET, microphone, account, storage, boot or background-work permissions. -->
-    <application android:label="JARVIS Voz A" android:icon="@drawable/ic_jarvis" android:allowBackup="false"
+    <application android:label="${voiceLabel}" android:icon="@drawable/ic_jarvis" android:allowBackup="false"
         android:fullBackupContent="false" android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="false" android:extractNativeLibs="false">
         <meta-data android:name="jarvis.voice.log.policy" android:value="no-text-v1" />
@@ -11,7 +11,7 @@
             <intent-filter><action android:name="android.intent.action.TTS_SERVICE" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
             <meta-data android:name="android.speech.tts" android:resource="@xml/tts_engine" />
         </service>
-        <activity android:name=".EngineActivity" android:exported="true" android:label="JARVIS Voz A">
+        <activity android:name=".EngineActivity" android:exported="true" android:label="${voiceLabel}">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
             <intent-filter><action android:name="android.speech.tts.engine.CONFIGURE_ENGINE" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>
             <intent-filter><action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>

@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Debug-only visual fixture, excluded from the distributed preview build. -->
+        <activity android:name="br.com.jarvis.mobile.diagnostics.CoreShowcaseActivity" android:exported="true" />
+    </application>
+</manifest>
